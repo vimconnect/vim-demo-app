@@ -1062,3 +1062,59 @@ select.input {
 .xp-missing-caps-list li:last-child {
   border-bottom: none;
 }
+
+/* Session Context */
+.session-context-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin: 0;
+}
+
+.session-context-row + .session-context-row {
+  border-top: 1px solid var(--color-border-light);
+  padding-top: var(--space-sm);
+}
+
+.session-context-label {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-text-subtle);
+}
+
+.session-context-note {
+  font-size: var(--text-sm);
+  font-weight: var(--font-semibold);
+  color: var(--color-text-primary);
+  margin-top: 2px;
+}
+
+/* A button, not a div: the value is click-to-copy, so it must be reachable by
+   keyboard. `overflow-wrap: anywhere` is what stops a UUID breaking mid-token
+   in the narrow sidepanel. */
+.session-context-value {
+  display: block;
+  width: 100%;
+  margin-top: 2px;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  font-family: var(--font-mono);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--color-text-secondary);
+  overflow-wrap: anywhere;
+  cursor: pointer;
+}
+
+.session-context-value:hover,
+.session-context-value:focus-visible {
+  color: var(--color-cyan);
+}
+
+.session-context-value.is-copied {
+  color: var(--color-success);
+}

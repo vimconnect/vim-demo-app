@@ -18,8 +18,10 @@ export async function copyText(text: string): Promise<boolean> {
     // Blocked by permissions policy — fall through to the legacy path.
   }
 
+  // The textarea holds `text` verbatim, so it must leave the DOM even when
+  // execCommand throws.
+  const textarea = document.createElement('textarea');
   try {
-    const textarea = document.createElement('textarea');
     textarea.value = text;
     textarea.setAttribute('readonly', '');
     textarea.style.position = 'fixed';
@@ -29,10 +31,10 @@ export async function copyText(text: string): Promise<boolean> {
     textarea.style.pointerEvents = 'none';
     document.body.appendChild(textarea);
     textarea.select();
-    const ok = document.execCommand('copy');
-    document.body.removeChild(textarea);
-    return ok;
+    return document.execCommand('copy');
   } catch {
     return false;
+  } finally {
+    textarea.remove();
   }
 }

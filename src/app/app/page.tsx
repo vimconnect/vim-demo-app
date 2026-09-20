@@ -6,6 +6,7 @@ import { initVimSDK, type VimSDK, type AppManifest, type WorkflowEvent, type App
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { CapabilityAutoRunner } from "@/components/CapabilityAutoRunner";
 import { getEnvironment } from "@/lib/sdk-config";
+import { SessionContextPanel } from "@/components/SessionContextPanel";
 import {
   DEMO_WORKER_STATE_KEY,
   REFRESH_DEMO_EVENT,
@@ -1110,6 +1111,11 @@ function AppPageContent() {
             View SDK Manifest
           </button>
         </div>
+
+        <SessionContextPanel
+          sessionContext={vimSDK?.sessionContext ?? null}
+          addLog={addLog}
+        />
 
         {/* Worker App Round-Trip (workerState + appEvents) */}
         <div className="demo-card-section" style={{ marginBottom: "var(--space-2xl)" }}>

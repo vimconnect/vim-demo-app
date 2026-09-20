@@ -49,12 +49,19 @@ export async function exchangeAuthCode(request: NextRequest): Promise<NextRespon
     const tokenData = await tokenResponse.json();
     console.log('Token exchange successful');
 
-    return NextResponse.json({
-      access_token: tokenData.access_token,
-      token_type: tokenData.token_type || 'Bearer',
-      expires_in: tokenData.expires_in,
-      scope: tokenData.scope,
-    });
+    return NextResponse.json(
+      {
+        access_token: tokenData.access_token,
+        // Required for sessionContext.getIdToken() — removing it breaks the
+        // token_endpoint flow silently.
+        id_token: tokenData.id_token,
+        token_type: tokenData.token_type || 'Bearer',
+        expires_in: tokenData.expires_in,
+        scope: tokenData.scope,
+      },
+      // RFC 6749 §5.1 — a token response carries credentials and must not be stored.
+      { headers: { 'Cache-Control': 'no-store', Pragma: 'no-cache' } },
+    );
   } catch (error) {
     console.error('Token exchange error:', error);
     return NextResponse.json(
