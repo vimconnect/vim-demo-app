@@ -1,9 +1,9 @@
 {
   "name": "vim-sdk-demo-app",
   "version": "1.0.0",
-  "description": "Reference implementation for building applications with the Vim Connect SDK",
+  "description": "Reference implementation for building applications with the Vim Connect App SDK",
   "license": "MIT",
-  "homepage": "https://developer-docs.stage.getvim.ai",
+  "homepage": "https://developer-docs.getvim.ai",
   "keywords": [
     "vim-connect",
     "sdk",
@@ -26,7 +26,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vimconnect/app-sdk": "0.4.57",
+    "@vimconnect/app-sdk": "0.4.58",
     "next": "^16.2.12",
     "react": "catalog:",
     "react-dom": "catalog:"

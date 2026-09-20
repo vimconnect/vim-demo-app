@@ -7,6 +7,12 @@
   --color-cyan-light: #E4FFF9;
   --color-cyan-dark: #56CFE1;
   --color-blue: #10ABE4;
+  /* The Vim design system's navy (`--color-brand-navy` in its own tokens.css).
+     Added here because it was already open-coded as a literal in at least four
+     places — CapabilityPreview's `INK`, WelcomePage.css, DashboardPage.css and
+     the extension sidepanel — and the compliance badges needed a fifth. Not a new
+     colour: the same one those sites were already using by hand. */
+  --color-brand-navy: #001C36;
   --color-purple: #B0B5FF;
   --color-purple-dark: #7400B8;
   --color-magenta: #7400B8;

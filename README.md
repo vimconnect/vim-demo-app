@@ -3,7 +3,7 @@
 [![npm version](https://img.shields.io/npm/v/@vimconnect/app-sdk.svg)](https://www.npmjs.com/package/@vimconnect/app-sdk)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
-A reference implementation showing how to build applications with the [Vim Connect SDK](https://developer-docs.stage.getvim.ai). Built with Next.js, this demo covers OAuth authentication, real-time EHR context events, and the full SDK API surface.
+A reference implementation showing how to build applications with the [Vim Connect App SDK](https://developer-docs.getvim.ai/docs). Built with Next.js, this demo covers OAuth authentication, real-time EHR context events, and the full SDK API surface.
 
 Use this as a starting point for building your own Vim Connect application.
 
@@ -30,9 +30,9 @@ App runs at [http://localhost:8080](http://localhost:8080)
 ## Prerequisites
 
 - **Node.js** 18+
-- **Vim Connect Chrome extension** installed ([setup guide](https://developer-docs.stage.getvim.ai))
+- **Vim Connect Chrome extension** installed ([setup guide](https://developer-docs.getvim.ai/docs/getting-started#prerequisites))
 - **Vim Connect account** with an OAuth application registered
-- **OAuth credentials** (client ID + client secret) from the [Vim developer portal](https://developer-docs.stage.getvim.ai)
+- **OAuth credentials** (client ID + client secret) from the [Vim Console](https://developer-docs.getvim.ai/docs/developer-account#getting-your-client-id-and-secret)
 
 ## Environment Variables
 
@@ -67,9 +67,9 @@ src/
 
 ## Documentation
 
-- [Vim Connect SDK Documentation](https://developer-docs.stage.getvim.ai)
+- [Vim Connect App SDK Documentation](https://developer-docs.getvim.ai/docs)
 - [`@vimconnect/app-sdk` on npm](https://www.npmjs.com/package/@vimconnect/app-sdk)
-- [OAuth Integration Guide](https://developer-docs.stage.getvim.ai)
+- [OAuth Integration Guide](https://developer-docs.getvim.ai/docs/authentication)
 
 ## Scripts
 

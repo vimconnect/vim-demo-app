@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'Vim Connect Demo App',
-  description: 'OAuth-enabled demo app for Vim Connect SDK',
+  description: 'OAuth-enabled demo app for Vim Connect App SDK',
 };
 
 export default function RootLayout({
