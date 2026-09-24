@@ -136,9 +136,9 @@ function AppPageContent() {
 
   // API Reads (SDK ehr.api.* getById/search) state.
   // Per-operation search inputs, keyed by `${sdkNamespace}.${sdkMethod}.<field>`
-  // where <field> is `query`, `cursor`, or `filters.${paramName}`. getById ops
-  // take no inputs (id resolved from context). Latest response per op, keyed by
-  // `${ns}.${method}`.
+  // where <field> is `query`, `cursor`, `filters.${paramName}`, or `id.${paramName}`
+  // for a getById id (optional — empty means resolve from EHR context). Latest
+  // response per op, keyed by `${ns}.${method}`.
   const [readOpInputs, setReadOpInputs] = useState<Record<string, string>>({});
   const [readOpResults, setReadOpResults] = useState<Record<string, string>>(
     {},
@@ -808,9 +808,9 @@ function AppPageContent() {
   // whatever read ops the active EHR's collection exposes (e.g. patient.getPatient,
   // patient.getInsurances, patient.getProblems).
   //
-  // getById ops take NO inputs — the entity id (patientId/encounterId) is resolved
-  // from the live EHR context by core-sdk, so passing an explicit id is deprecated;
-  // we send {}. search ops take an optional typed `input`: `query` (when
+  // getById ops take an optional id per metadata.idParameterNames; omitting it
+  // resolves the id from live EHR context. search ops take an optional typed
+  // `input`: `query` (when
   // metadata.supportsQuery), `filters` keyed by metadata.filterFields, and `cursor`
   // (when metadata.paginated) — each included only when the user supplied a value.
   async function executeReadOperation(op: any) {
@@ -843,8 +843,13 @@ function AppPageContent() {
       }
       callArg = input;
     } else {
-      // getById — id resolved from live context; send no id params.
-      callArg = {};
+      // An empty box must be omitted — `{}` is what makes the id resolve from context.
+      const ids: Record<string, string> = {};
+      for (const name of (op.metadata?.idParameterNames ?? []) as string[]) {
+        const v = readOpInputs[`${opKey}.id.${name}`]?.trim();
+        if (v) ids[name] = v;
+      }
+      callArg = ids;
     }
 
     setReadOpRunning((prev) => ({ ...prev, [opKey]: true }));
@@ -1851,7 +1856,11 @@ function AppPageContent() {
                                   {updater.fieldPath}
                                   {!detected && (
                                     <span className="updater-warning">
-                                      (not in context)
+                                      ({cap?.reason === "not_granted"
+                                        ? "not granted to this app"
+                                        : cap?.reason === "not_configured"
+                                          ? "not configured in this EHR"
+                                          : "not in context"})
                                     </span>
                                   )}
                                 </div>
@@ -2072,6 +2081,11 @@ function AppPageContent() {
                     : [];
                 const showCursor =
                   op.operationType === "search" && !!meta.paginated;
+                // Optional — an empty box leaves the id to EHR context.
+                const idFields: string[] =
+                  op.operationType === "getById"
+                    ? (meta.idParameterNames ?? [])
+                    : [];
                 const result = readOpResults[opKey];
                 return (
                   <div className="updater-card" key={opKey}>
@@ -2105,6 +2119,31 @@ function AppPageContent() {
                     >
                       {op.sdkSignature ?? `Catalog entry: ${op.catalogEntryId}`}
                     </div>
+
+                    {/* getById ids — optional; empty means "use EHR context" */}
+                    {idFields.map((name) => {
+                      const key = `${opKey}.id.${name}`;
+                      return (
+                        <div
+                          className="input-group"
+                          style={{ marginBottom: "var(--space-xs)" }}
+                          key={name}
+                        >
+                          <input
+                            type="text"
+                            value={readOpInputs[key] ?? ""}
+                            onChange={(e) =>
+                              setReadOpInputs((prev) => ({
+                                ...prev,
+                                [key]: e.target.value,
+                              }))
+                            }
+                            placeholder={`${name} (optional — defaults to EHR context)`}
+                            className="input"
+                          />
+                        </div>
+                      );
+                    })}
 
                     {/* search query — only when the op supports free-text query */}
                     {showQuery && (
