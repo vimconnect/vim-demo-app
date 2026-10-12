@@ -29,7 +29,8 @@ const renderPanel = (ctx: any, addLog = vi.fn()) => {
   return addLog;
 };
 
-const getIdTokenButton = () => screen.getByRole('button', { name: /get id token|fetching/i });
+const getIdTokenButton = () =>
+  screen.getByRole('button', { name: /get id token|fetching|refresh id token/i });
 
 describe('SessionContextPanel', () => {
   beforeEach(() => {
@@ -37,11 +38,11 @@ describe('SessionContextPanel', () => {
     copyTextMock.mockResolvedValue(true);
   });
 
-  it('renders all five fields, with the account name alongside its id', () => {
+  it('renders all six fields, with the account name and id on their own rows', () => {
     const ctx = sessionContext();
     renderPanel(ctx);
 
-    for (const label of ['User ID', 'Account', 'EHR', 'Session ID', 'Device ID']) {
+    for (const label of ['User ID', 'Account name', 'Account ID', 'EHR', 'Session ID', 'Device ID']) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
     expect(screen.getByText(ctx.userId)).toBeInTheDocument();
@@ -51,27 +52,10 @@ describe('SessionContextPanel', () => {
     expect(screen.getByText(ctx.deviceId)).toBeInTheDocument();
   });
 
-  it('copies a field and flashes Copied', async () => {
-    const user = userEvent.setup();
-    const ctx = sessionContext();
-    renderPanel(ctx);
-
-    await user.click(screen.getByTitle('Copy Session ID'));
-
-    expect(copyTextMock).toHaveBeenCalledWith(ctx.sessionId);
-    await waitFor(() => expect(screen.getByTitle('Copy Session ID')).toHaveTextContent('Copied'));
-  });
-
-  it('leaves the value shown when the copy is refused', async () => {
-    const user = userEvent.setup();
-    copyTextMock.mockResolvedValue(false);
-    const ctx = sessionContext();
-    renderPanel(ctx);
-
-    await user.click(screen.getByTitle('Copy User ID'));
-
-    await waitFor(() => expect(copyTextMock).toHaveBeenCalled());
-    expect(screen.getByTitle('Copy User ID')).toHaveTextContent(ctx.userId);
+  it('shows values as plain text with nothing to click', () => {
+    renderPanel(sessionContext());
+    expect(screen.queryByTitle(/^Copy /)).not.toBeInTheDocument();
+    expect(screen.getAllByRole('button').filter((b) => !b.classList.contains('info-tip'))).toHaveLength(1);
   });
 
   describe('with no session context', () => {
@@ -89,36 +73,51 @@ describe('SessionContextPanel', () => {
   });
 
   describe('Get ID Token', () => {
-    it('reports the length and the clipboard copy, never the token', async () => {
+    const b64url = (value: unknown) =>
+      btoa(JSON.stringify(value)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    const jwt = `${b64url({ alg: 'RS256' })}.${b64url({ sub: 'user-1', aud: 'demo', exp: 0 })}.signature`;
+
+    it('shows the decoded claims and logs the length, never the token', async () => {
       const user = userEvent.setup();
-      const ctx = sessionContext();
+      const ctx = sessionContext({ getIdToken: vi.fn().mockResolvedValue({ idToken: jwt }) });
       const addLog = renderPanel(ctx);
 
       await user.click(getIdTokenButton());
 
-      await waitFor(() => expect(addLog).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(screen.getByText('ID token claims')).toBeInTheDocument());
+      expect(screen.getByText('sub')).toBeInTheDocument();
+      expect(screen.getAllByText('User ID').length).toBeGreaterThan(1);
+      expect(screen.getByText('user-1')).toBeInTheDocument();
+      expect(screen.getByText('demo')).toBeInTheDocument();
+      expect(screen.getByText(`0 (${new Date(0).toLocaleString()})`)).toBeInTheDocument();
       const [message, level] = addLog.mock.calls[0];
       expect(level).toBe('success');
-      expect(message).toContain('1217-char JWT');
-      expect(message).toContain('copied to clipboard');
-      expect(message).not.toContain('x'.repeat(24));
-      expect(copyTextMock).toHaveBeenCalledWith('x'.repeat(1217));
+      expect(message).toContain(`${jwt.length}-char JWT, 3 claims`);
+      expect(message).not.toContain(jwt);
+      expect(copyTextMock).not.toHaveBeenCalled();
     });
 
-    it('says the clipboard was blocked rather than claiming a copy that did not happen', async () => {
+    it('copies the raw token only from Copy token', async () => {
       const user = userEvent.setup();
-      copyTextMock.mockResolvedValue(false);
-      const addLog = renderPanel(sessionContext());
+      renderPanel(sessionContext({ getIdToken: vi.fn().mockResolvedValue({ idToken: jwt }) }));
+
+      await user.click(getIdTokenButton());
+      await user.click(await screen.findByRole('button', { name: 'Copy token' }));
+
+      expect(copyTextMock).toHaveBeenCalledWith(jwt);
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Copied ✓' })).toBeInTheDocument());
+    });
+
+    it('says a non-JWT token has no claims', async () => {
+      const user = userEvent.setup();
+      renderPanel(sessionContext());
 
       await user.click(getIdTokenButton());
 
-      await waitFor(() => expect(addLog).toHaveBeenCalledTimes(1));
-      const [message] = addLog.mock.calls[0];
-      expect(message).toContain('(clipboard blocked)');
-      expect(message).not.toContain('copied to clipboard');
+      await waitFor(() => expect(screen.getByText(/isn.t a JWT/)).toBeInTheDocument());
     });
 
-    it('logs the SDK error code on rejection, and copies nothing', async () => {
+    it('shows and logs the SDK error code on rejection', async () => {
       const user = userEvent.setup();
       const ctx = sessionContext({
         getIdToken: vi.fn().mockRejectedValue({ code: 'ID_TOKEN_UNAVAILABLE' }),
@@ -130,7 +129,8 @@ describe('SessionContextPanel', () => {
       await waitFor(() => expect(addLog).toHaveBeenCalledTimes(1));
       expect(addLog.mock.calls[0][0]).toContain('ID_TOKEN_UNAVAILABLE');
       expect(addLog.mock.calls[0][1]).toBe('error');
-      expect(copyTextMock).not.toHaveBeenCalled();
+      expect(screen.getByText(/rejected: ID_TOKEN_UNAVAILABLE/)).toBeInTheDocument();
+      expect(screen.queryByText('ID token claims')).not.toBeInTheDocument();
     });
 
     it('relabels and ignores a second click while the call is in flight', async () => {
@@ -141,8 +141,7 @@ describe('SessionContextPanel', () => {
           settle = resolve;
         }),
       );
-      const ctx = sessionContext({ getIdToken });
-      renderPanel(ctx);
+      renderPanel(sessionContext({ getIdToken }));
 
       await user.click(getIdTokenButton());
       await waitFor(() => expect(getIdTokenButton()).toHaveTextContent('Fetching…'));
@@ -151,8 +150,8 @@ describe('SessionContextPanel', () => {
       await user.click(getIdTokenButton());
       expect(getIdToken).toHaveBeenCalledTimes(1);
 
-      settle({ idToken: 'y'.repeat(10) });
-      await waitFor(() => expect(getIdTokenButton()).toHaveTextContent('Get ID Token'));
+      settle({ idToken: jwt });
+      await waitFor(() => expect(getIdTokenButton()).toHaveTextContent('Refresh ID Token'));
     });
   });
 });

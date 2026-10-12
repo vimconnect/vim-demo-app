@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { AppManifest, ContextData, ContextKey, EventType, VimSDK, WorkflowEvent } from '@vimconnect/app-sdk';
+import { DeprecatedTag } from '@/components/DeprecatedTag';
 import { RawOutput } from '@/components/RawOutput';
+import { annotatedLines, apiResultAnnotator, contextAnnotator, noteOf, workflowEventAnnotator } from '@/lib/annotated-json';
 import {
   asEntityObject,
   buildMissingOps,
@@ -38,6 +40,7 @@ interface EventRow {
   type: string;
   at: string;
   raw: string;
+  event: WorkflowEvent;
 }
 
 interface LogRow {
@@ -244,7 +247,7 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
       try {
         const unsub = sdk.ehr.workflow.on(evt.id as EventType, (event: WorkflowEvent) => {
           eventIdRef.current += 1;
-          setEvents((prev) => [{ id: eventIdRef.current, type: event.type, at: now(), raw: JSON.stringify(event, null, 2) }, ...prev].slice(0, 100));
+          setEvents((prev) => [{ id: eventIdRef.current, type: event.type, at: now(), raw: JSON.stringify(event, null, 2), event }, ...prev].slice(0, 100));
           addLog(`event ${event.type}`, 'success');
         });
         unsubs.push(unsub);
@@ -348,7 +351,12 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                   <span className="xp-mono xp-dim">{entry.id ?? 'no id'}</span>
                 </div>
                 <div className="xp-card-meta">updated {entry.at}</div>
-                <RawOutput value={JSON.stringify(entry.data, null, 2)} label="context data" tone="success" />
+                <RawOutput
+                  value={JSON.stringify(entry.data, null, 2)}
+                  lines={annotatedLines(entry.data, contextAnnotator(manifest, entry.entityType))}
+                  label="context data"
+                  tone="success"
+                />
                 {/* The entity id lives at the top level of context data, not under
                     .fields — fold it in so an `id` field isn't reported missing. */}
                 <CompletenessBlock allFields={entityFields[entry.entityType] ?? []} value={{ id: entry.id, ...entry.data.fields }} />
@@ -371,7 +379,11 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                   <span className="xp-card-title">{evt.type}</span>
                   <span className="xp-dim">{evt.at}</span>
                 </div>
-                <RawOutput value={evt.raw} label="event payload" />
+                <RawOutput
+                  value={evt.raw}
+                  lines={annotatedLines(evt.event, workflowEventAnnotator(manifest, evt.type))}
+                  label="event payload"
+                />
               </div>
             ))}
           </div>
@@ -393,7 +405,10 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
               return (
                 <div key={op.key} className="xp-card">
                   <div className="xp-card-head">
-                    <span className="xp-card-title xp-mono">{op.key}</span>
+                    <span className="xp-card-title xp-mono">
+                      {op.key}
+                      <DeprecatedTag note={noteOf(opEntryByKey.get(op.key)?.deprecationStatus)} />
+                    </span>
                     <span className="xp-badges">
                       <span className="xp-badge xp-badge-read">{op.kind}</span>
                       {op.disruptive && <span className="xp-badge xp-badge-disruptive">disruptive</span>}
@@ -411,7 +426,18 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                       {result ? 'Re-run' : 'Run'}
                     </button>
                   </div>
-                  {result?.raw && <RawOutput value={result.raw} label="raw result" tone={result.state === 'error' ? 'error' : 'success'} />}
+                  {result?.raw && (
+                    <RawOutput
+                      value={result.raw}
+                      lines={
+                        result.result !== undefined && entityType
+                          ? annotatedLines(result.result, apiResultAnnotator(manifest, entityType))
+                          : undefined
+                      }
+                      label="raw result"
+                      tone={result.state === 'error' ? 'error' : 'success'}
+                    />
+                  )}
                   {entityType && <CompletenessBlock allFields={entityFields[entityType] ?? []} value={readEntity} />}
                 </div>
               );
@@ -435,7 +461,10 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
               return (
                 <div key={op.key} className="xp-card">
                   <div className="xp-card-head">
-                    <span className="xp-card-title xp-mono">{op.key}</span>
+                    <span className="xp-card-title xp-mono">
+                      {op.key}
+                      <DeprecatedTag note={noteOf(opEntryByKey.get(op.key)?.deprecationStatus)} />
+                    </span>
                     <span className="xp-badges">
                       <span className="xp-badge xp-badge-write">{op.kind}</span>
                       {op.disruptive && <span className="xp-badge xp-badge-disruptive">disruptive</span>}

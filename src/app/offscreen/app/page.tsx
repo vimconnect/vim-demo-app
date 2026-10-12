@@ -3,13 +3,20 @@
 import { Suspense, useEffect, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { initWorkerVimSDK } from '@vimconnect/app-sdk';
-import type { WorkerSDK, ContextData } from '@vimconnect/app-sdk';
+import type { WorkerSDK, ContextData, HubNamespace } from '@vimconnect/app-sdk';
 import { getEnvironment } from '@/lib/sdk-config';
 import {
   DEMO_WORKER_STATE_KEY,
   REFRESH_DEMO_EVENT,
   buildDemoWorkerData,
 } from '@/lib/worker-demo';
+import {
+  DEMO_APP_REPO_URL,
+  REDIRECT_HANDLED_EVENT,
+  REDIRECT_REQUEST_STATE_KEY,
+  pickWelcomePush,
+  type RedirectRequest,
+} from '@/lib/welcome-push';
 
 /**
  * Offscreen Worker App Page — headless background SDK worker (Phase 1)
@@ -17,7 +24,7 @@ import {
  * Loaded inside a hidden iframe managed by OffscreenAppManager.
  * Uses VimSDK.initWorker() (WorkerSDK) to:
  *   - Register for context events (patient, encounter) and write to workerState
- *   - Register for workflow events and send push notifications
+ *   - Show a welcome push once, on the first context or workflow event
  *   - Monitor hub.appState (whether the UI App is visible)
  *
  * Auth flow (mirrors the old offscreen/app pattern):
@@ -128,44 +135,111 @@ function OffscreenWorkerContent() {
         sdk.workerState.write('appIsOpen', status.isAppOpen);
       });
 
+      // ── Welcome push, once per worker lifetime ───────────────────────────────
+      // A worker can push only through a handle from a context or workflow callback.
+      let welcomeShown = false;
+      // The SDK drops a push's button callbacks when its context clears, so the
+      // push must not outlive the context it was sent from.
+      let openWelcome: { notificationId: string; contextKey: string } | null = null;
+      sdk.appEvents?.on(REDIRECT_HANDLED_EVENT, () => {
+        sdk.workerState.remove(REDIRECT_REQUEST_STATE_KEY);
+      });
+      const showWelcomeOnce = (hub: HubNamespace | undefined, trigger: string) => {
+        if (welcomeShown || hub == null) return;
+        welcomeShown = true;
+        const { title, text } = pickWelcomePush();
+        const notificationId = `demo-welcome-${Date.now()}`;
+        const settle = () => {
+          openWelcome = null;
+        };
+        if (supportedContexts.includes(trigger)) openWelcome = { notificationId, contextKey: trigger };
+        hub.pushNotification.show({
+          title,
+          text,
+          notificationId,
+          timeoutInSec: 20,
+          onTap: settle,
+          onTimeout: settle,
+          actionButtons: {
+            leftButton: {
+              text: 'View code',
+              buttonStyle: 'LINK',
+              openAppButton: true,
+              callback: () => {
+                settle();
+                const request: RedirectRequest = { url: DEMO_APP_REPO_URL, requestedAt: Date.now() };
+                sdk.workerState.write(REDIRECT_REQUEST_STATE_KEY, request);
+              },
+            },
+            rightButton: {
+              text: 'Explore app',
+              buttonStyle: 'PRIMARY',
+              openAppButton: true,
+              callback: settle,
+            },
+          },
+        })
+          .then((result) => {
+            console.log(`[offscreen/worker] Welcome push (${trigger}):`, result);
+            if (result.status !== 'sent') {
+              welcomeShown = false;
+              settle();
+            }
+          })
+          .catch((err) => {
+            welcomeShown = false;
+            settle();
+            console.error('[offscreen/worker] Welcome push failed:', err);
+          });
+      };
+
       // ── Register for context changes ──────────────────────────────────────────
       // Hardcode context keys — WorkerSDK does not expose getManifest().
       const supportedContexts = [
-        { contextKey: 'chart_open:patient' },
+        'chart_open:patient',
+        'encounter_open:encounter',
+        'encounter_open:patient',
+        'referral_open:referral',
       ];
 
-      for (const ctx of supportedContexts) {
-        const { contextKey } = ctx;
-
-        sdk.ehr.context.register<ContextData>(
-          contextKey,
-          {
-            // Declare that we only need firstName and lastName fields
-            // Callback only fires when these fields change or are first available
-            fields: ['firstName', 'lastName', 'dateOfBirth'],
-            debounceMs: 200,
-          },
-          (prev, curr, handle) => {
-            if (curr == null) {
-              console.log(`[offscreen/worker] Context cleared: ${contextKey}`);
-              return;
+      for (const contextKey of supportedContexts) {
+        try {
+          sdk.ehr.context.register<ContextData>(
+            contextKey,
+            {
+              operations: ['notify'],
+              debounceMs: 200,
+            },
+            (prev, curr, handle) => {
+              if (curr == null) {
+                console.log(`[offscreen/worker] Context cleared: ${contextKey}`);
+                if (openWelcome?.contextKey === contextKey) {
+                  handle.hub?.pushNotification.hide(openWelcome.notificationId);
+                  openWelcome = null;
+                }
+                return;
+              }
+              console.log(`[offscreen/worker] Context changed: ${contextKey}`, curr?.fields);
+              showWelcomeOnce(handle.hub, contextKey);
             }
+          );
+          console.log(`[offscreen/worker] Registered context: ${contextKey}`);
+        } catch (err) {
+          console.warn(`[offscreen/worker] Context not available: ${contextKey}`, err);
+        }
+      }
 
-            console.log(`[offscreen/worker] Context changed: ${contextKey}`, curr?.fields);
-
-            // Send a push notification if notify operation is available
-            if (handle.hub != null) {
-              handle.hub.pushNotification.show({
-                text: `Patient context updated: ${curr?.fields?.firstName ?? 'Unknown'}`,
-                notificationId: `patient-update-${contextKey}`,
-                timeoutInSec: 8,
-                launchPayload: { contextKey, patientId: curr?.id },
-              }).catch((err) => console.error('[offscreen/worker] Notification failed:', err));
-            }
-          }
-        );
-
-        console.log(`[offscreen/worker] Registered context: ${contextKey}`);
+      // register throws for an event the EHR or the manifest doesn't support.
+      for (const event of ['order_select', 'order_sign', 'referral_save']) {
+        try {
+          sdk.ehr.workflow.register(event, { operations: ['notify'] }, (_payload, handle) => {
+            console.log(`[offscreen/worker] Workflow event: ${event}`);
+            showWelcomeOnce(handle.hub, event);
+          });
+          console.log(`[offscreen/worker] Registered workflow event: ${event}`);
+        } catch (err) {
+          console.warn(`[offscreen/worker] Workflow event not available: ${event}`, err);
+        }
       }
 
       console.log('[offscreen/worker] Worker SDK fully initialized');

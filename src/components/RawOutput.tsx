@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { copyText } from '@/lib/clipboard';
+import type { JsonLine } from '@/lib/annotated-json';
+import { JsonLines } from '@/components/CodeBlock';
 
 type RawOutputProps = {
   /** Raw text (usually pretty-printed JSON) shown in the block and copied verbatim. */
@@ -12,9 +14,11 @@ type RawOutputProps = {
   defaultOpen?: boolean;
   /** Tone of the block border/label — mirrors the operation state. */
   tone?: 'neutral' | 'success' | 'error';
+  /** `value` with notes, shown in place of it; Copy still takes `value`. */
+  lines?: JsonLine[];
 };
 
-export function RawOutput({ value, label = 'raw', defaultOpen = false, tone = 'neutral' }: RawOutputProps) {
+export function RawOutput({ value, label = 'raw', defaultOpen = false, tone = 'neutral', lines }: RawOutputProps) {
   const [open, setOpen] = useState(defaultOpen);
   const [copied, setCopied] = useState<'idle' | 'ok' | 'fail'>('idle');
 
@@ -41,7 +45,7 @@ export function RawOutput({ value, label = 'raw', defaultOpen = false, tone = 'n
           {copied === 'ok' ? 'Copied' : copied === 'fail' ? 'Copy failed' : 'Copy'}
         </button>
       </div>
-      {open && <pre className="raw-output-code">{value}</pre>}
+      {open && <pre className="raw-output-code">{lines ? <JsonLines lines={lines} /> : value}</pre>}
     </div>
   );
 }

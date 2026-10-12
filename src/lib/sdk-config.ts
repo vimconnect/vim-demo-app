@@ -7,7 +7,7 @@
  */
 
 import { getConfig } from './client-config';
-import { VIM_BACKEND_URLS, APP_URLS } from './url-constants';
+import { VIM_BACKEND_URLS, APP_URLS, DEVELOPER_DOCS_URLS } from './url-constants';
 
 export function getEnvironment(): 'local' | 'staging' | 'production' {
   return getConfig().env;
@@ -31,4 +31,8 @@ export function getAppUrl(): string {
   }
 
   return APP_URLS[getEnvironment()];
+}
+
+export function getDeveloperDocsUrl(): string {
+  return DEVELOPER_DOCS_URLS[getEnvironment()];
 }

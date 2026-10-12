@@ -9,3 +9,8 @@ export const APP_URLS = {
   staging: 'http://localhost:8080',
   production: 'https://demo.getvim.ai',
 } as const;
+export const DEVELOPER_DOCS_URLS = {
+  local: 'https://developer-docs.stage.getvim.ai/docs/',
+  staging: 'https://developer-docs.stage.getvim.ai/docs/',
+  production: 'https://developer-docs.getvim.ai/docs/',
+} as const;

@@ -35,10 +35,16 @@
      AA; this reaches 4.5:1. Never substitute the plain amber for body-size text. */
   --color-warning-text-strong: #b45309;
 
+  /* Its violet counterpart. --color-purple is a pale lavender: 1.9:1 on white. */
+  --color-purple-text-strong: #5551c4;
+
   /* Theme-aware cyan for TEXT and thin accents: the bright brand cyan reads
      well on the dark canvas but drops below contrast on white, where light
      mode swaps in the strong variant. Fills/bars keep --color-cyan. */
   --color-cyan-text: var(--color-cyan);
+  --color-purple-text: var(--color-purple);
+  --color-warning-text: var(--color-warning-light);
+  --color-success-text: var(--color-success-light);
 
   /* Cyan Opacity Variants - Single source of truth (RGB 108,205,239) */
   --color-cyan-03: rgba(108, 205, 239, 0.03);
@@ -241,6 +247,9 @@ body.light-mode {
   --color-text-on-gradient: #ffffff;
 
   --color-cyan-text: var(--color-cyan-text-strong);
+  --color-purple-text: var(--color-purple-text-strong);
+  --color-warning-text: var(--color-warning-text-strong);
+  --color-success-text: var(--color-success-dark);
 
   /* Gradients — subtle teal tints for light mode surfaces */
   --gradient-subtle: linear-gradient(135deg, rgba(20, 184, 166, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%);

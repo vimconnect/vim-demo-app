@@ -3,6 +3,8 @@
 import { useState } from 'react';
 import type { VimSDK } from '@vimconnect/app-sdk';
 import { copyText } from '@/lib/clipboard';
+import { InfoTip } from '@/components/Hint';
+import { claimLabel, decodeJwtClaims, formatClaim } from '@/lib/jwt-claims';
 
 type SessionContext = NonNullable<VimSDK['sessionContext']>;
 
@@ -12,45 +14,74 @@ type SessionContextPanelProps = {
   addLog: (message: string, type: 'info' | 'success' | 'error') => void;
 };
 
+type IdTokenState =
+  | { status: 'idle' | 'pending' }
+  | { status: 'ok'; token: string; claims: Record<string, unknown> | null }
+  | { status: 'error'; code: string };
+
+function KvRows({
+  rows,
+  className = '',
+}: {
+  rows: { label: string; hint?: string | null; title?: string; value: string }[];
+  className?: string;
+}) {
+  return (
+    <dl className={`kv-list ${className}`}>
+      {rows.map(({ label, hint, title, value }) => (
+        <div className="kv-row" key={title ?? label}>
+          <dt className="kv-label" title={title}>
+            <span>{label}</span>
+            {hint && <span className="kv-hint">{hint}</span>}
+          </dt>
+          <dd className="kv-row-value">
+            <span className="kv-value">{value}</span>
+          </dd>
+        </div>
+      ))}
+    </dl>
+  );
+}
+
 export function SessionContextPanel({ sessionContext, addLog }: SessionContextPanelProps) {
   const [collapsed, setCollapsed] = useState(true);
-  const [idTokenPending, setIdTokenPending] = useState(false);
-  const [copiedField, setCopiedField] = useState<string | null>(null);
-
-  function copyField(label: string, value: string) {
-    copyText(value).then((ok) => {
-      if (!ok) return;
-      setCopiedField(label);
-      setTimeout(() => setCopiedField(null), 1200);
-    });
-  }
+  const [idToken, setIdToken] = useState<IdTokenState>({ status: 'idle' });
+  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   // Resolves only on the token endpoint flow: an app that passed accessToken to
   // initVimSDK(), or whose token endpoint omitted id_token, has none captured
   // and gets ID_TOKEN_UNAVAILABLE.
   async function fetchIdToken() {
-    if (!sessionContext || idTokenPending) return;
-    setIdTokenPending(true);
+    if (!sessionContext || idToken.status === 'pending') return;
+    setIdToken({ status: 'pending' });
     try {
-      const { idToken } = await sessionContext.getIdToken();
+      const { idToken: token } = await sessionContext.getIdToken();
+      const claims = decodeJwtClaims(token);
+      setIdToken({ status: 'ok', token, claims });
       // Never log the token itself — length is enough to confirm you got one.
-      const copied = await copyText(idToken);
       addLog(
-        `getIdToken() resolved — ${idToken.length}-char JWT${copied ? ', copied to clipboard' : ' (clipboard blocked)'}. Send it to your backend, verify it, then issue your own session.`,
+        `getIdToken() resolved — ${token.length}-char JWT${claims ? `, ${Object.keys(claims).length} claims` : ''}. Send it to your backend, verify it, then issue your own session.`,
         'success',
       );
     } catch (err: unknown) {
       const e = err as { code?: string; message?: string };
-      addLog(`getIdToken() rejected: ${e?.code ?? e?.message ?? String(err)}`, 'error');
-    } finally {
-      setIdTokenPending(false);
+      const code = e?.code ?? e?.message ?? String(err);
+      setIdToken({ status: 'error', code });
+      addLog(`getIdToken() rejected: ${code}`, 'error');
     }
   }
 
-  const fields = sessionContext
+  async function copyToken(token: string) {
+    const ok = await copyText(token);
+    setCopyState(ok ? 'copied' : 'failed');
+    setTimeout(() => setCopyState('idle'), 2000);
+  }
+
+  const fields: { label: string; value: string }[] = sessionContext
     ? [
         { label: 'User ID', value: sessionContext.userId },
-        { label: 'Account', note: sessionContext.account.name, value: sessionContext.account.id },
+        { label: 'Account name', value: sessionContext.account.name },
+        { label: 'Account ID', value: sessionContext.account.id },
         { label: 'EHR', value: sessionContext.ehrType },
         { label: 'Session ID', value: sessionContext.sessionId },
         { label: 'Device ID', value: sessionContext.deviceId },
@@ -66,62 +97,59 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
         >
           ▶
         </div>
-        <h2 className="section-title">Session Context</h2>
+        <h2 className="section-title">
+          Session Context{sessionContext ? ` (${fields.length})` : ''}
+        </h2>
+        <InfoTip label="About Session Context">Seeded at init; identifies the session, not the person. Verify <code>getIdToken()</code> server-side.</InfoTip>
       </div>
       <div className={`section-content ${collapsed ? 'collapsed' : ''}`}>
         <div className="section-inner">
-          <div
-            style={{
-              fontSize: 'var(--text-sm)',
-              color: 'var(--color-text-muted)',
-              marginBottom: 'var(--space-md)',
-            }}
-          >
-            <code>sdk.sessionContext</code> is seeded synchronously at init — no fetch. It
-            identifies the session, not the person: there is no name, email or NPI here. Use{' '}
-            <code>getIdToken()</code> and verify it server-side for anything your backend must
-            trust.
-          </div>
-          <div className="updater-card">
-            {sessionContext ? (
-              <dl className="session-context-list">
-                {fields.map(({ label, value, note }) => (
-                  <div className="session-context-row" key={label}>
-                    <dt className="session-context-label">{label}</dt>
-                    <dd style={{ margin: 0 }}>
-                      {note && <div className="session-context-note">{note}</div>}
-                      <button
-                        type="button"
-                        onClick={() => copyField(label, value)}
-                        className={`session-context-value${copiedField === label ? ' is-copied' : ''}`}
-                        title={`Copy ${label}`}
-                      >
-                        {copiedField === label ? 'Copied' : value}
-                      </button>
-                    </dd>
-                  </div>
-                ))}
-              </dl>
-            ) : (
-              <div className="empty-state" style={{ margin: 0 }}>
-                No session context — the extension has not handed off the session seed (older
-                extension builds send none).
-              </div>
-            )}
-          </div>
+          {sessionContext ? (
+            <KvRows rows={fields} />
+          ) : (
+            <div className="empty-state" style={{ margin: 0 }}>
+              No session context — older extension builds send none.
+            </div>
+          )}
           <button
             onClick={fetchIdToken}
-            disabled={!sessionContext || idTokenPending}
+            disabled={!sessionContext || idToken.status === 'pending'}
             className="btn btn-primary"
-            style={{
-              width: '100%',
-              marginTop: 'var(--space-md)',
-              opacity: sessionContext && !idTokenPending ? 1 : 0.5,
-            }}
-            title="Resolves only on the token endpoint flow — copies the token to your clipboard"
+            style={{ width: '100%', marginTop: 'var(--space-md)' }}
+            title="Resolves only on the token endpoint flow"
           >
-            {idTokenPending ? 'Fetching…' : 'Get ID Token'}
+            {idToken.status === 'pending'
+              ? 'Fetching…'
+              : idToken.status === 'ok'
+                ? 'Refresh ID Token'
+                : 'Get ID Token'}
           </button>
+          {idToken.status === 'error' && (
+            <p className="op-reason id-token-error">getIdToken() rejected: {idToken.code}</p>
+          )}
+          {idToken.status === 'ok' && (
+            <div className="id-token-claims">
+              <div className="id-token-claims-header">
+                <span className="demo-card-label">ID token claims</span>
+                <button type="button" className="btn btn-sm" onClick={() => void copyToken(idToken.token)}>
+                  {copyState === 'copied' ? 'Copied ✓' : copyState === 'failed' ? 'Copy failed' : 'Copy token'}
+                </button>
+              </div>
+              {idToken.claims ? (
+                <KvRows
+                  className="kv-list-claims"
+                  rows={Object.entries(idToken.claims).map(([name, value]) => {
+                    const { short, meaning } = claimLabel(name);
+                    return { label: short, hint: meaning, title: name, value: formatClaim(name, value) };
+                  })}
+                />
+              ) : (
+                <p className="empty-state" style={{ margin: 0 }}>
+                  The token isn&apos;t a JWT, so it has no claims to show.
+                </p>
+              )}
+            </div>
+          )}
         </div>
       </div>
     </div>
