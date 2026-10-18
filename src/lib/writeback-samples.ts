@@ -104,6 +104,7 @@ const CLINICAL_TEXT: Record<string, string> = {
   'referral:basicInformation.specialty': 'Cardiology',
   'referral:basicInformation.priority': 'routine',
   'referral:basicInformation.authCode': 'AUTH-12345',
+  'referral:basicInformation.reason': 'Evaluate chest pain on exertion',
   'referral:basicInformation.reasons': 'Evaluate chest pain on exertion',
   'referral:basicInformation.facilityName': 'Heart Center West',
   'referral:basicInformation.notes': 'Please see within 2 weeks',

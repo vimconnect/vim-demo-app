@@ -305,6 +305,7 @@ function AppPageContent() {
     "ENABLED" | "LOADING" | "DISABLED"
   >("ENABLED");
   const [tooltipText, setTooltipText] = useState("");
+  const [appliedTooltipText, setAppliedTooltipText] = useState("");
   const [notificationBadgeActive, setNotificationBadgeActive] = useState(false);
   const [notificationBadgeCount, setNotificationBadgeCount] = useState(3);
   const [microphoneBadgeActive, setMicrophoneBadgeActive] = useState(false);
@@ -530,6 +531,7 @@ function AppPageContent() {
   function hubApplyTooltip() {
     if (!vimSDK || !tooltipText.trim()) return;
     vimSDK.hub.setTooltipText(tooltipText);
+    setAppliedTooltipText(tooltipText);
     addLog(`Hub: setTooltipText → "${tooltipText}"`, "success");
   }
 
@@ -537,6 +539,7 @@ function AppPageContent() {
     if (!vimSDK) return;
     vimSDK.hub.setTooltipText("");
     setTooltipText("");
+    setAppliedTooltipText("");
     addLog("Hub: tooltip cleared", "success");
   }
 
@@ -2250,7 +2253,10 @@ function AppPageContent() {
                     type="text"
                     value={tooltipText}
                     onChange={(e) => setTooltipText(e.target.value)}
-                    placeholder="Enter tooltip text..."
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") hubApplyTooltip();
+                    }}
+                    placeholder="Enter tooltip text, then Set"
                     className="input"
                   />
                   <button
@@ -2263,6 +2269,17 @@ function AppPageContent() {
                     Clear
                   </button>
                 </div>
+                <p className="tooltip-applied" aria-live="polite">
+                  Hub shows:{" "}
+                  {appliedTooltipText ? (
+                    <code>{appliedTooltipText}</code>
+                  ) : (
+                    "app name (default)"
+                  )}
+                  {tooltipText !== appliedTooltipText &&
+                    tooltipText.trim() &&
+                    " · press Enter or Set to apply"}
+                </p>
               </div>
 
               <div className="demo-card-section">

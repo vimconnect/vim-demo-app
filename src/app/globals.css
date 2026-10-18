@@ -830,6 +830,12 @@ select.input {
   white-space: nowrap;
 }
 
+.tooltip-applied {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+}
+
 .redirect-hint {
   margin: 0;
   font-size: var(--text-xs);

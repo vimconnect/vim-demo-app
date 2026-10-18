@@ -290,7 +290,7 @@ describe('writeModesFor', () => {
           properties: {
             basicInformation: {
               type: 'object',
-              properties: { reasons: { type: 'string', supportsUpdates: true } },
+              properties: { reason: { type: 'string', supportsUpdates: true } },
             },
             targetProvider: {
               type: 'type',
@@ -320,7 +320,7 @@ describe('writeModesFor', () => {
   it('offers both modes on a free-text field, appending by default', () => {
     for (const [entity, path] of [
       ['encounter', 'assessment.generalNotes'],
-      ['referral', 'basicInformation.reasons'],
+      ['referral', 'basicInformation.reason'],
     ]) {
       expect(writeModesFor(manifest, entity, path)).toEqual({
         modes: ['override', 'append'],
