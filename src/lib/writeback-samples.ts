@@ -23,7 +23,8 @@ function writablePaths(properties: Record<string, FieldSchema> | undefined, pref
     if (field.type === 'object' && field.properties !== undefined) {
       out.push(...writablePaths(field.properties, path));
     }
-    if ((field.type === 'type' || field.type === 'entity') && field.typeFieldOverrides !== undefined) {
+    // Under an entity reference the EHR's own updatableFields say what is writable; overrides grant nothing there.
+    if (field.type === 'type' && field.typeFieldOverrides !== undefined) {
       for (const [nested, override] of Object.entries(field.typeFieldOverrides)) {
         if (override.supportsUpdates === true) out.push(`${path}.${nested}`);
       }
@@ -110,6 +111,8 @@ const CLINICAL_TEXT: Record<string, string> = {
   'referral:basicInformation.notes': 'Please see within 2 weeks',
   'referral:targetProvider.firstName': 'Jane',
   'referral:targetProvider.lastName': 'Smith',
+  'referral:targetProvider.demographics.firstName': 'Jane',
+  'referral:targetProvider.demographics.lastName': 'Smith',
   'order:basicInformation.notes': 'Fasting required',
 };
 
@@ -174,11 +177,30 @@ export interface WriteModes {
 const FREE_TEXT_LEAF = /(notes?|reasons?|instructions?|complaint|comments?)$/i;
 
 /**
- * The `update()` modes the demo offers per field. The collection declares no modes, so this is
- * the demo's own reading of the schema: a `supportsCreate` array adds items, a free-text string
- * offers both (append by default), and every other field is replaced.
+ * The `update()` modes the demo offers per field.
+ *
+ * `declared` is what the collection says, read from `getUpdateModes()`. Prefer it: it is the
+ * field's own answer, where everything below is this file guessing from the schema — and the
+ * guess reads a field NAME, which no contract promises.
+ *
+ * The guess stays for the extension that answers nothing: an older one has no
+ * `getUpdateModes`, and one that has it but predates the manifest field answers `{}`.
  */
-export function writeModesFor(manifest: AppManifest | null, entityType: string, fieldPath: string): WriteModes {
+export function writeModesFor(
+  manifest: AppManifest | null,
+  entityType: string,
+  fieldPath: string,
+  declared?: Record<string, WriteMode[]>,
+): WriteModes {
+  const fromCollection = declared?.[fieldPath];
+  if (fromCollection !== undefined && fromCollection.length > 0) {
+    return {
+      modes: fromCollection,
+      // Append wherever the field allows it — the default PR 4 makes the platform's.
+      defaultMode: fromCollection.includes('append') ? 'append' : 'override',
+    };
+  }
+
   const node = manifest ? schemaNodeAt(manifest, entityType, fieldPath) : undefined;
   if (node?.type === 'array' && node.items?.supportsCreate === true) {
     return { modes: ['append'], defaultMode: 'append' };

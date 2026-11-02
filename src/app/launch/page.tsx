@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { getVimBackendUrl, getAppUrl } from '@/lib/sdk-config';
 import { getConfig } from '@/lib/client-config';
 import { ErrorScreen } from '@/components/ErrorScreen';
+import { BrandLoader } from '@/components/BrandLoader';
 
 /**
  * Landing Page - OAuth Flow Launcher
@@ -96,59 +97,12 @@ function LaunchPageContent() {
     );
   }
 
-  return (
-    <div style={{
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: '40px',
-          height: '40px',
-          border: '3px solid #f3f4f6',
-          borderTopColor: '#3b82f6',
-          borderRadius: '50%',
-          animation: 'spin 1s linear infinite',
-          margin: '0 auto 16px',
-        }} />
-        <p style={{ color: '#6b7280' }}>Redirecting to Vim Connect...</p>
-        <style jsx>{`
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-        `}</style>
-      </div>
-    </div>
-  );
+  return <BrandLoader />;
 }
 
 export default function LandingPage() {
   return (
-    <Suspense fallback={
-      <div style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: '100vh',
-        fontFamily: 'system-ui, -apple-system, sans-serif',
-      }}>
-        <div style={{ textAlign: 'center' }}>
-          <div style={{
-            width: '40px',
-            height: '40px',
-            border: '3px solid #f3f4f6',
-            borderTopColor: '#3b82f6',
-            borderRadius: '50%',
-            animation: 'spin 1s linear infinite',
-            margin: '0 auto 16px',
-          }} />
-          <p style={{ color: '#6b7280' }}>Loading...</p>
-        </div>
-      </div>
-    }>
+    <Suspense fallback={<BrandLoader />}>
       <LaunchPageContent />
     </Suspense>
   );

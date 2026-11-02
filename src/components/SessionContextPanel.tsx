@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import type { VimSDK } from '@vimconnect/app-sdk';
 import { copyText } from '@/lib/clipboard';
-import { InfoTip } from '@/components/Hint';
+import { DocsLink } from '@/components/DocsLink';
 import { claimLabel, decodeJwtClaims, formatClaim } from '@/lib/jwt-claims';
 
 type SessionContext = NonNullable<VimSDK['sessionContext']>;
@@ -100,7 +100,7 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
         <h2 className="section-title">
           Session Context{sessionContext ? ` (${fields.length})` : ''}
         </h2>
-        <InfoTip label="About Session Context">Seeded at init; identifies the session, not the person. Verify <code>getIdToken()</code> server-side.</InfoTip>
+        <DocsLink path="/docs/app-sdk/authentication/" />
       </div>
       <div className={`section-content ${collapsed ? 'collapsed' : ''}`}>
         <div className="section-inner">

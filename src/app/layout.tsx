@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './shared-design-tokens.css';
 import './globals.css';
 import { buildClientConfig } from '@/lib/client-config';
+import { firstPaintScript } from '@/lib/color-scheme';
 
 // force-dynamic ensures buildClientConfig() reads process.env at request time,
 // not at build time. This is what makes runtime env vars (from helm values) work
@@ -31,7 +32,8 @@ export default function RootLayout({
           rel="stylesheet"
         />
       </head>
-      <body className="light-mode">
+      <body className="light-mode" suppressHydrationWarning>
+        <script dangerouslySetInnerHTML={{ __html: firstPaintScript() }} />
         {/* Inject runtime config for client components. Values come from process.env (no user input). */}
         <script
           dangerouslySetInnerHTML={{

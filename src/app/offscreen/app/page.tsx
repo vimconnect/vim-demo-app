@@ -5,6 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { initWorkerVimSDK } from '@vimconnect/app-sdk';
 import type { WorkerSDK, ContextData, HubNamespace } from '@vimconnect/app-sdk';
 import { getEnvironment } from '@/lib/sdk-config';
+import { serveOffscreenAutoRunner } from '@/lib/offscreen-auto-runner';
 import {
   DEMO_WORKER_STATE_KEY,
   REFRESH_DEMO_EVENT,
@@ -26,6 +27,7 @@ import {
  *   - Register for context events (patient, encounter) and write to workerState
  *   - Show a welcome push once, on the first context or workflow event
  *   - Monitor hub.appState (whether the UI App is visible)
+ *   - Serve the auto-runner's offscreen mode (see lib/offscreen-auto-runner)
  *
  * Auth flow (mirrors the old offscreen/app pattern):
  *   1. OAuth code + state arrive via query params
@@ -241,6 +243,8 @@ function OffscreenWorkerContent() {
           console.warn(`[offscreen/worker] Workflow event not available: ${event}`, err);
         }
       }
+
+      serveOffscreenAutoRunner(sdk);
 
       console.log('[offscreen/worker] Worker SDK fully initialized');
     } catch (err) {

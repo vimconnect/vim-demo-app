@@ -26,7 +26,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vimconnect/app-sdk": "0.6.1",
+    "@vimconnect/app-sdk": "0.7.2",
     "next": "^16.2.12",
     "react": "catalog:",
     "react-dom": "catalog:"
@@ -41,6 +41,7 @@
     "@vitejs/plugin-react": "^5.0.0",
     "jsdom": "^25.0.1",
     "typescript": "catalog:",
+    "vite": "catalog:",
     "vitest": "catalog:"
   },
   "repository": {

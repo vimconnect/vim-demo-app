@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { InfoTip } from '@/components/Hint';
+import { DocsLink } from '@/components/DocsLink';
 
 type CollapsibleCardProps = {
   title: ReactNode;
@@ -11,12 +12,14 @@ type CollapsibleCardProps = {
   info?: ReactNode;
   /** Controls kept visible while collapsed: bulk buttons, a turn-all toggle. */
   actions?: ReactNode;
+  /** Developer-docs path this card documents, e.g. `/docs/app-sdk/ehr-connectivity/`. */
+  docsHref?: string;
   expanded: boolean;
   onToggle: () => void;
   children: ReactNode;
 };
 
-export function CollapsibleCard({ title, badge, info, actions, expanded, onToggle, children }: CollapsibleCardProps) {
+export function CollapsibleCard({ title, badge, info, actions, docsHref, expanded, onToggle, children }: CollapsibleCardProps) {
   return (
     <div className={`entity-card ${expanded ? 'expanded' : ''}`}>
       <div className="entity-card-header">
@@ -26,6 +29,7 @@ export function CollapsibleCard({ title, badge, info, actions, expanded, onToggl
           {badge}
         </button>
         {info && <InfoTip label={`About ${typeof title === 'string' ? title : 'this card'}`}>{info}</InfoTip>}
+        {docsHref && <DocsLink path={docsHref} />}
         {actions && <div className="updater-group-actions">{actions}</div>}
       </div>
       {expanded && <div className="entity-card-body">{children}</div>}

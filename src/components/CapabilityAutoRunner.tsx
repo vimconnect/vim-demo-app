@@ -1,58 +1,61 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { AppManifest, ContextData, ContextKey, EventType, VimSDK, WorkflowEvent } from '@vimconnect/app-sdk';
+import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import type { AppManifest, VimSDK } from '@vimconnect/app-sdk';
 import { DeprecatedTag } from '@/components/DeprecatedTag';
+import { Hint } from '@/components/Hint';
 import { RawOutput } from '@/components/RawOutput';
-import { annotatedLines, apiResultAnnotator, contextAnnotator, noteOf, workflowEventAnnotator } from '@/lib/annotated-json';
+import { annotatedLines, apiResultAnnotator, contextAnnotator, noteOf, workflowEventAnnotator, type JsonLine } from '@/lib/annotated-json';
 import {
   asEntityObject,
   buildMissingOps,
-  buildRunnableOps,
   computeCompleteness,
   entityFieldsByType,
-  extractEntityId,
   resolveBinding,
-  shouldFire,
   withMissingFields,
   type Binding,
   type ContextStore,
   type RunnableOp,
 } from '@/lib/capability-engine';
-import { getApiMethod, getCapability, getWritebackNamespace, requestApiPermission } from '@/lib/sdk-invoke';
+import {
+  buildAutoRunnerPlan,
+  createAutoRunnerEngine,
+  errorMessage,
+  initialAutoRunnerState,
+  type AutoRunnerActions,
+  type AutoRunnerEngine,
+  type AutoRunnerPlan,
+  type AutoRunnerState,
+  type EventRow,
+  type LogRow,
+  type OpResult,
+  type OpState,
+  type Results,
+  type WritebackMode,
+  type WritebackTarget,
+} from '@/lib/auto-runner-engine';
+import { createAppSurface } from '@/lib/auto-runner-surfaces';
+import {
+  AUTO_RUNNER_COMMAND_EVENT,
+  AUTO_RUNNER_CONTEXT_KEY,
+  AUTO_RUNNER_EVENTS_KEY,
+  AUTO_RUNNER_LOG_KEY,
+  AUTO_RUNNER_STATUS_KEY,
+  RESULT_BUCKET_COUNT,
+  mergeBuckets,
+  resultBucketKey,
+  type AutoRunnerCommand,
+  type AutoRunnerStatus,
+} from '@/lib/offscreen-auto-runner-protocol';
 
 type OperationEntry = NonNullable<AppManifest['operations']>[number];
 
-type OpState = 'idle' | 'running' | 'ok' | 'error';
+type RunnerMode = 'app' | 'offscreen';
 
-interface OpResult {
-  state: OpState;
-  raw?: string;
-  at?: string;
-  argsLabel?: string;
-  /** Parsed result object — used to overlay missing entity fields on reads. */
-  result?: unknown;
-}
-type ResultMap = Record<string, OpResult>;
+type WorkerPhase = 'waiting' | 'starting' | 'running';
 
-interface EventRow {
-  id: number;
-  type: string;
-  at: string;
-  raw: string;
-  event: WorkflowEvent;
-}
-
-interface LogRow {
-  at: string;
-  message: string;
-  tone: 'info' | 'success' | 'error';
-}
-
-interface WritebackTarget {
-  entity: string;
-  field: string;
-  disruptive: boolean;
+interface AutoRunner extends AutoRunnerActions {
+  state: AutoRunnerState;
 }
 
 type CapabilityAutoRunnerProps = {
@@ -63,17 +66,14 @@ type CapabilityAutoRunnerProps = {
   onSwitchMode?: () => void;
 };
 
-function now(): string {
-  return new Date().toLocaleTimeString();
-}
-
-function isFailure(result: unknown): boolean {
-  return !!result && typeof result === 'object' && (result as { success?: boolean }).success === false;
-}
-
-function buildNestedFromPath(path: string, value: unknown): Record<string, unknown> {
-  return path.split('.').reduceRight<Record<string, unknown>>((acc, key) => ({ [key]: acc }), value as Record<string, unknown>);
-}
+type RunnerChrome = {
+  manifest: AppManifest;
+  plan: AutoRunnerPlan;
+  mode: RunnerMode;
+  onModeChange: (mode: RunnerMode) => void;
+  offscreenUnavailable: string | null;
+  onSwitchMode?: () => void;
+};
 
 function writeFieldsHint(entry: OperationEntry | undefined): string {
   const meta = entry?.metadata;
@@ -83,195 +83,142 @@ function writeFieldsHint(entry: OperationEntry | undefined): string {
   return '';
 }
 
+
 export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: CapabilityAutoRunnerProps) {
-  const [contextStore, setContextStore] = useState<ContextStore>({});
-  const [events, setEvents] = useState<EventRow[]>([]);
-  const [readResults, setReadResults] = useState<ResultMap>({});
-  const [writeResults, setWriteResults] = useState<ResultMap>({});
-  const [writebackResults, setWritebackResults] = useState<ResultMap>({});
-  const [autoRunDisruptive, setAutoRunDisruptive] = useState(false);
-  const [writePayloads, setWritePayloads] = useState<Record<string, string>>({});
-  const [writebackInputs, setWritebackInputs] = useState<Record<string, { value: string; mode: string }>>({});
-  const [log, setLog] = useState<LogRow[]>([]);
+  const [mode, setMode] = useState<RunnerMode>('app');
+  const plan = useMemo(() => buildAutoRunnerPlan(manifest), [manifest]);
+  const chrome: RunnerChrome = {
+    manifest,
+    plan,
+    mode,
+    onModeChange: setMode,
+    offscreenUnavailable: sdk.appEvents ? null : 'This extension does not support appEvents, so the UI App cannot reach its Worker App',
+    onSwitchMode,
+  };
+  return mode === 'app' ? <AppAutoRunner sdk={sdk} {...chrome} /> : <OffscreenAutoRunner sdk={sdk} {...chrome} />;
+}
 
-  const firedRef = useRef<Record<string, string>>({});
-  const eventIdRef = useRef(0);
+function AppAutoRunner({ sdk, ...chrome }: RunnerChrome & { sdk: VimSDK }) {
+  const runner = useAppAutoRunner(sdk, chrome.plan);
+  return <AutoRunnerView runner={runner} {...chrome} />;
+}
 
-  const addLog = useCallback((message: string, tone: LogRow['tone']) => {
-    setLog((prev) => [{ at: now(), message, tone }, ...prev].slice(0, 200));
-  }, []);
-
-  // ── Operation invocation ──────────────────────────────────────────────────
-
-  const runApiOperation = useCallback(
-    async (op: RunnableOp, callArgs: unknown[], setResults: (fn: (prev: ResultMap) => ResultMap) => void, source: 'auto' | 'manual') => {
-      const argsLabel = callArgs.map((a) => JSON.stringify(a)).join(', ');
-      setResults((prev) => ({ ...prev, [op.key]: { state: 'running', at: now(), argsLabel } }));
-      addLog(`${source === 'auto' ? 'auto ▸' : 'run ▸'} ehr.api.${op.key}(${argsLabel})`, 'info');
-
-      try {
-        if (op.disruptive) {
-          const cap = getCapability(sdk, op.namespace, op.method);
-          if (cap && !cap.available) {
-            setResults((prev) => ({ ...prev, [op.key]: { state: 'error', raw: `Not available: ${cap.reason ?? 'unknown'}`, at: now(), argsLabel } }));
-            addLog(`${op.key} not available (${cap.reason ?? 'unknown'})`, 'error');
-            return;
-          }
-          if (cap?.disruptive && cap.permissionState !== 'granted') {
-            addLog(`Requesting permission for ${op.key}…`, 'info');
-            const grant = await requestApiPermission(sdk, op.namespace, op.method);
-            if (grant !== 'granted') {
-              setResults((prev) => ({ ...prev, [op.key]: { state: 'error', raw: `Permission ${grant}`, at: now(), argsLabel } }));
-              addLog(`Permission ${grant} for ${op.key}`, 'error');
-              return;
-            }
-          }
-        }
-
-        const fn = getApiMethod(sdk, op.namespace, op.method);
-        if (!fn) {
-          setResults((prev) => ({ ...prev, [op.key]: { state: 'error', raw: 'Method not present on SDK', at: now(), argsLabel } }));
-          addLog(`ehr.api.${op.key} is not present on this SDK`, 'error');
-          return;
-        }
-
-        const result = await fn(...callArgs);
-        const raw = JSON.stringify(result, null, 2);
-        const failed = isFailure(result);
-        setResults((prev) => ({ ...prev, [op.key]: { state: failed ? 'error' : 'ok', raw, at: now(), argsLabel, result } }));
-        addLog(failed ? `${op.key} returned success:false` : `${op.key} ✓`, failed ? 'error' : 'success');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setResults((prev) => ({ ...prev, [op.key]: { state: 'error', raw: `Error: ${message}`, at: now(), argsLabel } }));
-        addLog(`${op.key} threw: ${message}`, 'error');
-      }
-    },
-    [sdk, addLog],
+function OffscreenAutoRunner({ sdk, ...chrome }: RunnerChrome & { sdk: VimSDK }) {
+  const { runner, phase, error, relayErrors } = useOffscreenAutoRunner(sdk, chrome.plan);
+  return (
+    <AutoRunnerView runner={runner} {...chrome} notice={<WorkerNotice phase={phase} error={error} relayErrors={relayErrors} />} />
   );
+}
 
-  const runRead = useCallback(
-    (op: RunnableOp, binding: Binding, source: 'auto' | 'manual') => {
-      void runApiOperation(op, [binding.args], setReadResults, source);
-    },
-    [runApiOperation],
-  );
+function useAppAutoRunner(sdk: VimSDK, plan: AutoRunnerPlan): AutoRunner {
+  const [state, setState] = useState(initialAutoRunnerState);
+  const engineRef = useRef<AutoRunnerEngine | null>(null);
 
-  const runWrite = useCallback(
-    (op: RunnableOp, binding: Binding) => {
-      const payloadText = writePayloads[op.key] ?? '{}';
-      let payload: unknown;
-      try {
-        payload = JSON.parse(payloadText);
-      } catch {
-        setWriteResults((prev) => ({ ...prev, [op.key]: { state: 'error', raw: 'Payload is not valid JSON', at: now() } }));
-        addLog(`${op.key}: payload is not valid JSON`, 'error');
-        return;
-      }
-      const callArgs = op.kind === 'create' ? [payload] : [binding.args, payload];
-      void runApiOperation(op, callArgs, setWriteResults, 'manual');
-    },
-    [writePayloads, runApiOperation, addLog],
-  );
-
-  const runWriteback = useCallback(
-    async (target: WritebackTarget) => {
-      const key = `${target.entity}.${target.field}`;
-      const input = writebackInputs[key] ?? { value: '', mode: 'override' };
-      setWritebackResults((prev) => ({ ...prev, [key]: { state: 'running', at: now() } }));
-      addLog(`writeback ▸ ${target.entity}.${target.field} = ${input.value} (${input.mode})`, 'info');
-
-      try {
-        const ns = getWritebackNamespace(sdk, target.entity);
-        if (!ns) {
-          setWritebackResults((prev) => ({ ...prev, [key]: { state: 'error', raw: `No writeback namespace for ${target.entity}`, at: now() } }));
-          addLog(`No writeback namespace for ${target.entity}`, 'error');
-          return;
-        }
-        const permOptions = { fields: [target.field] };
-        if (!ns.hasPermission('update', permOptions)) {
-          const grant = await ns.requestPermission('update', permOptions);
-          if (grant !== 'granted') {
-            setWritebackResults((prev) => ({ ...prev, [key]: { state: 'error', raw: `Permission ${grant}`, at: now() } }));
-            addLog(`Permission ${grant} for ${target.entity}.${target.field}`, 'error');
-            return;
-          }
-        }
-        let value: unknown = input.value;
-        try {
-          value = JSON.parse(input.value);
-        } catch {
-          // keep as plain string
-        }
-        const data = buildNestedFromPath(target.field, value);
-        const result = await ns.update(data, { mode: input.mode });
-        const raw = JSON.stringify(result, null, 2);
-        const failed = isFailure(result);
-        setWritebackResults((prev) => ({ ...prev, [key]: { state: failed ? 'error' : 'ok', raw, at: now() } }));
-        addLog(failed ? `writeback ${key} failed` : `writeback ${key} ✓`, failed ? 'error' : 'success');
-      } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        setWritebackResults((prev) => ({ ...prev, [key]: { state: 'error', raw: `Error: ${message}`, at: now() } }));
-        addLog(`writeback ${key} threw: ${message}`, 'error');
-      }
-    },
-    [sdk, writebackInputs, addLog],
-  );
-
-  // ── Subscribe to every event & context for the life of this view ────────────
   useEffect(() => {
-    const unsubs: Array<() => void> = [];
-    addLog(`watching — ${manifest.supportedEvents?.length ?? 0} events, ${manifest.supportedContexts?.length ?? 0} contexts, ${manifest.operations?.length ?? 0} operations`, 'success');
+    const engine = createAutoRunnerEngine(plan, createAppSurface(sdk), setState);
+    engineRef.current = engine;
+    engine.start();
+    return () => engine.stop();
+  }, [sdk, plan]);
 
-    for (const ctx of manifest.supportedContexts ?? []) {
-      const entityType = ctx.entityType;
+  const actions = useMemo<AutoRunnerActions>(
+    () => ({
+      runRead: (opKey) => engineRef.current?.runRead(opKey),
+      runWrite: (opKey, payloadText) => engineRef.current?.runWrite(opKey, payloadText),
+      runWriteback: (target, value, mode) => engineRef.current?.runWriteback(target, value, mode),
+      setAutoRunDisruptive: (value) => engineRef.current?.setAutoRunDisruptive(value),
+    }),
+    [],
+  );
+  return { state, ...actions };
+}
+
+/** Drives a run inside the Worker App: commands go out over appEvents, its state comes back over workerState. */
+function useOffscreenAutoRunner(
+  sdk: VimSDK,
+  plan: AutoRunnerPlan,
+): { runner: AutoRunner; phase: WorkerPhase; error: string | null; relayErrors: string[] } {
+  const [state, setState] = useState(initialAutoRunnerState);
+  const [phase, setPhase] = useState<WorkerPhase>('waiting');
+  const [error, setError] = useState<string | null>(null);
+  const [relayErrors, setRelayErrors] = useState<string[]>([]);
+  const sendRef = useRef<(command: AutoRunnerCommand) => void>(() => {});
+
+  useEffect(() => {
+    const appEvents = sdk.appEvents;
+    if (!appEvents) return;
+    const runId = crypto.randomUUID();
+    const send = (command: AutoRunnerCommand) => {
       try {
-        const unsub = sdk.ehr.context.onChange(ctx.contextKey as ContextKey, (_prev, current) => {
-          setContextStore((prev) => {
-            const next = { ...prev };
-            if (current) {
-              const data = current as ContextData;
-              next[entityType] = { entityType, id: extractEntityId(data), data, at: now() };
-            } else {
-              delete next[entityType];
-            }
-            return next;
-          });
-        });
-        unsubs.push(unsub);
-      } catch {
-        // Context not subscribable in this session — skip silently.
-      }
-    }
-
-    for (const evt of manifest.supportedEvents ?? []) {
-      try {
-        const unsub = sdk.ehr.workflow.on(evt.id as EventType, (event: WorkflowEvent) => {
-          eventIdRef.current += 1;
-          setEvents((prev) => [{ id: eventIdRef.current, type: event.type, at: now(), raw: JSON.stringify(event, null, 2), event }, ...prev].slice(0, 100));
-          addLog(`event ${event.type}`, 'success');
-        });
-        unsubs.push(unsub);
-      } catch {
-        // Event not subscribable in this session — skip silently.
-      }
-    }
-
-    return () => {
-      for (const unsub of unsubs) {
-        try {
-          unsub();
-        } catch {
-          // ignore teardown failures
-        }
+        appEvents.send(AUTO_RUNNER_COMMAND_EVENT, command);
+      } catch (err) {
+        setError(errorMessage(err));
       }
     };
-  }, [sdk, manifest, addLog]);
+    sendRef.current = send;
 
-  // ── Derived catalog ───────────────────────────────────────────────────────
+    const buckets: Array<Results | null> = new Array(RESULT_BUCKET_COUNT).fill(null);
+    // Preempts another UI's run at most once.
+    let tookOver = false;
+    const unsubscribes = [
+      sdk.workerState.on<AutoRunnerStatus>(AUTO_RUNNER_STATUS_KEY, (_prev, status) => {
+        if (status?.runId === runId) {
+          setPhase('running');
+          setRelayErrors(status.relayErrors ?? []);
+          setState((s) => ({ ...s, autoRunDisruptive: status.autoRunDisruptive }));
+        } else if (status?.runId == null || !tookOver) {
+          tookOver = true;
+          setPhase('starting');
+          send({ type: 'start', runId, plan });
+        }
+      }),
+      sdk.workerState.on<ContextStore>(AUTO_RUNNER_CONTEXT_KEY, (_prev, contextStore) =>
+        setState((s) => ({ ...s, contextStore: contextStore ?? {} })),
+      ),
+      sdk.workerState.on<EventRow[]>(AUTO_RUNNER_EVENTS_KEY, (_prev, events) => setState((s) => ({ ...s, events: events ?? [] }))),
+      sdk.workerState.on<LogRow[]>(AUTO_RUNNER_LOG_KEY, (_prev, log) => setState((s) => ({ ...s, log: log ?? [] }))),
+      ...buckets.map((_, bucket) =>
+        sdk.workerState.on<Results>(resultBucketKey(bucket), (_prev, contents) => {
+          buckets[bucket] = contents;
+          setState((s) => ({ ...s, results: mergeBuckets(buckets) }));
+        }),
+      ),
+    ];
 
-  const runnableOps = useMemo(() => buildRunnableOps(manifest), [manifest]);
-  const readOps = useMemo(() => runnableOps.filter((o) => o.isRead), [runnableOps]);
-  const writeOps = useMemo(() => runnableOps.filter((o) => !o.isRead), [runnableOps]);
+    return () => {
+      for (const unsubscribe of unsubscribes) unsubscribe();
+      send({ type: 'stop', runId });
+    };
+  }, [sdk, plan]);
+
+  const actions = useMemo<AutoRunnerActions>(
+    () => ({
+      runRead: (opKey) => sendRef.current({ type: 'runRead', opKey }),
+      runWrite: (opKey, payloadText) => sendRef.current({ type: 'runWrite', opKey, payloadText }),
+      runWriteback: (target, value, mode) => sendRef.current({ type: 'runWriteback', target, value, mode }),
+      setAutoRunDisruptive: (value) => sendRef.current({ type: 'setAutoRunDisruptive', value }),
+    }),
+    [],
+  );
+  return { runner: { state, ...actions }, phase, error, relayErrors };
+}
+
+function AutoRunnerView({
+  runner,
+  manifest,
+  plan,
+  mode,
+  onModeChange,
+  offscreenUnavailable,
+  onSwitchMode,
+  notice,
+}: RunnerChrome & { runner: AutoRunner; notice?: ReactNode }) {
+  const { contextStore, events, results, log, autoRunDisruptive } = runner.state;
+  const [writePayloads, setWritePayloads] = useState<Record<string, string>>({});
+  const [writebackInputs, setWritebackInputs] = useState<Record<string, { value: string; mode: WritebackMode }>>({});
+
+  const readOps = useMemo(() => plan.ops.filter((o) => o.isRead), [plan]);
+  const writeOps = useMemo(() => plan.ops.filter((o) => !o.isRead), [plan]);
   const opEntryByKey = useMemo(() => {
     const map = new Map<string, OperationEntry>();
     for (const op of manifest.operations ?? []) map.set(`${op.sdkNamespace}.${op.sdkMethod}`, op);
@@ -288,17 +235,6 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
   const missingReads = useMemo(() => buildMissingOps(manifest).filter((o) => o.isRead), [manifest]);
   const missingWrites = useMemo(() => buildMissingOps(manifest).filter((o) => !o.isRead), [manifest]);
 
-  // ── Reactive auto-fire: reads emit the moment context satisfies their inputs.
-  useEffect(() => {
-    for (const op of readOps) {
-      const binding = resolveBinding(op, contextStore);
-      if (shouldFire(op, binding, { autoRunDisruptive, lastFingerprint: firedRef.current[op.key] })) {
-        firedRef.current[op.key] = binding.fingerprint;
-        runRead(op, binding, 'auto');
-      }
-    }
-  }, [contextStore, autoRunDisruptive, readOps, runRead]);
-
   const contextEntries = Object.values(contextStore);
 
   return (
@@ -307,7 +243,9 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
         <div className="xp-header-main">
           <h1>SDK Capability Auto-Runner</h1>
           <p className="xp-subtitle">
-            Subscribes to every event & context, and fires each read the instant the context supplies its inputs.
+            {mode === 'app'
+              ? 'Subscribes to every event & context, and fires each read the instant the context supplies its inputs.'
+              : 'Does the same from inside the offscreen Worker App: the worker subscribes, fires the reads and runs every action, so whatever fails here is what a worker cannot do.'}
           </p>
         </div>
         <div className="xp-header-side">
@@ -316,17 +254,40 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
               ← Classic demo
             </button>
           )}
+          <div className="mode-toggle" role="group" aria-label="Where the runner executes">
+            <button
+              type="button"
+              className={`mode-option ${mode === 'app' ? 'active' : ''}`}
+              aria-pressed={mode === 'app'}
+              onClick={() => onModeChange('app')}
+            >
+              In app
+            </button>
+            <Hint text={offscreenUnavailable}>
+              <button
+                type="button"
+                className={`mode-option ${mode === 'offscreen' ? 'active' : ''}`}
+                aria-pressed={mode === 'offscreen'}
+                disabled={offscreenUnavailable !== null}
+                onClick={() => onModeChange('offscreen')}
+              >
+                Offscreen
+              </button>
+            </Hint>
+          </div>
           <span className="status-badge">
             <span className="status-dot" /> Connected · v{manifest.version ?? '?'}
           </span>
           <label className="toggle-switch">
-            <span className={`toggle-track ${autoRunDisruptive ? 'active' : ''}`} onClick={() => setAutoRunDisruptive((v) => !v)}>
+            <span className={`toggle-track ${autoRunDisruptive ? 'active' : ''}`} onClick={() => runner.setAutoRunDisruptive(!autoRunDisruptive)}>
               <span className="toggle-thumb" />
             </span>
             <span className="toggle-label">Auto-run disruptive reads</span>
           </label>
         </div>
       </header>
+
+      {notice}
 
       <div className="xp-chips">
         <span className="xp-chip">{manifest.supportedEvents?.length ?? 0} events</span>
@@ -380,7 +341,7 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                   <span className="xp-dim">{evt.at}</span>
                 </div>
                 <RawOutput
-                  value={evt.raw}
+                  value={JSON.stringify(evt.event, null, 2)}
                   lines={annotatedLines(evt.event, workflowEventAnnotator(manifest, evt.type))}
                   label="event payload"
                 />
@@ -399,7 +360,7 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
           <div className="xp-grid">
             {readOps.map((op) => {
               const binding = resolveBinding(op, contextStore);
-              const result = readResults[op.key];
+              const result = results.reads[op.key];
               const entityType = opEntryByKey.get(op.key)?.entityTypeId;
               const readEntity = asEntityObject(asEntityObject(result?.result)?.data);
               return (
@@ -417,27 +378,18 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                   <BindingLine binding={binding} />
                   <div className="xp-card-foot">
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
-                    <button
-                      type="button"
-                      className="btn btn-sm"
-                      disabled={binding.status !== 'ready'}
-                      onClick={() => runRead(op, binding, 'manual')}
-                    >
+                    <button type="button" className="btn btn-sm" disabled={binding.status !== 'ready'} onClick={() => runner.runRead(op.key)}>
                       {result ? 'Re-run' : 'Run'}
                     </button>
                   </div>
-                  {result?.raw && (
-                    <RawOutput
-                      value={result.raw}
-                      lines={
-                        result.result !== undefined && entityType
-                          ? annotatedLines(result.result, apiResultAnnotator(manifest, entityType))
-                          : undefined
-                      }
-                      label="raw result"
-                      tone={result.state === 'error' ? 'error' : 'success'}
-                    />
-                  )}
+                  <ResultOutput
+                    result={result}
+                    lines={
+                      result?.result !== undefined && entityType
+                        ? annotatedLines(result.result, apiResultAnnotator(manifest, entityType))
+                        : undefined
+                    }
+                  />
                   {entityType && <CompletenessBlock allFields={entityFields[entityType] ?? []} value={readEntity} />}
                 </div>
               );
@@ -456,7 +408,7 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
           <div className="xp-grid">
             {writeOps.map((op) => {
               const binding = resolveBinding(op, contextStore);
-              const result = writeResults[op.key];
+              const result = results.writes[op.key];
               const hint = writeFieldsHint(opEntryByKey.get(op.key));
               return (
                 <div key={op.key} className="xp-card">
@@ -484,12 +436,12 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                       type="button"
                       className="btn btn-sm btn-primary"
                       disabled={op.kind !== 'create' && binding.status !== 'ready'}
-                      onClick={() => runWrite(op, binding)}
+                      onClick={() => runner.runWrite(op.key, writePayloads[op.key] ?? '{}')}
                     >
                       Run
                     </button>
                   </div>
-                  {result?.raw && <RawOutput value={result.raw} label="raw result" tone={result.state === 'error' ? 'error' : 'success'} />}
+                  <ResultOutput result={result} />
                 </div>
               );
             })}
@@ -506,7 +458,7 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
             {writebackTargets.map((target) => {
               const key = `${target.entity}.${target.field}`;
               const input = writebackInputs[key] ?? { value: '', mode: 'override' };
-              const result = writebackResults[key];
+              const result = results.writebacks[key];
               const boundEntity = !!contextStore[target.entity];
               return (
                 <div key={key} className="xp-card">
@@ -530,7 +482,9 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                     <select
                       className="input xp-mode"
                       value={input.mode}
-                      onChange={(e) => setWritebackInputs((prev) => ({ ...prev, [key]: { ...input, mode: e.target.value } }))}
+                      onChange={(e) =>
+                        setWritebackInputs((prev) => ({ ...prev, [key]: { ...input, mode: e.target.value === 'append' ? 'append' : 'override' } }))
+                      }
                     >
                       <option value="override">override</option>
                       <option value="append">append</option>
@@ -538,11 +492,11 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
                   </div>
                   <div className="xp-card-foot">
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => void runWriteback(target)}>
+                    <button type="button" className="btn btn-sm btn-primary" onClick={() => runner.runWriteback(target, input.value, input.mode)}>
                       Run
                     </button>
                   </div>
-                  {result?.raw && <RawOutput value={result.raw} label="raw result" tone={result.state === 'error' ? 'error' : 'success'} />}
+                  <ResultOutput result={result} />
                 </div>
               );
             })}
@@ -570,6 +524,28 @@ export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: Capability
   );
 }
 
+function WorkerNotice({ phase, error, relayErrors }: { phase: WorkerPhase; error: string | null; relayErrors: string[] }) {
+  if (error) return <div className="xp-binding xp-worker-status xp-worker-status-error">Could not reach the Worker App: {error}</div>;
+  if (phase === 'running' && relayErrors.length > 0) {
+    return (
+      <div className="xp-binding xp-worker-status xp-worker-status-error">
+        Running inside the Worker App, but some of its state did not reach this panel:
+        <ul>
+          {relayErrors.map((relayError) => (
+            <li key={relayError}>{relayError}</li>
+          ))}
+        </ul>
+      </div>
+    );
+  }
+  if (phase === 'running') return <div className="xp-binding xp-binding-ready xp-worker-status">Running inside the Worker App.</div>;
+  return (
+    <div className="xp-binding xp-binding-waiting xp-worker-status">
+      {phase === 'starting' ? 'Starting the run in the Worker App…' : 'Waiting for the Worker App to serve the auto-runner…'}
+    </div>
+  );
+}
+
 function BindingLine({ binding }: { binding: Binding }) {
   if (binding.status === 'ready') {
     const ids = Object.entries(binding.resolvedIds);
@@ -577,6 +553,13 @@ function BindingLine({ binding }: { binding: Binding }) {
     return <div className="xp-binding xp-binding-ready">bound · {label}</div>;
   }
   return <div className="xp-binding xp-binding-waiting">waiting for {binding.waitingOn.join(', ')}</div>;
+}
+
+function ResultOutput({ result, lines }: { result: OpResult | undefined; lines?: JsonLine[] }) {
+  if (!result) return null;
+  const text = result.error ?? (result.result === undefined ? undefined : JSON.stringify(result.result, null, 2));
+  if (!text) return null;
+  return <RawOutput value={text} lines={lines} label="raw result" tone={result.state === 'error' ? 'error' : 'success'} />;
 }
 
 function StateChip({ state, at }: { state: OpState; at?: string }) {

@@ -244,6 +244,8 @@ describe('collectionWritebackEntriesOf', () => {
               notes: { type: 'string', supportsUpdates: true },
               loose: { type: 'string', properties: { inner: { type: 'string', supportsUpdates: true } } },
               meta: { type: 'string', typeFieldOverrides: { x: { supportsUpdates: true } } },
+              // The EHR's updatableFields say what is writable under a reference; overrides grant nothing.
+              doctor: { type: 'entity', entityTypeId: 'providerRecord', typeFieldOverrides: { npi: { supportsUpdates: true } } },
             },
           },
         },
@@ -339,5 +341,36 @@ describe('writeModesFor', () => {
   it('only overrides an unknown field', () => {
     expect(writeModesFor(manifest, 'encounter', 'nope.missing').modes).toEqual(['override']);
     expect(writeModesFor(null, 'encounter', 'assessment.diagnoses').modes).toEqual(['override']);
+  });
+
+  describe('when the collection declares the modes', () => {
+    // The guess below reads a field NAME. The collection's answer is the field's own, so it
+    // wins even where the two disagree — that disagreement is the point of asking.
+    it('takes the declared modes over the guess', () => {
+      expect(writeModesFor(manifest, 'encounter', 'basicInformation.status', {
+        'basicInformation.status': ['override', 'append'],
+      })).toEqual({ modes: ['override', 'append'], defaultMode: 'append' });
+
+      expect(writeModesFor(manifest, 'encounter', 'assessment.generalNotes', {
+        'assessment.generalNotes': ['override'],
+      })).toEqual({ modes: ['override'], defaultMode: 'override' });
+    });
+
+    it('defaults to append wherever the declared modes allow it', () => {
+      expect(writeModesFor(manifest, 'encounter', 'x', { x: ['append'] }).defaultMode).toBe('append');
+      expect(writeModesFor(manifest, 'encounter', 'x', { x: ['override'] }).defaultMode).toBe('override');
+    });
+
+    // An extension that cannot answer says nothing, and nothing is not an answer.
+    it('falls back to the guess for a field the map does not name', () => {
+      expect(writeModesFor(manifest, 'encounter', 'assessment.generalNotes', {
+        'assessment.diagnoses': ['append'],
+      }).modes).toEqual(['override', 'append']);
+
+      expect(writeModesFor(manifest, 'encounter', 'assessment.generalNotes', {}).modes)
+        .toEqual(['override', 'append']);
+      expect(writeModesFor(manifest, 'encounter', 'assessment.generalNotes', undefined).modes)
+        .toEqual(['override', 'append']);
+    });
   });
 });

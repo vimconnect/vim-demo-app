@@ -8,7 +8,7 @@
  * reaches into `as any`.
  */
 
-import type { VimSDK } from '@vimconnect/app-sdk';
+import type { ApiNamespace, VimSDK } from '@vimconnect/app-sdk';
 
 export type ApiMethod = (...args: unknown[]) => Promise<unknown>;
 
@@ -26,16 +26,27 @@ export interface WritebackNamespace {
   update(data: Record<string, unknown>, options?: { mode?: string }): Promise<unknown>;
 }
 
-function apiNamespace(sdk: VimSDK, namespace: string): Record<string, unknown> | null {
-  const api = sdk.ehr.api as unknown as Record<string, unknown>;
+function namespaceOf(api: Record<string, unknown>, namespace: string): Record<string, unknown> | null {
   const ns = api[namespace];
   return ns && typeof ns === 'object' ? (ns as Record<string, unknown>) : null;
 }
 
-export function getApiMethod(sdk: VimSDK, namespace: string, method: string): ApiMethod | null {
-  const ns = apiNamespace(sdk, namespace);
+function apiNamespace(sdk: VimSDK, namespace: string): Record<string, unknown> | null {
+  return namespaceOf(sdk.ehr.api as unknown as Record<string, unknown>, namespace);
+}
+
+function methodOf(ns: Record<string, unknown> | null, method: string): ApiMethod | null {
   const fn = ns?.[method];
   return typeof fn === 'function' ? (fn as ApiMethod) : null;
+}
+
+export function getApiMethod(sdk: VimSDK, namespace: string, method: string): ApiMethod | null {
+  return methodOf(apiNamespace(sdk, namespace), method);
+}
+
+/** A method on a Worker handle's `api`, which carries only what the handle factory built for it. */
+export function getHandleApiMethod(api: ApiNamespace, namespace: string, method: string): ApiMethod | null {
+  return methodOf(namespaceOf(api, namespace), method);
 }
 
 export function getCapability(sdk: VimSDK, namespace: string, method: string): Capability | null {

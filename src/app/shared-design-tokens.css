@@ -35,6 +35,17 @@
      AA; this reaches 4.5:1. Never substitute the plain amber for body-size text. */
   --color-warning-text-strong: #b45309;
 
+  /* Light-mode-safe red, added 2026-10-04 alongside the .note-error banner
+     family — raw --color-error is only 1.9:1 on white (and worse against
+     its own 50%-opacity fill). 6.5:1 on white, 3.3:1 on --color-error-50. */
+  --color-error-text-strong: #b91c1c;
+
+  /* Its green counterpart, added 2026-10-12 — --color-success and
+     --color-success-light both fail contrast on white, same as every other
+     raw brand/status hue in this block. Matches the value DashboardPage.css
+     had already open-coded in two places before this token existed. */
+  --color-success-text-strong: #0a8a52;
+
   /* Its violet counterpart. --color-purple is a pale lavender: 1.9:1 on white. */
   --color-purple-text-strong: #5551c4;
 
@@ -70,6 +81,10 @@
   --color-purple-12: rgba(176, 181, 255, 0.12);
   --color-purple-15: rgba(176, 181, 255, 0.15);
   --color-purple-30: rgba(176, 181, 255, 0.3);
+  /* -50/-60 added 2026-10-04 for the .note-* banner family's solid-fill
+     recipe (see .note-blue/.note-purple/.note-orange/.note-error in
+     index.css) — same pairing --color-cyan-50/-60 already had. */
+  --color-purple-50: rgba(176, 181, 255, 0.5);
   --color-purple-60: rgba(176, 181, 255, 0.6);
 
   /* Success (Green) Opacity Variants - Single source of truth (RGB 16,185,129) */
@@ -84,11 +99,15 @@
   --color-error-08: rgba(239, 68, 68, 0.08);
   --color-error-15: rgba(239, 68, 68, 0.15);
   --color-error-30: rgba(239, 68, 68, 0.30);
+  --color-error-50: rgba(239, 68, 68, 0.5);
+  --color-error-60: rgba(239, 68, 68, 0.6);
 
   /* Warning (Amber) Opacity Variants - Single source of truth (RGB 245,158,11) */
   --color-warning-08: rgba(245, 158, 11, 0.08);
   --color-warning-15: rgba(245, 158, 11, 0.15);
   --color-warning-30: rgba(245, 158, 11, 0.30);
+  --color-warning-50: rgba(245, 158, 11, 0.5);
+  --color-warning-60: rgba(245, 158, 11, 0.6);
 
   /* Neutral Colors */
   --color-bg-primary: #030812;
@@ -135,6 +154,11 @@
   --gradient-subtle:  linear-gradient(135deg, rgba(108, 205, 239, 0.05) 0%, rgba(176, 181, 255, 0.05) 100%);
   --gradient-card:    linear-gradient(135deg, rgba(108, 205, 239, 0.08) 0%, rgba(176, 181, 255, 0.08) 100%);
   --gradient-marketplace-banner-fallback: linear-gradient(to right, #bea8f0 0%, #00c2f8 100%);
+  /* Filled CTA ramp, cyan → blue (not --gradient-primary's purple → blue).
+     Design-system Button accent uses --gradient-accent-button. */
+  --gradient-cta:     linear-gradient(135deg, #6CCDEF 0%, #10ABE4 100%);
+  /* Accent filled button — L→R cyan → mid-blue. */
+  --gradient-accent-button: linear-gradient(90deg, #6CCDEF 0%, #2BA8E0 100%);
 
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.3);
@@ -146,6 +170,22 @@
   --shadow-glow: 0 0 20px rgba(108, 205, 239, 0.25);
   --shadow-glow-hover: 0 0 35px rgba(108, 205, 239, 0.35), 0 0 70px rgba(176, 181, 255, 0.2);
   --shadow-card: 0 0 25px rgba(108, 205, 239, 0.12);
+
+  /* Text link — the hover recipe for an inline text link that isn't a
+     button: a pill of tinted background appears behind the label on
+     hover/focus, and the text itself darkens a step, rather than an
+     underline. Canonicalized from `.text-link` (index.css), which several
+     pages (`DashboardPage.css`'s `.info-link`/`.app-stat-link`) had
+     re-implemented independently with the same literals before this existed.
+     The negative margin equal to the padding is part of the recipe, not
+     optional — it's what keeps the pill from shifting the label's own
+     position in normal flow; consumers apply it as `padding: var(--text-link-padding-y)
+     var(--text-link-padding-x); margin: calc(-1 * var(--text-link-padding-y))
+     calc(-1 * var(--text-link-padding-x));`. */
+  --text-link-radius: var(--radius-xl);
+  --text-link-padding-y: 9px;
+  --text-link-padding-x: 16px;
+  --text-link-hover-bg: var(--color-cyan-10);
 
   /* Border Radius */
   --radius-sm: 4px;
@@ -167,8 +207,22 @@
   /* Typography */
   --font-sans: 'Plus Jakarta Sans', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', sans-serif;
   --font-title: 'Poppins', 'Plus Jakarta Sans', sans-serif;
+  /* Shared by the extension, developer-docs, command-center, brain-app, demo-app
+     and backend auth-callback, which use this for IDs/hashes/endpoints that need
+     fixed-width alignment — stays monospace here. The Console remaps this to
+     --font-sans in frontend/apps/vim-connect-console/src/styles/console-tokens.css. */
   --font-mono: 'JetBrains Mono', 'SF Mono', 'Monaco', 'Menlo', 'Courier New', monospace;
 
+  /* Policy: 12px text (Tailwind's `text-xs` utility, or this scale's own
+     `--text-sm`) is reserved for badges/chips, breadcrumbs, disclaimers
+     (legal/helper fine print), and small buttons — anything else set at 12px
+     (body copy, row metadata, empty-state text, card labels, etc.) should be
+     14px instead: `text-sm` for a Tailwind-class call site (its default is
+     exactly 14px, so `text-xs`→`text-sm` is the whole change), or
+     `var(--text-lg)` for a call site using this custom scale directly (14px
+     here is named `--text-lg`, not `--text-sm` — the two scales don't share
+     names at the same pixel value). Decided 2026-09-30; existing call sites
+     are being swept to match, not yet exhaustive. */
   --text-xs: 11px;
   --text-sm: 12px;
   --text-base: 13px;
@@ -176,6 +230,16 @@
   --text-xl: 16px;
   --text-2xl: 18px;
   --text-3xl: 20px;
+  /* H1 / page title. Consumed by the console's `.page-title`. Was bumped to
+     32px on 2026-10-05 to match DashboardPage's own bespoke heading — but
+     that just traded one inconsistency for another: ~25 pages never
+     migrated off raw Tailwind `text-3xl font-bold` (30px/700), so the app
+     ended up with two different "page title" sizes again. Corrected
+     2026-10-08 back to 30px/700 (this token + `--font-bold`, not
+     `--font-extrabold`) — the value the user pointed at via dev tools as
+     the one true standard — with every divergent page swept onto
+     `.page-title` in the same pass instead of patching Dashboard alone. */
+  --text-4xl: 30px;
 
   --font-light: 300;
   --font-normal: 400;
@@ -220,6 +284,39 @@
   /* Gradients — used as background on ::before pseudo-elements */
   --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.0) 60%);
   --glass-specular:  linear-gradient(to bottom, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.0) 100%);
+
+  /* Empty-state illustration recipe — the shared visual language behind the
+     Vim brand design system's "Empty State Blueprints" (12 animated SVG
+     illustrations for product-UI empty states; not for email or decks,
+     which stay light). Extracted as reusable tokens, not the 12 SVGs
+     themselves — a future illustration built to this recipe should read as
+     part of the same set without redrawing it by hand each time. Not
+     redefined under `body.light-mode`: every blueprint's dark-navy ground is
+     a deliberate, fixed part of its own visual identity (the same "this
+     surface doesn't swap with the app's theme" reasoning already applied to
+     a couple of other always-dark surfaces elsewhere in the console), not
+     something that should turn light along with the rest of the page.
+     `--empty-state-accent` is deliberately its own token rather than a bare
+     alias for `--color-cyan` — the two happen to share a value (#6CCDEF)
+     today because both trace back to the same brand cyan, but they answer
+     different questions (this illustration's own ink vs. the app's
+     interactive-accent color) and shouldn't be assumed to move together. */
+  --empty-state-bg-start: #0C2038;
+  --empty-state-bg-mid:   #06121F;
+  --empty-state-bg-end:   #030A14;
+  --empty-state-grid-line:   rgba(108, 205, 239, 0.08);
+  --empty-state-frame-line:  rgba(108, 205, 239, 0.26);
+  --empty-state-glass-start: rgba(108, 205, 239, 0.30);
+  --empty-state-glass-end:   rgba(108, 205, 239, 0.04);
+  --empty-state-accent:      #6CCDEF;
+  --empty-state-ink-muted:   rgba(160, 190, 214, 0.7);
+  /* Ambient motion durations — each blueprint's own float/drift/pulse/spin
+     loop picks one of these three bands rather than inventing its own
+     timing; all use a spline close enough to standard `ease-in-out` to just
+     use that keyword. */
+  --empty-state-motion-slow: 48s;
+  --empty-state-motion-med:  17s;
+  --empty-state-motion-fast: 6s;
 }
 
 /* Light Mode */
