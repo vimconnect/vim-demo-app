@@ -39,7 +39,7 @@ function LaunchPageContent() {
 
     if (!launchId) {
       setError({
-        message: 'Missing launch_id parameter. This app must be launched from Vim Connect extension.',
+        message: 'Missing launch_id parameter. This app must be launched from the Vim Connect extension.',
         timestamp: new Date().toISOString(),
         userAgent: navigator.userAgent,
       });
