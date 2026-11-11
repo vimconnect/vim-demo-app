@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import { getVimBackendUrl, getAppUrl } from '@/lib/sdk-config';
 import { getConfig } from '@/lib/client-config';
 import { ErrorScreen } from '@/components/ErrorScreen';
-import { BrandLoader } from '@/components/BrandLoader';
+import { BlueprintLoader } from '@/components/BlueprintLoader';
 
 /**
  * Landing Page - OAuth Flow Launcher
@@ -97,12 +97,12 @@ function LaunchPageContent() {
     );
   }
 
-  return <BrandLoader />;
+  return <BlueprintLoader />;
 }
 
 export default function LandingPage() {
   return (
-    <Suspense fallback={<BrandLoader />}>
+    <Suspense fallback={<BlueprintLoader />}>
       <LaunchPageContent />
     </Suspense>
   );

@@ -22,9 +22,9 @@ export default function RootPage() {
       alignItems: 'center',
       justifyContent: 'center',
       minHeight: '100vh',
-      fontFamily: 'system-ui, -apple-system, sans-serif',
+      fontFamily: 'var(--font-sans)',
     }}>
-      <p style={{ color: '#6b7280' }}>Redirecting...</p>
+      <p style={{ color: 'var(--color-text-muted)' }}>Redirecting...</p>
     </div>
   );
 }

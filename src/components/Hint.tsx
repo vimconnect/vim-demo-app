@@ -36,6 +36,20 @@ export function Hint({ text, block = false, children }: { text?: string | null; 
 }
 
 /**
+ * The label of an icon-only button, shown in a themed hint on hover and on keyboard focus.
+ * Every icon-only button gets one; the button keeps its own aria-label.
+ */
+export function IconTip({ label, children }: { label: string; children: ReactNode }) {
+  const { ref, show, hide, bubble } = useBubble(false);
+  return (
+    <span ref={ref} className="hint" onMouseEnter={show} onMouseLeave={hide} onFocus={show} onBlur={hide}>
+      {children}
+      {bubble(label)}
+    </span>
+  );
+}
+
+/**
  * An ⓘ icon that shows `children` in a themed hint on hover or keyboard focus. The help text is
  * also always in the DOM, visually hidden, as the trigger's description for screen readers.
  */

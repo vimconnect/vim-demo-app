@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import type { AppManifest } from '@vimconnect/app-sdk';
 import { CodeBlock } from '@/components/CodeBlock';
+import { SectionHeader } from '@/components/SectionHeader';
 import { annotatedLines, manifestAnnotator } from '@/lib/annotated-json';
 
 /** A count for array and object values, so a collapsed section still says how much it holds. */
@@ -42,15 +43,7 @@ export function ManifestView({ manifest }: { manifest: AppManifest }) {
               </div>
             ) : (
               <>
-                <div className="section-header" onClick={() => toggle(key)}>
-                  <div className="section-chevron" style={{ transform: isOpen ? 'rotate(90deg)' : 'rotate(0deg)' }}>
-                    ▶
-                  </div>
-                  <h2 className="section-title">
-                    {key}
-                    {sizeOf(value)}
-                  </h2>
-                </div>
+                <SectionHeader title={`${key}${sizeOf(value)}`} collapsed={!isOpen} onToggle={() => toggle(key)} />
                 {isOpen && (
                   <div className="section-inner">
                     <CodeBlock

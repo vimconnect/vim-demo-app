@@ -1,5 +1,7 @@
 'use client';
 
+import { IconTip } from '@/components/Hint';
+
 export type DemoView = 'main' | 'explorer' | 'docs' | 'manifest';
 
 const GITHUB_PATH =
@@ -48,26 +50,31 @@ type NavTabsProps = {
 
 /** The app's tab bar, pinned to the top of the panel. */
 export function NavTabs({ view, onGetCode, onNavigate }: NavTabsProps) {
-  const tab = (target: Exclude<DemoView, 'main'>, icon: React.ReactNode, label: string) => (
-    <button
-      type="button"
-      className={`nav-tab ${view === target ? 'active' : ''}`}
-      aria-current={view === target ? 'page' : undefined}
-      onClick={() => onNavigate(view === target ? 'main' : target)}
-    >
-      {icon}
-      <span className="nav-tab-label">{label}</span>
-    </button>
+  // Every tab names what it opens in a themed hint: labels truncate and icons drop in a narrow panel.
+  const tab = (target: Exclude<DemoView, 'main'>, icon: React.ReactNode, label: string, hint: string) => (
+    <IconTip label={hint}>
+      <button
+        type="button"
+        className={`nav-tab ${view === target ? 'active' : ''}`}
+        aria-current={view === target ? 'page' : undefined}
+        onClick={() => onNavigate(view === target ? 'main' : target)}
+      >
+        {icon}
+        <span className="nav-tab-label">{label}</span>
+      </button>
+    </IconTip>
   );
   return (
     <nav className="nav-tabs" aria-label="Demo app">
-      {tab('docs', <DocsIcon />, 'Docs')}
-      <button type="button" className="nav-tab" onClick={onGetCode}>
-        <GithubIcon />
-        <span className="nav-tab-label">Code</span>
-      </button>
-      {tab('manifest', <EyeIcon />, 'Manifest')}
-      {tab('explorer', <FlashIcon />, 'Auto runner')}
+      {tab('docs', <DocsIcon />, 'Docs', 'Developer docs')}
+      <IconTip label="This app's source on GitHub">
+        <button type="button" className="nav-tab" onClick={onGetCode}>
+          <GithubIcon />
+          <span className="nav-tab-label">Code</span>
+        </button>
+      </IconTip>
+      {tab('manifest', <EyeIcon />, 'Manifest', 'The manifest this session runs')}
+      {tab('explorer', <FlashIcon />, 'Auto runner', 'Run every SDK capability automatically')}
     </nav>
   );
 }

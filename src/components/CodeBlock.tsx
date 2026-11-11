@@ -2,14 +2,19 @@
 
 import { useState } from 'react';
 import { copyText } from '@/lib/clipboard';
+import { CheckIcon, CopyIcon } from '@/components/icons';
+import { IconTip } from '@/components/Hint';
 import type { JsonLine } from '@/lib/annotated-json';
 
-export function CopyButton({ text, label = 'Copy' }: { text: string; label?: string }) {
+/** `iconOnly` draws a copy icon (a check once copied) and keeps `label` as the accessible name. */
+export function CopyButton({ text, label = 'Copy', iconOnly = false }: { text: string; label?: string; iconOnly?: boolean }) {
   const [state, setState] = useState<'idle' | 'copied' | 'failed'>('idle');
-  return (
+  const name = state === 'copied' ? 'Copied' : state === 'failed' ? 'Copy failed' : label;
+  const button = (
     <button
       type="button"
-      className="btn btn-sm copy-button"
+      className={`btn btn-sm copy-button${iconOnly ? ' btn-icon' : ''}${iconOnly && state === 'copied' ? ' is-done' : ''}`}
+      aria-label={iconOnly ? name : undefined}
       onClick={(e) => {
         e.preventDefault();
         e.stopPropagation();
@@ -19,9 +24,18 @@ export function CopyButton({ text, label = 'Copy' }: { text: string; label?: str
         });
       }}
     >
-      {state === 'copied' ? 'Copied ✓' : state === 'failed' ? 'Copy failed' : label}
+      {iconOnly
+        ? state === 'copied'
+          ? <CheckIcon size={14} />
+          : <CopyIcon size={14} />
+        : state === 'copied'
+          ? 'Copied ✓'
+          : state === 'failed'
+            ? 'Copy failed'
+            : label}
     </button>
   );
+  return iconOnly ? <IconTip label={name}>{button}</IconTip> : button;
 }
 
 /** JSON lines, each followed by its note as a `// deprecated` comment. */
@@ -48,7 +62,7 @@ export function JsonLines({ lines }: { lines: JsonLine[] }) {
 export function CodeBlock({ code, lines, className = '' }: { code: string; lines?: JsonLine[]; className?: string }) {
   return (
     <div className={`code-block ${className}`}>
-      <CopyButton text={code} />
+      <CopyButton text={code} iconOnly />
       <pre className="code-block-pre">{lines ? <JsonLines lines={lines} /> : code}</pre>
     </div>
   );

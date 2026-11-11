@@ -1,10 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import type { AppManifest, VimSDK } from '@vimconnect/app-sdk';
 import { DeprecatedTag } from '@/components/DeprecatedTag';
 import { Hint } from '@/components/Hint';
 import { RawOutput } from '@/components/RawOutput';
+import { Toggle } from '@/components/Toggle';
+import { Notice, StatusLine } from '@/components/Notice';
+import { Select } from '@/components/Select';
 import { annotatedLines, apiResultAnnotator, contextAnnotator, noteOf, workflowEventAnnotator, type JsonLine } from '@/lib/annotated-json';
 import {
   asEntityObject,
@@ -83,6 +86,7 @@ function writeFieldsHint(entry: OperationEntry | undefined): string {
   return '';
 }
 
+const sentence = (text: string) => text.charAt(0).toUpperCase() + text.slice(1);
 
 export function CapabilityAutoRunner({ sdk, manifest, onSwitchMode }: CapabilityAutoRunnerProps) {
   const [mode, setMode] = useState<RunnerMode>('app');
@@ -250,7 +254,7 @@ function AutoRunnerView({
         </div>
         <div className="xp-header-side">
           {onSwitchMode && (
-            <button type="button" className="btn btn-gradient btn-sm" onClick={onSwitchMode}>
+            <button type="button" className="btn btn-secondary btn-sm" onClick={onSwitchMode}>
               ← Classic demo
             </button>
           )}
@@ -278,12 +282,9 @@ function AutoRunnerView({
           <span className="status-badge">
             <span className="status-dot" /> Connected · v{manifest.version ?? '?'}
           </span>
-          <label className="toggle-switch">
-            <span className={`toggle-track ${autoRunDisruptive ? 'active' : ''}`} onClick={() => runner.setAutoRunDisruptive(!autoRunDisruptive)}>
-              <span className="toggle-thumb" />
-            </span>
-            <span className="toggle-label">Auto-run disruptive reads</span>
-          </label>
+          <Toggle on={autoRunDisruptive} onChange={runner.setAutoRunDisruptive} label="Auto-run disruptive reads">
+            Auto-run disruptive reads
+          </Toggle>
         </div>
       </header>
 
@@ -434,7 +435,7 @@ function AutoRunnerView({
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
                     <button
                       type="button"
-                      className="btn btn-sm btn-primary"
+                      className="btn btn-sm btn-secondary"
                       disabled={op.kind !== 'create' && binding.status !== 'ready'}
                       onClick={() => runner.runWrite(op.key, writePayloads[op.key] ?? '{}')}
                     >
@@ -463,36 +464,45 @@ function AutoRunnerView({
               return (
                 <div key={key} className="xp-card">
                   <div className="xp-card-head">
-                    <span className="xp-card-title xp-mono">{target.entity}.{target.field}</span>
+                    <span className="xp-card-title xp-mono">
+                      {`${target.entity}.${target.field}`.split('.').map((part, i) => (
+                        <Fragment key={i}>
+                          {i > 0 && <>.<wbr /></>}
+                          {part}
+                        </Fragment>
+                      ))}
+                    </span>
                     <span className="xp-badges">
                       <span className="xp-badge xp-badge-write">writeback</span>
                       {target.disruptive && <span className="xp-badge xp-badge-disruptive">disruptive</span>}
                     </span>
                   </div>
-                  <div className={`xp-binding ${boundEntity ? 'xp-binding-ready' : 'xp-binding-waiting'}`}>
-                    {boundEntity ? `${target.entity} in context` : `waiting for ${target.entity}`}
-                  </div>
-                  <div className="input-group">
+                  {boundEntity ? (
+                    <StatusLine>{sentence(`${target.entity} in context`)}</StatusLine>
+                  ) : (
+                    <Notice>Waiting for {target.entity}. Open one in the EHR.</Notice>
+                  )}
+                  <div className="input-group xp-writeback-row">
                     <input
                       className="input"
-                      placeholder="value (JSON or text)"
+                      placeholder="Value (JSON or text)"
                       value={input.value}
                       onChange={(e) => setWritebackInputs((prev) => ({ ...prev, [key]: { ...input, value: e.target.value } }))}
                     />
-                    <select
-                      className="input xp-mode"
-                      value={input.mode}
-                      onChange={(e) =>
-                        setWritebackInputs((prev) => ({ ...prev, [key]: { ...input, mode: e.target.value === 'append' ? 'append' : 'override' } }))
-                      }
-                    >
-                      <option value="override">override</option>
-                      <option value="append">append</option>
-                    </select>
+                    <Select
+                      className="xp-mode"
+                      label="Write mode"
+                      value={input.mode === 'append' ? 'append' : 'override'}
+                      options={[
+                        { value: 'override', label: 'Override' },
+                        { value: 'append', label: 'Append' },
+                      ]}
+                      onChange={(mode) => setWritebackInputs((prev) => ({ ...prev, [key]: { ...input, mode } }))}
+                    />
                   </div>
                   <div className="xp-card-foot">
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
-                    <button type="button" className="btn btn-sm btn-primary" onClick={() => runner.runWriteback(target, input.value, input.mode)}>
+                    <button type="button" className="btn btn-sm btn-secondary" onClick={() => runner.runWriteback(target, input.value, input.mode)}>
                       Run
                     </button>
                   </div>
@@ -525,23 +535,39 @@ function AutoRunnerView({
 }
 
 function WorkerNotice({ phase, error, relayErrors }: { phase: WorkerPhase; error: string | null; relayErrors: string[] }) {
-  if (error) return <div className="xp-binding xp-worker-status xp-worker-status-error">Could not reach the Worker App: {error}</div>;
-  if (phase === 'running' && relayErrors.length > 0) {
+  if (error) {
     return (
-      <div className="xp-binding xp-worker-status xp-worker-status-error">
-        Running inside the Worker App, but some of its state did not reach this panel:
-        <ul>
-          {relayErrors.map((relayError) => (
-            <li key={relayError}>{relayError}</li>
-          ))}
-        </ul>
+      <div className="xp-worker-status">
+        <Notice tone="error">
+          <strong>Could not reach the Worker App:</strong> {error}
+        </Notice>
       </div>
     );
   }
-  if (phase === 'running') return <div className="xp-binding xp-binding-ready xp-worker-status">Running inside the Worker App.</div>;
+  if (phase === 'running' && relayErrors.length > 0) {
+    return (
+      <div className="xp-worker-status">
+        <Notice tone="error">
+          Running inside the Worker App, but some of its state did not reach this panel:
+          <ul>
+            {relayErrors.map((relayError) => (
+              <li key={relayError}>{relayError}</li>
+            ))}
+          </ul>
+        </Notice>
+      </div>
+    );
+  }
+  if (phase === 'running') {
+    return (
+      <div className="xp-worker-status">
+        <StatusLine>Running inside the Worker App</StatusLine>
+      </div>
+    );
+  }
   return (
-    <div className="xp-binding xp-binding-waiting xp-worker-status">
-      {phase === 'starting' ? 'Starting the run in the Worker App…' : 'Waiting for the Worker App to serve the auto-runner…'}
+    <div className="xp-worker-status">
+      <Notice>{phase === 'starting' ? 'Starting the run in the Worker App…' : 'Waiting for the Worker App to serve the auto-runner…'}</Notice>
     </div>
   );
 }
@@ -550,20 +576,21 @@ function BindingLine({ binding }: { binding: Binding }) {
   if (binding.status === 'ready') {
     const ids = Object.entries(binding.resolvedIds);
     const label = ids.length ? ids.map(([k, v]) => `${k}=${v}`).join(', ') : 'resolved from current context';
-    return <div className="xp-binding xp-binding-ready">bound · {label}</div>;
+    return <StatusLine>Bound · {label}</StatusLine>;
   }
-  return <div className="xp-binding xp-binding-waiting">waiting for {binding.waitingOn.join(', ')}</div>;
+  return <Notice>Waiting for {binding.waitingOn.join(', ')}. Open one in the EHR.</Notice>;
 }
 
 function ResultOutput({ result, lines }: { result: OpResult | undefined; lines?: JsonLine[] }) {
   if (!result) return null;
+  if (result.state === 'error' && result.error) return <Notice tone="error">{result.error}</Notice>;
   const text = result.error ?? (result.result === undefined ? undefined : JSON.stringify(result.result, null, 2));
   if (!text) return null;
-  return <RawOutput value={text} lines={lines} label="raw result" tone={result.state === 'error' ? 'error' : 'success'} />;
+  return <RawOutput value={text} lines={lines} label="Raw result" tone={result.state === 'error' ? 'error' : 'success'} />;
 }
 
 function StateChip({ state, at }: { state: OpState; at?: string }) {
-  const label = state === 'idle' ? 'idle' : state === 'running' ? 'running…' : state === 'ok' ? `ok · ${at ?? ''}` : `error · ${at ?? ''}`;
+  const label = state === 'idle' ? 'Idle' : state === 'running' ? 'Running…' : state === 'ok' ? `Done · ${at ?? ''}` : `Failed · ${at ?? ''}`;
   return <span className={`xp-state xp-state-${state}`}>{label}</span>;
 }
 

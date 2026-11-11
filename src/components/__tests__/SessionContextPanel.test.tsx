@@ -38,6 +38,19 @@ describe('SessionContextPanel', () => {
     copyTextMock.mockResolvedValue(true);
   });
 
+  it('shows each field once, as a row, with no header repeating the account and EHR', () => {
+    renderPanel(sessionContext());
+    expect(screen.getAllByText('Yaniv dev 7')).toHaveLength(1);
+    expect(screen.getAllByText('sandbox_ehr_next')).toHaveLength(1);
+  });
+
+  it('shows a field a newer SDK adds, such as ehrUsername, without a code change', () => {
+    renderPanel(sessionContext({ ehrUsername: 'dr.smith' }));
+    expect(screen.getByText('EHR username')).toBeInTheDocument();
+    expect(screen.getByText('dr.smith')).toBeInTheDocument();
+    expect(document.querySelectorAll('.session-id')).toHaveLength(7);
+  });
+
   it('renders all six fields, with the account name and id on their own rows', () => {
     const ctx = sessionContext();
     renderPanel(ctx);
@@ -55,7 +68,9 @@ describe('SessionContextPanel', () => {
   it('shows values as plain text with nothing to click', () => {
     renderPanel(sessionContext());
     expect(screen.queryByTitle(/^Copy /)).not.toBeInTheDocument();
-    expect(screen.getAllByRole('button').filter((b) => !b.classList.contains('info-tip'))).toHaveLength(1);
+    expect(
+      screen.getAllByRole('button').filter((b) => !b.classList.contains('info-tip') && !b.classList.contains('section-header')),
+    ).toHaveLength(1);
   });
 
   describe('with no session context', () => {
@@ -105,7 +120,7 @@ describe('SessionContextPanel', () => {
       await user.click(await screen.findByRole('button', { name: 'Copy token' }));
 
       expect(copyTextMock).toHaveBeenCalledWith(jwt);
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Copied ✓' })).toBeInTheDocument());
+      await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument());
     });
 
     it('says a non-JWT token has no claims', async () => {

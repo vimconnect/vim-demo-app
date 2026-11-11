@@ -1,0 +1,15 @@
+/* Tailwind v4, so the demo app can render the shared @vim-connect/ui components
+   (authored in Tailwind, per the write-ui-component skill).
+
+   - No preflight: the app's own globals.css stays in charge of base styles.
+   - Layered (theme, utilities): the DS tokens in shared/styles/design-tokens.css
+     are unlayered, so a Tailwind theme variable with the same name (--font-sans,
+     --text-xs, --radius-*) never overrides a DS token.
+   - source(none) + an explicit @source: only the shared components are scanned,
+     so class names the demo app already uses for its own CSS (.card, .hidden…)
+     never pick up a Tailwind utility by accident. */
+@layer theme, base, components, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities) source(none);
+@source '../../../packages/ui/src/**/*.tsx';
+@source not '../../../packages/ui/src/**/*.test.tsx';

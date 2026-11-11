@@ -10,6 +10,15 @@ const CURRENT = 'demo-search-current';
 type HighlightRegistry = Map<string, unknown>;
 type HighlightCtor = new (...ranges: Range[]) => unknown;
 
+/**
+ * `::highlight()` lives here, not in globals.css: Next's CSS parser rejects it and logs a warning on every
+ * compile, which buries the server log. Browsers support it.
+ */
+const HIGHLIGHT_STYLES = `
+::highlight(${ALL}) { background-color: var(--color-warning-30); color: inherit; }
+::highlight(${CURRENT}) { background-color: var(--color-warning-60); color: inherit; }
+`;
+
 function highlights(): { registry: HighlightRegistry; Highlight: HighlightCtor } | null {
   const registry = (globalThis.CSS as unknown as { highlights?: HighlightRegistry } | undefined)?.highlights;
   const Highlight = (globalThis as unknown as { Highlight?: HighlightCtor }).Highlight;
@@ -93,6 +102,7 @@ export function InPageSearch({ rootSelector, open, onOpenChange }: {
 
   return (
     <div className="in-page-search" role="search" data-search-ignore>
+      <style>{HIGHLIGHT_STYLES}</style>
       <SearchIcon />
       <input
         ref={inputRef}

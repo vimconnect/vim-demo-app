@@ -276,7 +276,7 @@ export function DeviceAccessControls({
       <div className="device-control" key={device}>
         <button
           type="button"
-          className={`btn btn-sm ${live ? 'btn-danger' : 'btn-primary'} device-control-btn`}
+          className={`btn btn-sm ${live ? 'btn-danger' : 'btn-secondary'} device-control-btn`}
           disabled={state.status === 'requesting'}
           onClick={() => (live ? stop(device) : void start(device))}
         >

@@ -45,7 +45,7 @@ export function ErrorScreen({
             <button
               type="button"
               onClick={retry.onClick}
-              className="btn btn-danger"
+              className="btn btn-primary"
             >
               {retry.label}
             </button>

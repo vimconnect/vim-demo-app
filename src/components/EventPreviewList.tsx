@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { RadioIcon } from '@/components/icons';
 
 export type PreviewEntry = {
   key: string | number;
@@ -36,14 +37,16 @@ export function EventPreviewList({
 }) {
   const [collapsed, setCollapsed] = useState(startCollapsed);
   const [showOlder, setShowOlder] = useState(false);
-  // Until the reader picks one, the newest arrival is the open one; `key: null`
-  // is "they closed it", which is not the same as "nobody has chosen".
-  const [opened, setOpened] = useState<{ pinned: false } | { pinned: true; key: string | number | null }>({
-    pinned: false,
-  });
+  // The newest event with a payload is the open one. A reader's pick (`key: null` is
+  // "they closed it") holds only until a newer event lands.
+  const [opened, setOpened] = useState<{ key: string | number | null; newest: string | number | undefined } | null>(
+    null,
+  );
 
-  const openKey = opened.pinned ? opened.key : entries[0]?.key;
-  const toggle = (key: string | number) => setOpened({ pinned: true, key: openKey === key ? null : key });
+  const newestKey = entries[0]?.key;
+  const defaultKey = entries.find((entry) => entry.body !== null)?.key ?? newestKey;
+  const openKey = opened && opened.newest === newestKey ? opened.key : defaultKey;
+  const toggle = (key: string | number) => setOpened({ key: openKey === key ? null : key, newest: newestKey });
 
   const newest = entries.slice(0, NEWEST_SHOWN);
   const older = entries.slice(NEWEST_SHOWN);
@@ -60,9 +63,7 @@ export function EventPreviewList({
           }}
         >
           <span className="event-preview-title">
-            <span className="entity-card-chevron" style={{ transform: open ? 'rotate(90deg)' : 'none' }}>
-              ▶
-            </span>
+            <span className={`disclosure-chevron${open ? ' open' : ''}`} aria-hidden="true" />
             {entry.title}
           </span>
           <span className="event-preview-time">{entry.meta}</span>
@@ -81,9 +82,7 @@ export function EventPreviewList({
           aria-expanded={!collapsed}
           onClick={() => setCollapsed(!collapsed)}
         >
-          <span className="entity-card-chevron" style={{ transform: collapsed ? 'none' : 'rotate(90deg)' }}>
-            ▶
-          </span>
+          <span className={`disclosure-chevron${!collapsed ? ' open' : ''}`} aria-hidden="true" />
           {label} ({entries.length})
         </button>
         {entries.length > 0 && !collapsed && (
@@ -95,7 +94,17 @@ export function EventPreviewList({
       {!collapsed && (
         <>
           {entries.length === 0 ? (
-            <p className="empty-state empty-state-inline">{emptyText}</p>
+            <div className="empty-tab">
+              <p className="empty-tab-title">
+                <span className="icon-tile icon-tile--heading" aria-hidden="true">
+                  <RadioIcon size={12} />
+                </span>
+                <span>
+                  No {label.toLowerCase()} <span className="empty-tab-accent">yet</span>
+                </span>
+              </p>
+              <p className="empty-tab-body">{emptyText}</p>
+            </div>
           ) : (
             newest.map(card)
           )}
@@ -107,9 +116,7 @@ export function EventPreviewList({
                 aria-expanded={showOlder}
                 onClick={() => setShowOlder(!showOlder)}
               >
-                <span className="entity-card-chevron" style={{ transform: showOlder ? 'rotate(90deg)' : 'none' }}>
-                  ▶
-                </span>
+                <span className={`disclosure-chevron${showOlder ? ' open' : ''}`} aria-hidden="true" />
                 {showOlder ? 'Hide older' : `${older.length} older`}
               </button>
               {showOlder && older.map(card)}

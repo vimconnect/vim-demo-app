@@ -1,9 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { copyText } from '@/lib/clipboard';
 import type { JsonLine } from '@/lib/annotated-json';
-import { JsonLines } from '@/components/CodeBlock';
+import { CopyButton, JsonLines } from '@/components/CodeBlock';
 
 type RawOutputProps = {
   /** Raw text (usually pretty-printed JSON) shown in the block and copied verbatim. */
@@ -20,14 +19,6 @@ type RawOutputProps = {
 
 export function RawOutput({ value, label = 'raw', defaultOpen = false, tone = 'neutral', lines }: RawOutputProps) {
   const [open, setOpen] = useState(defaultOpen);
-  const [copied, setCopied] = useState<'idle' | 'ok' | 'fail'>('idle');
-
-  function copy() {
-    copyText(value).then((ok) => {
-      setCopied(ok ? 'ok' : 'fail');
-      setTimeout(() => setCopied('idle'), 1200);
-    });
-  }
 
   return (
     <div className={`raw-output raw-output-${tone}`}>
@@ -37,13 +28,13 @@ export function RawOutput({ value, label = 'raw', defaultOpen = false, tone = 'n
           className="raw-output-toggle"
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
+          // A mouse click shouldn't leave the keyboard focus ring on the toggle.
+          onMouseDown={(e) => e.preventDefault()}
         >
-          <span className="raw-output-chevron">{open ? '▾' : '▸'}</span>
           <span className="raw-output-label">{label}</span>
+          <span className={`disclosure-chevron${open ? ' open' : ''}`} aria-hidden="true" />
         </button>
-        <button type="button" className="btn btn-sm" onClick={copy}>
-          {copied === 'ok' ? 'Copied' : copied === 'fail' ? 'Copy failed' : 'Copy'}
-        </button>
+        <CopyButton text={value} label="Copy result" iconOnly />
       </div>
       {open && <pre className="raw-output-code">{lines ? <JsonLines lines={lines} /> : value}</pre>}
     </div>

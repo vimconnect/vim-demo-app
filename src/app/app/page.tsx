@@ -47,14 +47,19 @@ import {
 import { orderEntityGroups } from "@/lib/panel-layout";
 import { Hint, InfoTip } from "@/components/Hint";
 import { StatusBanner } from "@/components/StatusBanner";
+import { Toggle } from "@/components/Toggle";
+import { CountBadge } from "@/components/CountBadge";
+import { SectionHeader } from "@/components/SectionHeader";
+import { OverviewCard } from "@/components/OverviewCard";
+import { ActivityIcon, BellIcon, CpuIcon, ReadIcon, WriteIcon } from "@/components/icons";
 import { formatManifestVersion } from "@/lib/manifest-version-label";
 import { DeviceAccessControls } from "@/components/DeviceAccessControls";
 import { InPageSearch } from "@/components/InPageSearch";
 import { entityLabel } from "@/lib/entity-label";
-import { groupUpdatesByEntity, parseUpdaterValue, setPath } from "@/lib/batch-updates";
+import { groupUpdatesByEntity, parseUpdaterValue, setPath, type EntityBatch } from "@/lib/batch-updates";
 import { copyText } from "@/lib/clipboard";
 import { unavailableReasonText, type CapabilityAction } from "@/lib/updater-availability";
-import { BrandLoader } from "@/components/BrandLoader";
+import { BlueprintLoader } from "@/components/BlueprintLoader";
 import {
   applyColorScheme,
   followColorScheme,
@@ -122,12 +127,9 @@ function ToggleAllLabel({
     >
       <span>{label}</span>
       {count > 0 && (
-        <div className="toggle-switch" onClick={() => onToggle(!allOn)}>
-          <span className="toggle-label">{allOn ? "Turn all off" : "Turn all on"}</span>
-          <div className={`toggle-track ${allOn ? "active" : ""}`}>
-            <div className="toggle-thumb" />
-          </div>
-        </div>
+        <Toggle on={allOn} onChange={onToggle} label={`Turn all ${label} ${allOn ? "off" : "on"}`} labelFirst>
+          {allOn ? "Turn all off" : "Turn all on"}
+        </Toggle>
       )}
     </div>
   );
@@ -256,7 +258,7 @@ function AppPageContent() {
   const [detectedComponents, setDetectedComponents] = useState<
     Map<string, Set<string>>
   >(new Map());
-  // Collapsible sections state
+  // Collapsible sections state: Read from EHR starts open, every other card closed
   const [workerCollapsed, setWorkerCollapsed] = useState(true);
   const [readCollapsed, setReadCollapsed] = useState(false);
   const [hubControlsCollapsed, setHubControlsCollapsed] = useState(true);
@@ -265,7 +267,7 @@ function AppPageContent() {
   const [activeUpdatersCollapsed, setActiveUpdatersCollapsed] = useState(true);
   const [expandedCards, setExpandedCards] = useState<Set<string>>(new Set());
   const [searchOpen, setSearchOpen] = useState(false);
-  const [activityLogCollapsed, setActivityLogCollapsed] = useState(false);
+  const [activityLogCollapsed, setActivityLogCollapsed] = useState(true);
   const isReadCard = (id: string) => id.startsWith("__read:") || id.startsWith("__op:");
   const toggleCard = (id: string) =>
     setExpandedCards((prev) => {
@@ -421,6 +423,16 @@ function AppPageContent() {
 
   async function initializeApp() {
     try {
+      if (process.env.NODE_ENV === "development" && searchParams.get("preview") === "1") {
+        const { createPreviewSDK } = await import("@/lib/dev-preview-sdk");
+        const sdk = createPreviewSDK();
+        initializedRef.current = true;
+        setVimSDK(sdk);
+        setManifest(sdk.ehr.getManifest());
+        setStatus("connected");
+        return;
+      }
+
       const code = searchParams.get("code");
       const stateParam = searchParams.get("state");
 
@@ -722,7 +734,7 @@ function AppPageContent() {
 
   const MULTI_NOTIF_PRESETS: NotifPreset[] = [
     {
-      label: "🔴 Critical (no timeout, ack required)",
+      label: "Critical (no timeout, ack required)",
       title: "Drug Interaction Detected",
       text: "<b>Warfarin</b> + <b>Aspirin</b> — high bleed risk. Review immediately.",
       type: "critical" as const,
@@ -736,7 +748,7 @@ function AppPageContent() {
       },
     },
     {
-      label: "⚠️ Warning",
+      label: "Warning",
       title: "Prior Auth Expiring",
       text: "Prior auth expires in <b>3 days</b>",
       type: "warning" as const,
@@ -755,13 +767,13 @@ function AppPageContent() {
       },
     },
     {
-      label: "✅ Success",
+      label: "Success",
       title: "Care Gap Closed",
       text: "HbA1c documented — gap resolved ✓",
       type: "success" as const,
     },
     {
-      label: "🔴 Critical plain",
+      label: "Critical plain",
       title: "Critical Lab Value",
       text: "Hemoglobin 5.2 g/dL — critical low",
       type: "critical" as const,
@@ -771,7 +783,7 @@ function AppPageContent() {
       text: "Patient A1C is 9.2 — review recommended",
     },
     {
-      label: "⚠️ Warning multi-line",
+      label: "Warning multi-line",
       title: "Medication Alert",
       text: "<b>Warfarin 5mg</b> — INR check overdue",
       type: "warning" as const,
@@ -1023,7 +1035,10 @@ function AppPageContent() {
 
   function setAllWorkflowEvents(on: boolean) {
     if (!vimSDK) return;
-    const ids: string[] = (manifest?.supportedEvents ?? []).map((e) => e.id);
+    // Refused events are skipped.
+    const ids: string[] = (manifest?.supportedEvents ?? [])
+      .map((e) => e.id)
+      .filter((id) => !subscriptionRefusals.has(id));
     if (on) {
       const added = ids.filter(
         (id) => subscribedWorkflowEvents.has(id) || subscribeToWorkflowEvent(id),
@@ -1041,7 +1056,7 @@ function AppPageContent() {
     if (!vimSDK) return;
     const keys = (manifest?.supportedContexts ?? [])
       .map((c) => c.contextKey)
-      .filter((k) => !HIDDEN_CONTEXT_KEYS.has(k));
+      .filter((k) => !HIDDEN_CONTEXT_KEYS.has(k) && !subscriptionRefusals.has(k));
     if (on) {
       const added = keys.filter(
         (k) => subscribedContexts.has(k) || subscribeToContext(k),
@@ -1307,6 +1322,7 @@ function AppPageContent() {
     entityType: string,
     scope: string[] | undefined,
     writes: { mode: "override" | "append"; fields: string[]; data: Record<string, unknown> }[],
+    mixed?: EntityBatch["mixed"],
   ): Promise<number> {
     if (!vimSDK) return 0;
     const namespace = (vimSDK.ehr.context as any)[entityType];
@@ -1317,16 +1333,63 @@ function AppPageContent() {
     const permOptions = scope ? { fields: scope } : undefined;
     const scopeLabel = scope ? `[scope: ${scope.join(", ")}]` : "[scope: all fields]";
     let written = 0;
+
+    const ensurePermission = async (): Promise<boolean> => {
+      if (namespace.hasPermission("update", permOptions)) return true;
+      addLog(`Requesting permission for ${entityType} ${scopeLabel}...`, "info");
+      const permResult = await namespace.requestPermission("update", permOptions);
+      if (permResult === "granted") return true;
+      addLog(`Permission ${permResult} for ${entityType}`, "error");
+      return false;
+    };
+
+    // Send updateRequirements only when supportsUpdateRequirements?.() is true; an older
+    // served core SDK ignores it and overrides every field, and cannot refuse.
+    if (mixed !== undefined && namespace.supportsUpdateRequirements?.() !== true) {
+      addLog(
+        `Mixed update unavailable for ${entityType} (the Vim SDK or extension in this browser is older than this app) — falling back to one call per mode`,
+        "info",
+      );
+    } else if (mixed !== undefined) {
+      const all = [...mixed.updateRequirements.fieldsToOverride, ...mixed.updateRequirements.fieldsToAppend];
+      try {
+        if (!(await ensurePermission())) return 0;
+        const result = await namespace.update(mixed.data, { updateRequirements: mixed.updateRequirements });
+        if (result?.success !== false) {
+          const applied = result?.appliedUpdateModes as Record<string, string> | undefined;
+          if (applied === undefined) {
+            addLog(
+              `Mixed update: ${entityType} reported success without per-field modes — what each field got is unconfirmed`,
+              "error",
+            );
+            return 0;
+          }
+          const detail = Object.entries(applied).map(([f, m]) => `${f}: ${m}`).join(", ");
+          addLog(`Mixed update successful: ${entityType} — ${detail}`, "success");
+          return all.length;
+        }
+        const wrote = result.updatedFields ?? [];
+        addLog(
+          `Mixed update failed: ${entityType} — ${result.error || "Unknown error"}`
+          + (wrote.length === 0
+            ? " — nothing was written, so this batch can be retried one call per mode"
+            : ` — already written: ${wrote.join(", ")}; retrying would write them twice`),
+          "error",
+        );
+        return wrote.length;
+      } catch (err: any) {
+        if (err?.code !== "EXTENSION_UPDATE_REQUIRED") {
+          addLog(`Mixed update failed: ${entityType} — ${err.message}`, "error");
+          return 0;
+        }
+        // Nothing was written, so one call per mode is still safe to run.
+        addLog(`Mixed update unavailable (${err.message}) — falling back to one call per mode`, "info");
+      }
+    }
+
     for (const write of writes) {
       try {
-        if (!namespace.hasPermission("update", permOptions)) {
-          addLog(`Requesting permission for ${entityType} ${scopeLabel}...`, "info");
-          const permResult = await namespace.requestPermission("update", permOptions);
-          if (permResult !== "granted") {
-            addLog(`Permission ${permResult} for ${entityType}`, "error");
-            return written;
-          }
-        }
+        if (!(await ensurePermission())) return written;
         const result = await namespace.update(write.data, { mode: write.mode });
         if (result && result.success === false) {
           addLog(
@@ -1428,7 +1491,7 @@ function AppPageContent() {
     try {
       for (const batch of batches) {
         const updaters = toWrite.filter((u) => u.entityType === batch.entityType);
-        const done = await writeWithPermission(batch.entityType, batchScope(updaters), batch.writes);
+        const done = await writeWithPermission(batch.entityType, batchScope(updaters), batch.writes, batch.mixed);
         written += done;
         failed += batch.fields.length - done;
       }
@@ -1479,7 +1542,7 @@ function AppPageContent() {
 
   if (status === "loading") {
     return (
-      <BrandLoader />
+      <BlueprintLoader />
     );
   }
 
@@ -1557,10 +1620,10 @@ function AppPageContent() {
   // are the non-disruptive reads (updateById/create are writes, handled above).
   /** Short top-right label for an API card the app can't use here, or null. */
   const apiOpLabel = (op: any): string | null => {
-    if (!op?.available) return "Not supported on this EHR";
+    if (!op?.available) return "Unsupported";
     const cap = (vimSDK?.ehr?.api as any)?.[op.sdkNamespace]?.getCapability?.(op.sdkMethod);
     if (cap?.available === false) {
-      return cap.reason === "not_granted" ? "Not in your manifest" : "Not supported on this EHR";
+      return cap.reason === "not_granted" ? "Not in manifest" : "Unsupported";
     }
     return null;
   };
@@ -1623,25 +1686,25 @@ function AppPageContent() {
     (entity) =>
       (readOpsByEntity.find(([e]) => e === entity)?.[1] ?? []).filter((op) => apiOpReason(op) === null).length,
   );
+  // Refused subscriptions are excluded from the all-on state.
+  const subscribableEvents = supportedEvents.filter((e) => !subscriptionRefusals.has(e.id));
+  const subscribableContexts = supportedContexts.filter((c) => !subscriptionRefusals.has(c.contextKey));
   const allWorkflowOn =
-    supportedEvents.length > 0 && supportedEvents.every((e) => subscribedWorkflowEvents.has(e.id));
+    subscribableEvents.length > 0 && subscribableEvents.every((e) => subscribedWorkflowEvents.has(e.id));
   const allContextsOn =
-    supportedContexts.length > 0 && supportedContexts.every((c) => subscribedContexts.has(c.contextKey));
+    subscribableContexts.length > 0 && subscribableContexts.every((c) => subscribedContexts.has(c.contextKey));
+  // A stream with nothing the SDK accepts doesn't count toward the Subscriptions toggle.
+  const allSubscriptionsOn =
+    subscribableEvents.length + subscribableContexts.length > 0 &&
+    (subscribableEvents.length === 0 || allWorkflowOn) &&
+    (subscribableContexts.length === 0 || allContextsOn);
   const subscriptionTotal = supportedEvents.length + supportedContexts.length;
   const subscriptionAvailable = availableEvents.length + availableContexts.length;
   const readTotal = subscriptionTotal + readOps.length;
   const readAvailable = subscriptionAvailable + availableReadOps.length;
 
   const turnAllToggle = (on: boolean, onToggle: (on: boolean) => void, label: string) => (
-    <div
-      className="toggle-switch"
-      title={on ? `Turn all ${label} off` : `Turn all ${label} on`}
-      onClick={() => onToggle(!on)}
-    >
-      <div className={`toggle-track ${on ? "active" : ""}`}>
-        <div className="toggle-thumb" />
-      </div>
-    </div>
+    <Toggle on={on} onChange={onToggle} label={on ? `Turn all ${label} off` : `Turn all ${label} on`} />
   );
 
   const renderReadOp = (op: any) => {
@@ -1703,8 +1766,10 @@ function AppPageContent() {
           aria-expanded={open}
           onClick={() => toggleCard(`__op:${opKey}`)}
         >
-          <span className="entity-card-chevron" style={{ transform: open ? "rotate(90deg)" : "none" }}>▶</span>
-          <span className="op-card-name">ehr.api.{opKey}</span>
+          <span className={`disclosure-chevron${open ? " open" : ""}`} aria-hidden="true" />
+          <span className="op-card-name" title={`ehr.api.${opKey}`}>
+            {op.sdkMethod}
+          </span>
           <DeprecatedTag note={noteOf(op.deprecationStatus)} />
           <span className="verb-badge verb-get">{op.operationType === "search" ? "search" : "get"}</span>
           {apiOpLabel(op) && (
@@ -1727,7 +1792,7 @@ function AppPageContent() {
           <Hint text={runBlocked} block={!lastField}>
             <button
               onClick={() => executeReadOperation(op)}
-              className={`btn btn-primary ${lastField ? "op-run-btn" : "op-run-btn-full"}`}
+              className={`btn btn-secondary ${lastField ? "op-run-btn" : "op-run-btn-full"}`}
               disabled={readOpRunning[opKey] || runBlocked !== null}
             >
               {readOpRunning[opKey] ? "Running…" : "Run"}
@@ -1772,12 +1837,7 @@ function AppPageContent() {
         {unfiredHere && <div className="updater-meta">This EHR does not fire this event</div>}
         {subscriptionRefusals.has(key) && <div className="updater-meta">{subscriptionRefusals.get(key)}</div>}
       </div>
-      <div className="toggle-switch" onClick={onToggle}>
-        <div className={`toggle-track ${on ? "active" : ""}`}>
-          <div className="toggle-thumb" />
-        </div>
-        <span className="toggle-label">{on ? "ON" : "OFF"}</span>
-      </div>
+      <Toggle on={on} onChange={onToggle} label={`Subscribe to ${label}`} />
     </div>
   );
 
@@ -1795,9 +1855,7 @@ function AppPageContent() {
         aria-expanded={expandedCards.has(cardKey)}
         onClick={() => toggleCard(cardKey)}
       >
-        <span className="entity-card-chevron" style={{ transform: expandedCards.has(cardKey) ? "rotate(90deg)" : "none" }}>
-          ▶
-        </span>
+        <span className={`disclosure-chevron${expandedCards.has(cardKey) ? " open" : ""}`} aria-hidden="true" />
         {title}
       </button>
       <div className="subsection-actions">
@@ -1807,14 +1865,15 @@ function AppPageContent() {
     </div>
   );
 
-  const sectionHeader = (title: string, collapsed: boolean, onToggle: () => void, docsHref?: string) => (
-    <div className="section-header" onClick={onToggle}>
-      <div className="section-chevron" style={{ transform: collapsed ? "rotate(0deg)" : "rotate(90deg)" }}>
-        ▶
-      </div>
-      <h2 className="section-title">{title}</h2>
-      {docsHref && <DocsLink path={docsHref} />}
-    </div>
+  const sectionHeader = (
+    title: string,
+    collapsed: boolean,
+    onToggle: () => void,
+    docsHref?: string,
+    icon?: React.ReactNode,
+    subtitle?: string,
+  ) => (
+    <SectionHeader title={title} collapsed={collapsed} onToggle={onToggle} docsHref={docsHref} icon={icon} subtitle={subtitle} />
   );
 
   const subPageTitle: Record<Exclude<DemoView, "main">, string> = {
@@ -1870,7 +1929,7 @@ function AppPageContent() {
               : undefined)}>
         <button
           onClick={executeUpdateProcedureCodes}
-          className="btn btn-primary"
+          className="btn btn-secondary"
           style={{ width: "100%" }}
           disabled={procedureCodesReason !== null || !cptEncounterId.trim() || !cptCode.trim()}
         >
@@ -1890,7 +1949,7 @@ function AppPageContent() {
             <NavTabs view={view} onGetCode={() => setRedirectUrl(DEMO_APP_REPO_URL)} onNavigate={setView} />
             <InPageSearch rootSelector="#demo-search-root" open={searchOpen} onOpenChange={setSearchOpen} />
           </div>
-          <StatusBanner text={statusLine} />
+          {view !== "main" && <StatusBanner text={statusLine} />}
         </>
       )}
       {view !== "main" && vimSDK && manifest ? (
@@ -1914,6 +1973,12 @@ function AppPageContent() {
     <div id="demo-search-root" className="demo-container">
 
       <div className="demo-content">
+        <OverviewCard
+          ehr={vimSDK?.sessionContext?.ehrType ?? null}
+          sdkVersion={manifest?.version || "unknown"}
+          manifestVersion={vimSDK?.manifestVersion ?? null}
+          inContext={[...openEntityTypes].map((e) => entityLabel(manifest, e))}
+        />
         {/* Read from EHR: subscriptions, what they delivered, and on-demand API reads */}
         <div className="section-collapsible">
           {sectionHeader(
@@ -1921,6 +1986,8 @@ function AppPageContent() {
             readCollapsed,
             () => setReadCollapsed(!readCollapsed),
             "/docs/app-sdk/ehr-connectivity/",
+            <ReadIcon size={12} />,
+            "What the EHR tells your app, live and on demand",
           )}
           <div className={`section-content ${readCollapsed ? "collapsed" : ""}`}>
             <div className="section-inner">
@@ -1931,7 +1998,7 @@ function AppPageContent() {
                   "/docs/app-sdk/ehr-connectivity/",
                   subscriptionTotal > 0 &&
                     turnAllToggle(
-                      allWorkflowOn && allContextsOn,
+                      allSubscriptionsOn,
                       (on) => {
                         setAllWorkflowEvents(on);
                         setAllContextEvents(on);
@@ -2010,10 +2077,9 @@ function AppPageContent() {
                   aria-expanded={!eventPreviewCollapsed}
                   onClick={() => setEventPreviewCollapsed(!eventPreviewCollapsed)}
                 >
-                  <span className="entity-card-chevron" style={{ transform: eventPreviewCollapsed ? "none" : "rotate(90deg)" }}>
-                    ▶
-                  </span>
-                  Event preview ({eventPreviews.length + contextChanges.length})
+                  Event preview
+                  <CountBadge count={String(eventPreviews.length + contextChanges.length)} complete={false} />
+                  <span className={`subsection-chevron${eventPreviewCollapsed ? "" : " open"}`} aria-hidden="true" />
                 </button>
                 {!eventPreviewCollapsed && (
                   <div className="subsection-body">
@@ -2031,7 +2097,7 @@ function AppPageContent() {
                           />
                         ),
                       }))}
-                      emptyText="No events yet. Open a patient, encounter, order or referral in the EHR."
+                      emptyText="Open a patient, encounter, order or referral in the EHR."
                       onClear={() => setEventPreviews([])}
                       startCollapsed
                     />
@@ -2058,7 +2124,7 @@ function AppPageContent() {
                             />
                           ),
                       }))}
-                      emptyText="No context changes yet. Open a patient, encounter, order or referral in the EHR."
+                      emptyText="Open a patient, encounter, order or referral in the EHR."
                       onClear={() => setContextChanges([])}
                     />
                   </div>
@@ -2075,9 +2141,7 @@ function AppPageContent() {
                     aria-expanded={!apiReadsCollapsed}
                     onClick={() => setApiReadsCollapsed(!apiReadsCollapsed)}
                   >
-                    <span className="entity-card-chevron" style={{ transform: apiReadsCollapsed ? "none" : "rotate(90deg)" }}>
-                      ▶
-                    </span>
+                    <span className={`disclosure-chevron${!apiReadsCollapsed ? " open" : ""}`} aria-hidden="true" />
                     API reads ({availableReadOps.length}/{readOps.length})
                   </button>
                   {readGroupsExpanded && !apiReadsCollapsed && (
@@ -2119,6 +2183,8 @@ function AppPageContent() {
             activeUpdatersCollapsed,
             () => setActiveUpdatersCollapsed(!activeUpdatersCollapsed),
             "/docs/app-sdk/ehr-connectivity/writeback/",
+            <WriteIcon size={12} />,
+            "Send notes and codes back into the chart",
           )}
           <div className={`section-content ${activeUpdatersCollapsed ? "collapsed" : ""}`}>
             <div className="section-inner">
@@ -2147,7 +2213,7 @@ function AppPageContent() {
                         : `Writes the ${writableWithValue.length} field(s) writable in the current context`}>
                     <button
                       type="button"
-                      className="btn btn-primary btn-sm"
+                      className="btn btn-secondary btn-sm"
                       onClick={() => void updateAllUpdaters()}
                       disabled={updatingAll || writableWithValue.length === 0}
                     >
@@ -2198,7 +2264,7 @@ function AppPageContent() {
                                   : `Write the ${entityWithValue.length} ${entityType} field(s) that have a value`}>
                             <button
                               type="button"
-                              className="btn btn-primary btn-sm"
+                              className="btn btn-secondary btn-sm"
                               onClick={() => void updateAllUpdaters(entityType)}
                               disabled={updatingAll || entityWithValue.length === 0}
                             >
@@ -2242,22 +2308,12 @@ function AppPageContent() {
                                           : "Writable now"}
                                     </div>
                                   </div>
-                                  <div
-                                    className={`toggle-switch ${reason && !isActive ? "toggle-blocked" : ""}`}
-                                    aria-disabled={reason !== null && !isActive}
-                                    onClick={() => {
-                                      if (reason === null || isActive) {
-                                        toggleUpdater(upd.entityType, upd.fieldPath, "");
-                                      }
-                                    }}
-                                  >
-                                    <div className={`toggle-track ${isActive ? "active" : ""}`}>
-                                      <div className="toggle-thumb" />
-                                    </div>
-                                    <span className="toggle-label">
-                                      {isActive ? "ON" : reason ? "N/A" : "OFF"}
-                                    </span>
-                                  </div>
+                                  <Toggle
+                                    on={isActive}
+                                    disabled={reason !== null && !isActive}
+                                    onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
+                                    label={`Write ${upd.fieldPath}`}
+                                  />
                                 </div>
                               );
                             })}
@@ -2347,7 +2403,7 @@ function AppPageContent() {
                               <button
                                 onClick={() => executeUpdate(updater)}
                                 disabled={!detected}
-                                className="btn btn-primary btn-sm update-row-submit"
+                                className="btn btn-secondary btn-sm update-row-submit"
                               >
                                 Update
                               </button>
@@ -2387,23 +2443,14 @@ function AppPageContent() {
 
         {/* Hub Controls */}
         <div className="section-collapsible">
-          <div
-            className="section-header"
-            onClick={() => setHubControlsCollapsed(!hubControlsCollapsed)}
-          >
-            <div
-              className="section-chevron"
-              style={{
-                transform: hubControlsCollapsed
-                  ? "rotate(0deg)"
-                  : "rotate(90deg)",
-              }}
-            >
-              ▶
-            </div>
-            <h2 className="section-title">Hub Controls</h2>
-            <DocsLink path="/docs/app-sdk/vim-hub/" />
-          </div>
+          {sectionHeader(
+            "Hub Controls",
+            hubControlsCollapsed,
+            () => setHubControlsCollapsed(!hubControlsCollapsed),
+            "/docs/app-sdk/vim-hub/",
+            <BellIcon size={12} />,
+            "Your app's icon, badges and notifications in the hub",
+          )}
           <div
             className={`section-content ${hubControlsCollapsed ? "collapsed" : ""}`}
           >
@@ -2445,7 +2492,7 @@ function AppPageContent() {
                   />
                   <button
                     onClick={hubApplyTooltip}
-                    className="btn btn-primary btn-sm"
+                    className="btn btn-secondary btn-sm"
                   >
                     Set
                   </button>
@@ -2475,19 +2522,13 @@ function AppPageContent() {
                   </InfoTip>
                 </div>
                 <div className="input-group">
-                  <div
-                    className="toggle-switch"
-                    onClick={hubToggleNotificationBadge}
+                  <Toggle
+                    on={notificationBadgeActive}
+                    onChange={hubToggleNotificationBadge}
+                    label="Show notification badge"
                   >
-                    <div
-                      className={`toggle-track ${notificationBadgeActive ? "active" : ""}`}
-                    >
-                      <div className="toggle-thumb" />
-                    </div>
-                    <span className="toggle-label">
-                      {notificationBadgeActive ? "ON" : "OFF"}
-                    </span>
-                  </div>
+                    {notificationBadgeActive ? "Showing" : "Hidden"}
+                  </Toggle>
                   <input
                     type="number"
                     value={notificationBadgeCount}
@@ -2504,36 +2545,16 @@ function AppPageContent() {
               <div className="demo-card-section demo-badge-row">
                 <div>
                   <div className="demo-card-label">Microphone Badge</div>
-                  <div
-                    className="toggle-switch"
-                    onClick={hubToggleMicrophoneBadge}
-                  >
-                    <div
-                      className={`toggle-track ${microphoneBadgeActive ? "active" : ""}`}
-                    >
-                      <div className="toggle-thumb" />
-                    </div>
-                    <span className="toggle-label">
-                      {microphoneBadgeActive ? "ON" : "OFF"}
-                    </span>
-                  </div>
+                  <Toggle on={microphoneBadgeActive} onChange={hubToggleMicrophoneBadge} label="Show microphone badge">
+                    {microphoneBadgeActive ? "Showing" : "Hidden"}
+                  </Toggle>
                 </div>
 
                 <div>
                   <div className="demo-card-label">Camera Badge</div>
-                  <div
-                    className="toggle-switch"
-                    onClick={hubToggleCameraBadge}
-                  >
-                    <div
-                      className={`toggle-track ${cameraBadgeActive ? "active" : ""}`}
-                    >
-                      <div className="toggle-thumb" />
-                    </div>
-                    <span className="toggle-label">
-                      {cameraBadgeActive ? "ON" : "OFF"}
-                    </span>
-                  </div>
+                  <Toggle on={cameraBadgeActive} onChange={hubToggleCameraBadge} label="Show camera badge">
+                    {cameraBadgeActive ? "Showing" : "Hidden"}
+                  </Toggle>
                 </div>
               </div>
 
@@ -2559,7 +2580,7 @@ function AppPageContent() {
                   />
                   <button
                     onClick={hubShowPushNotification}
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     style={{ flex: 1 }}
                   >
                     Show
@@ -2579,13 +2600,7 @@ function AppPageContent() {
                 </div>
                 {/* Fire N at once */}
                 <div style={{ marginBottom: "var(--space-sm)" }}>
-                  <div
-                    style={{
-                      fontSize: "var(--text-xs)",
-                      color: "var(--color-text-muted)",
-                      marginBottom: "var(--space-xs)",
-                    }}
-                  >
+                  <div className="field-hint">
                     Fire burst (timeout 30s each)
                   </div>
                   <div className="btn-group">
@@ -2593,7 +2608,7 @@ function AppPageContent() {
                       <button
                         key={n}
                         onClick={() => hubFireCount(n)}
-                        className="btn btn-sm btn-primary"
+                        className="btn btn-sm btn-secondary"
                       >
                         ×{n}
                       </button>
@@ -2607,41 +2622,18 @@ function AppPageContent() {
                   </div>
                 </div>
                 {/* Individual presets */}
-                <div
-                  style={{
-                    fontSize: "var(--text-xs)",
-                    color: "var(--color-text-muted)",
-                    marginBottom: "var(--space-xs)",
-                  }}
-                >
+                <div className="field-hint">
                   Individual presets
                 </div>
-                <div
-                  style={{
-                    display: "flex",
-                    flexDirection: "column",
-                    gap: "var(--space-xs)",
-                  }}
-                >
+                <div className="preset-list">
                   {MULTI_NOTIF_PRESETS.map((preset, i) => (
                     <button
                       key={i}
                       onClick={() => hubFirePreset(i)}
-                      className="btn btn-sm"
-                      style={{
-                        textAlign: "left",
-                        justifyContent: "flex-start",
-                      }}
+                      className="btn btn-sm preset-row"
                     >
-                      <span
-                        style={{
-                          opacity: 0.5,
-                          marginRight: "6px",
-                          fontFamily: "monospace",
-                        }}
-                      >
-                        {i + 1}
-                      </span>
+                      <span className="preset-index">{i + 1}</span>
+                      <span className={`preset-dot preset-dot-${"type" in preset ? preset.type : "plain"}`} aria-hidden="true" />
                       {preset.label}
                     </button>
                   ))}
@@ -2684,66 +2676,42 @@ function AppPageContent() {
                 {!appStateSubscribed ? (
                   <button
                     onClick={hubSubscribeAppState}
-                    className="btn btn-primary"
+                    className="btn btn-secondary"
                     style={{ width: "100%" }}
                   >
                     Subscribe
                   </button>
                 ) : (
                   <>
-                    <button
-                      onClick={hubUnsubscribeAppState}
-                      className="btn"
-                      style={{ width: "100%", marginBottom: "var(--space-sm)" }}
-                    >
-                      Unsubscribe
-                    </button>
-                    <div className="updater-card">
-                      <div style={{ marginBottom: "var(--space-xs)" }}>
-                        Status:{" "}
-                        <strong>
+                    <div className="status-panel">
+                      <div className="status-panel-head">
+                        <span
+                          className={`status-line ${appStateIsOpen === null ? "is-waiting" : appStateIsOpen ? "is-live" : "is-off"}`}
+                          aria-live="polite"
+                        >
+                          <span className="status-line-dot" aria-hidden="true" />
                           {appStateIsOpen === null
-                            ? "Unknown"
+                            ? "Waiting for a change"
                             : appStateIsOpen
-                              ? "OPEN"
-                              : "CLOSED"}
-                        </strong>
+                              ? "App is open"
+                              : "App is closed"}
+                        </span>
+                        <button onClick={hubUnsubscribeAppState} className="btn btn-sm">
+                          Unsubscribe
+                        </button>
                       </div>
                       {appStateLog.length > 0 && (
-                        <div
-                          style={{
-                            marginTop: "var(--space-sm)",
-                          }}
-                        >
+                        <ol className="status-history">
                           {appStateLog.map((entry, i) => (
-                            <div key={i} className="log-entry">
-                              <span className="log-timestamp">
-                                {entry.timestamp}
+                            <li key={i} className="status-history-row">
+                              <span className="log-timestamp">{entry.timestamp}</span>
+                              <span className={`badge ${entry.isOpen ? "badge-success" : "badge-neutral"}`}>
+                                {entry.isOpen ? "Opened" : "Closed"}
                               </span>
-                              <span
-                                style={{
-                                  color: entry.isOpen
-                                    ? "var(--color-success)"
-                                    : "var(--color-text-muted)",
-                                  fontWeight: "var(--font-semibold)",
-                                }}
-                              >
-                                {entry.isOpen ? "OPENED" : "CLOSED"}
-                              </span>
-                              {entry.trigger && (
-                                <span
-                                  style={{
-                                    color: "var(--color-text-muted)",
-                                    fontSize: "var(--text-xs)",
-                                  }}
-                                >
-                                  {" "}
-                                  ({entry.trigger})
-                                </span>
-                              )}
-                            </div>
+                              {entry.trigger && <span className="log-trigger">{entry.trigger}</span>}
+                            </li>
                           ))}
-                        </div>
+                        </ol>
                       )}
                     </div>
                   </>
@@ -2791,7 +2759,7 @@ function AppPageContent() {
                         Read current
                       </button>
                       {!colorSchemeSubscribed ? (
-                        <button onClick={hubSubscribeColorScheme} className="btn btn-primary" style={{ flex: 1 }}>
+                        <button onClick={hubSubscribeColorScheme} className="btn btn-secondary" style={{ flex: 1 }}>
                           Subscribe
                         </button>
                       ) : (
@@ -2835,41 +2803,52 @@ function AppPageContent() {
         />
 
         <div className="section-collapsible">
-          <div className="section-header" onClick={() => setWorkerCollapsed(!workerCollapsed)}>
-            <div
-              className="section-chevron"
-              style={{ transform: workerCollapsed ? "rotate(0deg)" : "rotate(90deg)" }}
-            >
-              ▶
-            </div>
-            <h2 className="section-title">Worker App</h2>
-            <DocsLink path="/docs/app-sdk/worker-apps/" />
-          </div>
+          {sectionHeader(
+            "Worker App",
+            workerCollapsed,
+            () => setWorkerCollapsed(!workerCollapsed),
+            "/docs/app-sdk/worker-apps/",
+            <CpuIcon size={12} />,
+            "Work that keeps running when the panel is closed",
+          )}
           <div className={`section-content ${workerCollapsed ? "collapsed" : ""}`}>
             <div className="section-inner">
-              <div className="worker-strip-main">
-                <span className={`pill ${appEventsSupported ? "pill-ok" : "pill-muted"}`}>
-                  appEvents {appEventsSupported ? "supported" : "not supported"}
-                </span>
-                {workerData ? (
-                  <dl className="worker-fields">
-                    <dt>Refresh #</dt>
-                    <dd>{workerData.refreshCount}</dd>
-                    <dt>Generated</dt>
-                    <dd>{new Date(workerData.generatedAt).toLocaleTimeString()}</dd>
-                    <dt>Token</dt>
-                    <dd>{workerData.token}</dd>
+              <div className="worker-panel">
+                <div className="worker-panel-head">
+                  <span className={`worker-state ${workerData ? "is-live" : "is-waiting"}`} aria-live="polite">
+                    <span className="worker-state-dot" aria-hidden="true" />
+                    {workerData ? "Worker is running" : "Waiting for the Worker…"}
+                  </span>
+                  <button
+                    onClick={refreshWorkerData}
+                    disabled={!appEventsSupported}
+                    className="btn btn-secondary btn-sm"
+                  >
+                    Refresh
+                  </button>
+                </div>
+                {workerData && (
+                  <dl className="kv-list worker-kv">
+                    <div className="kv-row">
+                      <dt className="kv-label">Refresh #</dt>
+                      <dd className="kv-row-value kv-value">{workerData.refreshCount}</dd>
+                    </div>
+                    <div className="kv-row">
+                      <dt className="kv-label">Generated</dt>
+                      <dd className="kv-row-value kv-value">{new Date(workerData.generatedAt).toLocaleTimeString()}</dd>
+                    </div>
+                    <div className="kv-row">
+                      <dt className="kv-label">Token</dt>
+                      <dd className="kv-row-value kv-value">{workerData.token}</dd>
+                    </div>
                   </dl>
-                ) : (
-                  <span className="worker-strip-summary">Waiting for the Worker…</span>
                 )}
-                <button
-                  onClick={refreshWorkerData}
-                  disabled={!appEventsSupported}
-                  className="btn btn-secondary btn-sm"
-                >
-                  Refresh
-                </button>
+                <div className="worker-panel-foot">
+                  <span className={`badge badge-dot ${appEventsSupported ? "badge-success" : "badge-neutral"}`}>
+                    appEvents {appEventsSupported ? "supported" : "not supported"}
+                  </span>
+                  {!appEventsSupported && <span className="field-hint">Refresh needs an extension that sends appEvents.</span>}
+                </div>
               </div>
             </div>
           </div>
@@ -2877,35 +2856,20 @@ function AppPageContent() {
 
         {/* Activity Log */}
         <div className="section-collapsible">
-          <div
-            className="section-header"
-            onClick={() => setActivityLogCollapsed(!activityLogCollapsed)}
-          >
-            <div
-              className="section-chevron"
-              style={{
-                transform: activityLogCollapsed
-                  ? "rotate(0deg)"
-                  : "rotate(90deg)",
-              }}
-            >
-              ▶
-            </div>
-            <h2 className="section-title">Activity Log ({logEntries.length})</h2>
-          </div>
+          {sectionHeader(
+            `Activity Log (${logEntries.length})`,
+            activityLogCollapsed,
+            () => setActivityLogCollapsed(!activityLogCollapsed),
+            undefined,
+            <ActivityIcon size={12} />,
+            "Everything the SDK did, newest first",
+          )}
           <div
             className={`section-content ${activityLogCollapsed ? "collapsed" : ""}`}
           >
             <div className="section-inner">
-              <div
-                style={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  marginBottom: "var(--space-lg)",
-                }}
-              >
-                <div style={{ color: "var(--color-text-secondary)" }}>
+              <div className="log-toolbar">
+                <div className="field-hint">
                   {logEntries.length} log entr
                   {logEntries.length !== 1 ? "ies" : "y"}
                 </div>
@@ -2976,7 +2940,7 @@ function AppPageContent() {
             <div className="redirect-actions">
               <button
                 type="button"
-                className="btn btn-gradient btn-sm"
+                className="btn btn-primary btn-sm"
                 onClick={() => copyRedirect("command", DEMO_APP_FORK_COMMAND)}
               >
                 {redirectCopy?.target === "command" && redirectCopy.ok
@@ -2987,7 +2951,7 @@ function AppPageContent() {
                 href={redirectUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-gradient-outline btn-sm"
+                className="btn btn-secondary btn-sm"
                 onClick={() => addLog("Link: opening the template repo (target=_blank)", "info")}
               >
                 Open ↗
@@ -3014,7 +2978,7 @@ export default function AppPage() {
   return (
     <Suspense
       fallback={
-        <BrandLoader />
+        <BlueprintLoader />
       }
     >
       <AppPageContent />
