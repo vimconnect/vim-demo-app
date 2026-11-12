@@ -26,7 +26,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@vimconnect/app-sdk": "0.8.0",
+    "@vimconnect/app-sdk": "0.9.0",
     "next": "^16.2.12",
     "react": "catalog:",
     "react-dom": "catalog:"
