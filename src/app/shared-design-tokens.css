@@ -200,7 +200,13 @@
   --radius-md: 8px;
   --radius-lg: 10px;
   --radius-xl: 12px;
+  --radius-2xl: 16px;
   --radius-full: 9999px;
+
+  /* App icon plate: the fixed white canvas a marketplace app's icon sits on, in
+     both themes. App icons are flat art drawn for a light backdrop; the DS rule
+     is to show them as-is, never inverted or recoloured. */
+  --app-icon-plate: #ffffff;
 
   /* Spacing */
   --space-xs: 4px;
