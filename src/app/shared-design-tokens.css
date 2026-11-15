@@ -277,6 +277,7 @@
   /* Z-index */
   --z-dropdown: 1000;
   --z-modal: 2000;
+  --z-popover: 2100;
   --z-tooltip: 3000;
 
   /* Glass Surface Tokens */
@@ -315,35 +316,7 @@
   --glass-highlight: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.0) 60%);
   --glass-specular:  linear-gradient(to bottom, rgba(255, 255, 255, 0.10) 0%, rgba(255, 255, 255, 0.0) 100%);
 
-  /* Empty-state illustration recipe — the shared visual language behind the
-     Vim brand design system's "Empty State Blueprints" (12 animated SVG
-     illustrations for product-UI empty states; not for email or decks,
-     which stay light). Extracted as reusable tokens, not the 12 SVGs
-     themselves — a future illustration built to this recipe should read as
-     part of the same set without redrawing it by hand each time. Not
-     redefined under `body.light-mode`: every blueprint's dark-navy ground is
-     a deliberate, fixed part of its own visual identity (the same "this
-     surface doesn't swap with the app's theme" reasoning already applied to
-     a couple of other always-dark surfaces elsewhere in the console), not
-     something that should turn light along with the rest of the page.
-     `--empty-state-accent` is deliberately its own token rather than a bare
-     alias for `--color-cyan` — the two happen to share a value (#6CCDEF)
-     today because both trace back to the same brand cyan, but they answer
-     different questions (this illustration's own ink vs. the app's
-     interactive-accent color) and shouldn't be assumed to move together. */
-  --empty-state-bg-start: #0C2038;
-  --empty-state-bg-mid:   #06121F;
-  --empty-state-bg-end:   #030A14;
-  --empty-state-grid-line:   rgba(108, 205, 239, 0.08);
-  --empty-state-frame-line:  rgba(108, 205, 239, 0.26);
-  --empty-state-glass-start: rgba(108, 205, 239, 0.30);
-  --empty-state-glass-end:   rgba(108, 205, 239, 0.04);
-  --empty-state-accent:      #6CCDEF;
-  --empty-state-ink-muted:   rgba(160, 190, 214, 0.7);
-  /* Ambient motion durations — each blueprint's own float/drift/pulse/spin
-     loop picks one of these three bands rather than inventing its own
-     timing; all use a spline close enough to standard `ease-in-out` to just
-     use that keyword. */
+  /* Empty-state blueprint motion: each blueprint's loop uses one of these three durations. */
   --empty-state-motion-slow: 48s;
   --empty-state-motion-med:  17s;
   --empty-state-motion-fast: 6s;
