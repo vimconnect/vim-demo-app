@@ -10,6 +10,7 @@ import { CollapsibleCard } from "@/components/CollapsibleCard";
 import { EventPreviewList } from "@/components/EventPreviewList";
 import { DocsLink, readDocsHref, writeDocsHref } from "@/components/DocsLink";
 import { DocsView } from "@/components/DocsView";
+import { advanceScroll, type ScrollTracker } from "@/lib/hide-on-scroll";
 import { ManifestView } from "@/components/ManifestView";
 import { Breadcrumb, GithubIcon, NavTabs, type DemoView } from "@/components/NavTabs";
 import { getDeveloperDocsUrl, getEnvironment } from "@/lib/sdk-config";
@@ -227,6 +228,7 @@ function AppPageContent() {
   );
   const [error, setError] = useState<ErrorDetail | null>(null);
   const [vimSDK, setVimSDK] = useState<VimSDK | null>(null);
+  const topbarRef = useRef<HTMLDivElement | null>(null);
   const [manifest, setManifest] = useState<AppManifest | null>(null);
   // Every view shares this one initialized SDK session and its subscriptions.
   const [view, setView] = useState<DemoView>("main");
@@ -465,6 +467,7 @@ function AppPageContent() {
       } as Parameters<typeof initVimSDK>[0] & { __overrideEnv?: "staging" });
 
       setVimSDK(sdk);
+      sdk.hub.setActivationStatus("ENABLED");
       setStatus("connected");
       addLog("SDK initialized successfully", "success");
 
@@ -578,6 +581,29 @@ function AppPageContent() {
       addLog(`appEvents.send failed: ${err.message}`, "error");
     }
   }
+
+  useEffect(() => {
+    const bar = topbarRef.current;
+    if (!bar) return;
+    let tracker: ScrollTracker = { anchorY: window.scrollY, visible: true };
+    const setVisible = (visible: boolean) => {
+      tracker = { ...tracker, visible };
+      bar.dataset.hidden = visible ? "false" : "true";
+    };
+    const onScroll = () => {
+      const next = advanceScroll(tracker, window.scrollY);
+      const changed = next.visible !== tracker.visible;
+      tracker = next;
+      if (changed) bar.dataset.hidden = next.visible ? "false" : "true";
+    };
+    const onFocusIn = () => setVisible(true);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    bar.addEventListener("focusin", onFocusIn);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      bar.removeEventListener("focusin", onFocusIn);
+    };
+  }, [vimSDK, manifest]);
 
   // Hub Control Functions
   function hubSetActivationStatus(
@@ -1945,7 +1971,7 @@ function AppPageContent() {
     <>
       {vimSDK && manifest && (
         <>
-          <div className="app-topbar">
+          <div className="app-topbar" ref={topbarRef}>
             <NavTabs view={view} onGetCode={() => setRedirectUrl(DEMO_APP_REPO_URL)} onNavigate={setView} />
             <InPageSearch rootSelector="#demo-search-root" open={searchOpen} onOpenChange={setSearchOpen} />
           </div>

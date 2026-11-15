@@ -17,7 +17,7 @@
   /* No monospace anywhere: DS data labels, IDs and payloads are Plus Jakarta Sans. */
   --font-mono: var(--font-sans);
 
-  --nav-tabs-height: 44px;
+  --nav-tabs-height: 36px;
   --status-banner-height: 28px;
 }
 
@@ -107,6 +107,17 @@ code {
   /* Solid, so content scrolling underneath doesn't show through */
   background: var(--color-bg-card);
   border-bottom: 1px solid var(--color-border-light);
+  transition: transform var(--transition-base);
+}
+
+.app-topbar[data-hidden="true"] {
+  transform: translateY(-100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .app-topbar {
+    transition: none;
+  }
 }
 
 .nav-tabs {

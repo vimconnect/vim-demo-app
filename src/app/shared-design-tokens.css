@@ -56,6 +56,10 @@
   --color-cyan-text: var(--color-cyan);
   --color-purple-text: var(--color-purple);
   --color-warning-text: var(--color-warning-light);
+  /* PrivateAppPill on its own amber fill — not --color-warning-text (tuned for plain grounds). */
+  --color-warning-pill-bg: color-mix(in srgb, var(--color-warning) 16%, transparent);
+  --color-warning-pill-border: color-mix(in srgb, var(--color-warning) 34%, transparent);
+  --color-warning-pill-fg: #f0b357;
   /* Error red for small marks (icons) that must read on either theme; the error twin of
      --color-warning-text. Light: --color-error-text-strong (#b91c1c). Added 2026-11-09 for Notice. */
   --color-error-text: var(--color-error-light);
@@ -350,6 +354,9 @@ body.light-mode {
   --color-cyan-text: var(--color-cyan-text-strong);
   --color-purple-text: var(--color-purple-dark);
   --color-warning-text: var(--color-warning-text-strong);
+  --color-warning-pill-bg: color-mix(in srgb, var(--color-warning) 14%, transparent);
+  --color-warning-pill-border: var(--color-warning-30);
+  --color-warning-pill-fg: var(--color-warning-text-strong);
   --color-error-text: var(--color-error-text-strong);
   --color-success-text: var(--color-success-dark);
 
