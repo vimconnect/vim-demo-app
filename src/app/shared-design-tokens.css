@@ -41,7 +41,7 @@
      its own 50%-opacity fill). 6.5:1 on white, 3.3:1 on --color-error-50. */
   --color-error-text-strong: #b91c1c;
 
-  /* Its green counterpart (vim-ai DS 1.0.73): --color-success and
+  /* Its green counterpart (vim-ai DS 1.0.74): --color-success and
      --color-success-light both fail contrast on white. 5.5:1 on white, 4.8:1 on
      a success badge's tint; the same 700 step as warning and error. Light-surface
      only: text that shows in both themes takes --color-success-text. */
