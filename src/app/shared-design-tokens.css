@@ -310,8 +310,7 @@
   /* The blue-tinted glow raised and floating surfaces use (DS Tooltip, card hover). Promoted
      from the Console's own tokens so shared components can use it; same values. */
   --shadow-card-hover: 0 20px 60px rgba(16, 171, 228, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
-  /* Same glow family, scaled down for small floating surfaces (the shared Tooltip).
-     Promoted from the Console's own tokens for the same reason as above. */
+  /* Scaled-down --shadow-card-hover for small floating surfaces (the shared Tooltip). */
   --shadow-card-hover-tight: 0 2px 10px rgba(16, 171, 228, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.14);
   --glass-shadow-float:  0 20px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 
