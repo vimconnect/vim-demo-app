@@ -5,10 +5,10 @@ import type { VimSDK } from '@vimconnect/app-sdk';
 import { SectionHeader } from '@/components/SectionHeader';
 import { Hint } from '@/components/Hint';
 import { Notice } from '@/components/Notice';
-import { ShieldCheckIcon } from '@/components/icons';
+import { ShieldCheck } from 'lucide-react';
 import { claimLabel, decodeJwtClaims, formatClaim } from '@/lib/jwt-claims';
 import { sessionContextRows } from '@/lib/session-context-rows';
-import { Button, Card, CopyButton, Tooltip } from '@vim-connect/ui';
+import { Button, Card, CopyButton, KeyValue, KeyValueList } from '@vim-connect/ui';
 
 type SessionContext = NonNullable<VimSDK['sessionContext']>;
 
@@ -31,23 +31,23 @@ function KvRows({
   className?: string;
 }) {
   return (
-    <dl className={`kv-list kv-list-compact ${className}`}>
+    <KeyValueList className={className}>
       {rows.map(({ label, hint, title, value }) => (
-        <div className="kv-row" key={title ?? label}>
-          <dt className="kv-label">
-            <Hint text={title}>
-              <span>{label}</span>
-            </Hint>
-            {hint && <span className="kv-hint">{hint}</span>}
-          </dt>
-          <Tooltip label={value} wrap>
-            <dd className="kv-row-value">
-              <span className="kv-value">{value}</span>
-            </dd>
-          </Tooltip>
-        </div>
+        <KeyValue
+          key={title ?? label}
+          label={
+            <>
+              <Hint text={title}>
+                <span>{label}</span>
+              </Hint>
+              {hint && <span className="kv-hint">{hint}</span>}
+            </>
+          }
+        >
+          {value}
+        </KeyValue>
       ))}
-    </dl>
+    </KeyValueList>
   );
 }
 
@@ -88,23 +88,21 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
         collapsed={collapsed}
         onToggle={() => setCollapsed(!collapsed)}
         docsHref="/docs/app-sdk/authentication/"
-        icon={<ShieldCheckIcon size={12} />}
+        icon={<ShieldCheck size={12} />}
         subtitle="Who is signed in, and where this session runs"
       />
       <div className={`section-content ${collapsed ? 'collapsed' : ''}`}>
         <div className="section-inner">
           {sessionContext ? (
             <Card className="session-card">
-              <dl className="session-ids">
+              <KeyValueList className="session-ids">
                 {rows.map(({ key, label, value }) => (
-                  <div className="session-id" key={key}>
-                    <dt>{label}</dt>
-                    <Tooltip label={value} wrap>
-                      <dd>{value}</dd>
-                    </Tooltip>
-                  </div>
+                  // `session-id` has no styles: e2e helpers find a row by it.
+                  <KeyValue key={key} className="session-id" label={label}>
+                    {value}
+                  </KeyValue>
                 ))}
-              </dl>
+              </KeyValueList>
             </Card>
           ) : (
             <div className="empty-state" style={{ margin: 0 }}>

@@ -1,5 +1,8 @@
 'use client';
 
+import { ArrowUpRight } from 'lucide-react';
+import { TextLink } from '@vim-connect/ui';
+
 const DOCS_ORIGIN = 'https://developer-docs.getvim.ai';
 
 /** Matches `anchorId()` in the docs site, whose ids are a published contract. */
@@ -14,7 +17,7 @@ export const writeDocsHref = (entityType: string) =>
   `/docs/app-sdk/api-reference/entity-types#type-${slug(entityType)}`;
 
 /**
- * A new-tab link to the developer docs.
+ * A new-tab link to the developer docs, on the shared TextLink.
  *
  * `stopPropagation` keeps the click off an enclosing collapsible header: the SDK's
  * link gate cancels the event before that header would see it, but only while the
@@ -22,14 +25,15 @@ export const writeDocsHref = (entityType: string) =>
  */
 export function DocsLink({ path, label = 'Learn' }: { path: string; label?: string }) {
   return (
-    <a
+    <TextLink
       className="docs-link"
       href={`${DOCS_ORIGIN}${path}`}
       target="_blank"
       rel="noopener noreferrer"
       onClick={(e) => e.stopPropagation()}
     >
-      {label} ↗
-    </a>
+      {label}
+      <ArrowUpRight aria-hidden="true" />
+    </TextLink>
   );
 }

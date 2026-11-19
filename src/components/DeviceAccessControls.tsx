@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { Button } from '@vim-connect/ui';
+import { Button, ProgressBar } from '@vim-connect/ui';
 
 type Device = 'microphone' | 'camera';
 type LogType = 'info' | 'success' | 'error';
@@ -65,9 +65,7 @@ function MicLevel({ stream }: { stream: MediaStream }) {
     };
   }, [stream]);
   return (
-    <div className="mic-level" role="meter" aria-label="Microphone level" aria-valuemin={0} aria-valuemax={100} aria-valuenow={Math.round(level * 100)}>
-      <div className="mic-level-fill" style={{ transform: `scaleX(${level})` }} />
-    </div>
+    <ProgressBar meter size="sm" value={Math.round(level * 100)} aria-label="Microphone level" />
   );
 }
 

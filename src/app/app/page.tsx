@@ -52,7 +52,7 @@ import { Toggle } from "@/components/Toggle";
 import { CountBadge } from "@/components/CountBadge";
 import { SectionHeader } from "@/components/SectionHeader";
 import { OverviewCard } from "@/components/OverviewCard";
-import { ActivityIcon, BellIcon, CpuIcon, ReadIcon, WriteIcon } from "@/components/icons";
+import { Activity, ArrowDownToLine, ArrowUpFromLine, Bell, Cpu, PenLine, Radio } from "lucide-react";
 import { formatManifestVersion } from "@/lib/manifest-version-label";
 import { DeviceAccessControls } from "@/components/DeviceAccessControls";
 import { InPageSearch } from "@/components/InPageSearch";
@@ -68,7 +68,7 @@ import {
   type AppThemeChoice,
   type ColorScheme,
 } from "@/lib/color-scheme";
-import { Accordion, AccordionItem, Badge, Button, buttonVariants, Card, CopyButton, Input, Modal, SegmentedControl, StatusDot, TabPanel, Tooltip } from "@vim-connect/ui";
+import { Accordion, AccordionItem, Badge, Button, Card, CopyButton, Input, KeyValue, KeyValueList, List, ListRow, Modal, SegmentedControl, StatusDot, TabPanel, Tooltip, buttonVariants } from "@vim-connect/ui";
 
 type LogEntry = {
   timestamp: string;
@@ -1925,18 +1925,25 @@ function AppPageContent() {
     deprecation: string | null = null,
     unfiredHere = false,
   ) => (
-    <div key={key} className={`event-item ${subscriptionRefusals.has(key) || unfiredHere ? "updater-unavailable" : ""}`}>
-      <div className="event-item-text">
-        <div className="event-name">
-          <span className="event-name-label">{label}</span>
+    // `event-item` / `event-name-label` have no styles: e2e helpers find a row by them.
+    <ListRow
+      key={key}
+      className={`event-item ${subscriptionRefusals.has(key) || unfiredHere ? "updater-unavailable" : ""}`}
+      icon={<Radio />}
+      title={<span className="event-name-label">{label}</span>}
+      badge={
+        <>
           {description && <InfoTip label={`About ${label}`}>{description}</InfoTip>}
           <DeprecatedTag note={deprecation} />
-        </div>
-        {unfiredHere && <div className="updater-meta">This EHR does not fire this event</div>}
-        {subscriptionRefusals.has(key) && <div className="updater-meta">{subscriptionRefusals.get(key)}</div>}
-      </div>
-      <Toggle on={on} onChange={onToggle} label={`Subscribe to ${label}`} />
-    </div>
+        </>
+      }
+      meta={
+        [unfiredHere ? "This EHR does not fire this event" : null, subscriptionRefusals.get(key) ?? null]
+          .filter(Boolean)
+          .join(" · ") || undefined
+      }
+      actions={<Toggle on={on} onChange={onToggle} label={`Subscribe to ${label}`} />}
+    />
   );
 
   /** One disclosure row inside a section: Subscriptions and its event lists. The body mounts only while open. */
@@ -2137,7 +2144,7 @@ function AppPageContent() {
               readCollapsed,
               () => setReadCollapsed(!readCollapsed),
               "/docs/app-sdk/ehr-connectivity/",
-              <ReadIcon size={12} />,
+              <ArrowDownToLine size={12} />,
               "What the EHR tells your app, live and on demand",
             )}
             <div className={`section-content ${readCollapsed ? "collapsed" : ""}`}>
@@ -2162,7 +2169,7 @@ function AppPageContent() {
                         "__workflow",
                         "/docs/app-sdk/ehr-connectivity/workflow-events/",
                         supportedEvents.length > 0 && turnAllToggle(allWorkflowOn, setAllWorkflowEvents, "workflow events"),
-                        <div className="event-list">
+                        <List className="event-list">
                           {supportedEvents.length === 0 ? (
                             <div className="empty-state">No workflow events available</div>
                           ) : (
@@ -2178,14 +2185,14 @@ function AppPageContent() {
                               ),
                             )
                           )}
-                        </div>
+                        </List>
                       )}
                       {subItem(
                         `Context events (${availableContexts.length}/${supportedContexts.length})`,
                         "__context",
                         "/docs/app-sdk/ehr-connectivity/context/",
                         supportedContexts.length > 0 && turnAllToggle(allContextsOn, setAllContextEvents, "context events"),
-                        <div className="event-list">
+                        <List className="event-list">
                           {supportedContexts.length === 0 ? (
                             <div className="empty-state">No context events available</div>
                           ) : (
@@ -2202,7 +2209,7 @@ function AppPageContent() {
                               ),
                             )
                           )}
-                        </div>
+                        </List>
                       )}
                     </Accordion>,
                   )}
@@ -2317,7 +2324,7 @@ function AppPageContent() {
               activeUpdatersCollapsed,
               () => setActiveUpdatersCollapsed(!activeUpdatersCollapsed),
               "/docs/app-sdk/ehr-connectivity/writeback/",
-              <WriteIcon size={12} />,
+              <ArrowUpFromLine size={12} />,
               "Send notes and codes back into the chart",
             )}
             <div className={`section-content ${activeUpdatersCollapsed ? "collapsed" : ""}`}>
@@ -2423,40 +2430,40 @@ function AppPageContent() {
                               expanded={expandedCards.has(`__fields:${entityType}`)}
                               onToggle={() => toggleCard(`__fields:${entityType}`)}
                             >
-                              <div className="event-list">
+                              <List className="event-list">
                                 {entries.map((upd) => {
                                   const reason = unavailableReasons.get(`${upd.entityType}:${upd.fieldPath}`) ?? null;
                                   const isActive = isUpdaterOn(upd);
                                   return (
-                                    <div
+                                    <ListRow
                                       key={`${upd.entityType}-${upd.fieldPath}`}
                                       className={`event-item ${reason ? "updater-unavailable" : ""}`}
-                                    >
-                                      <div className="event-item-text">
+                                      icon={<PenLine />}
+                                      title={
                                         <Tooltip label={upd.fieldPath}>
-                                          <div className="event-name">
-                                            <span className="event-name-label">{upd.fieldPath}</span>
-                                            <DeprecatedTag note={fieldDeprecation(manifest, upd.entityType, upd.fieldPath)} />
-                                          </div>
+                                          <span className="event-name-label">{upd.fieldPath}</span>
                                         </Tooltip>
-                                        <div className="updater-meta">
-                                          {reason
-                                            ? unavailableReasonText(reason, upd.entityType, "write")
-                                            : upd.disruptive
-                                              ? "Requires permission"
-                                              : "Writable now"}
-                                        </div>
-                                      </div>
-                                      <Toggle
-                                        on={isActive}
-                                        disabled={reason !== null && !isActive}
-                                        onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
-                                        label={`Write ${upd.fieldPath}`}
-                                      />
-                                    </div>
+                                      }
+                                      badge={<DeprecatedTag note={fieldDeprecation(manifest, upd.entityType, upd.fieldPath)} />}
+                                      meta={
+                                        reason
+                                          ? unavailableReasonText(reason, upd.entityType, "write")
+                                          : upd.disruptive
+                                            ? "Requires permission"
+                                            : "Writable now"
+                                      }
+                                      actions={
+                                        <Toggle
+                                          on={isActive}
+                                          disabled={reason !== null && !isActive}
+                                          onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
+                                          label={`Write ${upd.fieldPath}`}
+                                        />
+                                      }
+                                    />
                                   );
                                 })}
-                              </div>
+                              </List>
                             </CollapsibleCard>
                           </Accordion>
                           {entityUpdaters.length === 0 && (
@@ -2600,7 +2607,7 @@ function AppPageContent() {
               hubControlsCollapsed,
               () => setHubControlsCollapsed(!hubControlsCollapsed),
               "/docs/app-sdk/vim-hub/",
-              <BellIcon size={12} />,
+              <Bell size={12} />,
               "Your app's icon, badges and notifications in the hub",
             )}
             <div
@@ -2946,7 +2953,7 @@ function AppPageContent() {
               workerCollapsed,
               () => setWorkerCollapsed(!workerCollapsed),
               "/docs/app-sdk/worker-apps/",
-              <CpuIcon size={12} />,
+              <Cpu size={12} />,
               "Work that keeps running when the panel is closed",
             )}
             <div className={`section-content ${workerCollapsed ? "collapsed" : ""}`}>
@@ -2967,20 +2974,11 @@ function AppPageContent() {
                     </Button>
                   </div>
                   {workerData && (
-                    <dl className="kv-list worker-kv">
-                      <div className="kv-row">
-                        <dt className="kv-label">Refresh #</dt>
-                        <dd className="kv-row-value kv-value">{workerData.refreshCount}</dd>
-                      </div>
-                      <div className="kv-row">
-                        <dt className="kv-label">Generated</dt>
-                        <dd className="kv-row-value kv-value">{new Date(workerData.generatedAt).toLocaleTimeString()}</dd>
-                      </div>
-                      <div className="kv-row">
-                        <dt className="kv-label">Token</dt>
-                        <dd className="kv-row-value kv-value">{workerData.token}</dd>
-                      </div>
-                    </dl>
+                    <KeyValueList className="worker-kv">
+                      <KeyValue label="Refresh #">{workerData.refreshCount}</KeyValue>
+                      <KeyValue label="Generated">{new Date(workerData.generatedAt).toLocaleTimeString()}</KeyValue>
+                      <KeyValue label="Token">{workerData.token}</KeyValue>
+                    </KeyValueList>
                   )}
                   <div className="worker-panel-foot">
                     <Badge variant={appEventsSupported ? "success" : "neutral"} dot>
@@ -3000,7 +2998,7 @@ function AppPageContent() {
               activityLogCollapsed,
               () => setActivityLogCollapsed(!activityLogCollapsed),
               undefined,
-              <ActivityIcon size={12} />,
+              <Activity size={12} />,
               "Everything the SDK did, newest first",
             )}
             <div

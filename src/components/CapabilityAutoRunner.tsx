@@ -50,7 +50,7 @@ import {
   type AutoRunnerCommand,
   type AutoRunnerStatus,
 } from '@/lib/offscreen-auto-runner-protocol';
-import { Badge, Button, Card, Input, SegmentedControl, Textarea } from '@vim-connect/ui';
+import { Badge, Button, Card, CollapsibleChipList, Input, PageHeader, SegmentedControl, Textarea } from '@vim-connect/ui';
 
 type OperationEntry = NonNullable<AppManifest['operations']>[number];
 
@@ -241,52 +241,62 @@ function AutoRunnerView({
   const missingWrites = useMemo(() => buildMissingOps(manifest).filter((o) => !o.isRead), [manifest]);
 
   const contextEntries = Object.values(contextStore);
+  const counts = [
+    { label: `${manifest.supportedEvents?.length ?? 0} events` },
+    { label: `${manifest.supportedContexts?.length ?? 0} contexts` },
+    { label: `${readOps.length} reads` },
+    { label: `${writeOps.length} writes` },
+    { label: `${writebackTargets.length} writeback fields` },
+    { label: `${contextEntries.length} in context`, live: true },
+  ];
 
   return (
     <div className="xp-container">
-      <header className="xp-header">
-        <div className="xp-header-main">
-          <h1>SDK Capability Auto-Runner</h1>
-          <p className="xp-subtitle">
-            {mode === 'app'
-              ? 'Subscribes to every event & context, and fires each read the instant the context supplies its inputs.'
-              : 'Does the same from inside the offscreen Worker App: the worker subscribes, fires the reads and runs every action, so whatever fails here is what a worker cannot do.'}
-          </p>
-        </div>
-        <div className="xp-header-side">
-          {onSwitchMode && (
-            <Button variant="secondary" size="sm" onClick={onSwitchMode}>
-              ← Classic demo
-            </Button>
-          )}
-          <SegmentedControl
-            ariaLabel="Where the runner executes"
-            value={mode}
-            onChange={onModeChange}
-            options={[
-              { value: 'app', label: 'In app' },
-              { value: 'offscreen', label: 'Offscreen', disabledReason: offscreenUnavailable ?? undefined },
-            ]}
-          />
-          <Badge variant="success" dot>
-            Connected · v{manifest.version ?? '?'}
-          </Badge>
-          <Toggle on={autoRunDisruptive} onChange={runner.setAutoRunDisruptive} label="Auto-run disruptive reads">
-            Auto-run disruptive reads
-          </Toggle>
-        </div>
-      </header>
+      <PageHeader
+        size="compact"
+        title="SDK Capability Auto-Runner"
+        subtitle={
+          mode === 'app'
+            ? 'Subscribes to every event & context, and fires each read the instant the context supplies its inputs.'
+            : 'Does the same from inside the offscreen Worker App: the worker subscribes, fires the reads and runs every action, so whatever fails here is what a worker cannot do.'
+        }
+        actions={
+          <>
+            {onSwitchMode && (
+              <Button variant="secondary" size="sm" onClick={onSwitchMode}>
+                ← Classic demo
+              </Button>
+            )}
+            <SegmentedControl
+              ariaLabel="Where the runner executes"
+              value={mode}
+              onChange={onModeChange}
+              options={[
+                { value: 'app', label: 'In app' },
+                { value: 'offscreen', label: 'Offscreen', disabledReason: offscreenUnavailable ?? undefined },
+              ]}
+            />
+            <Badge variant="success" dot>
+              Connected · v{manifest.version ?? '?'}
+            </Badge>
+            <Toggle on={autoRunDisruptive} onChange={runner.setAutoRunDisruptive} label="Auto-run disruptive reads">
+              Auto-run disruptive reads
+            </Toggle>
+          </>
+        }
+      />
 
       {notice}
 
-      <div className="xp-chips">
-        <span className="xp-chip">{manifest.supportedEvents?.length ?? 0} events</span>
-        <span className="xp-chip">{manifest.supportedContexts?.length ?? 0} contexts</span>
-        <span className="xp-chip">{readOps.length} reads</span>
-        <span className="xp-chip">{writeOps.length} writes</span>
-        <span className="xp-chip">{writebackTargets.length} writeback fields</span>
-        <span className="xp-chip xp-chip-live">{contextEntries.length} in context</span>
-      </div>
+      <CollapsibleChipList className="xp-chips" items={counts} limit={counts.length}>
+        {(shown) =>
+          shown.map((c) => (
+            <Badge key={c.label} size="sm" variant={c.live ? 'info' : 'neutral'}>
+              {c.label}
+            </Badge>
+          ))
+        }
+      </CollapsibleChipList>
 
       {/* Context */}
       <section className="xp-section">
@@ -592,11 +602,15 @@ function CompletenessBlock({ allFields, value }: { allFields: string[]; value: R
         {comp.missing.length > 0 && <span className="xp-complete-gap"> · {comp.missing.length} missing</span>}
       </div>
       {comp.missing.length > 0 && (
-        <div className="xp-missing-fields">
-          {comp.missing.map((f) => (
-            <span key={f} className="xp-missing-chip">{f}</span>
-          ))}
-        </div>
+        <CollapsibleChipList className="xp-missing-fields" items={comp.missing} limit={8}>
+          {(shown) =>
+            shown.map((f) => (
+              <Badge key={f} size="sm" variant="warning">
+                {f}
+              </Badge>
+            ))
+          }
+        </CollapsibleChipList>
       )}
       <RawOutput value={JSON.stringify(withMissingFields(allFields, value), null, 2)} label="entity + missing fields (null)" />
     </div>
@@ -608,14 +622,16 @@ function MissingOpsList({ ops }: { ops: RunnableOp[] }) {
   return (
     <div className="xp-missing-caps">
       <div className="xp-missing-caps-title">Not available in this EHR ({ops.length})</div>
-      <ul className="xp-missing-caps-list">
-        {ops.map((o) => (
-          <li key={o.key}>
-            <span className="xp-mono">{o.key}</span>
-            <span className="xp-dim"> {o.kind}{o.disruptive ? ' · disruptive' : ''}</span>
-          </li>
-        ))}
-      </ul>
+      <CollapsibleChipList items={ops} limit={8}>
+        {(shown) =>
+          shown.map((o) => (
+            <Badge key={o.key} size="sm" variant="warning">
+              {o.key} · {o.kind}
+              {o.disruptive ? ' · disruptive' : ''}
+            </Badge>
+          ))
+        }
+      </CollapsibleChipList>
     </div>
   );
 }

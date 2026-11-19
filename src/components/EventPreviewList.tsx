@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { RadioIcon } from '@/components/icons';
-import { AccordionItem, Button } from '@vim-connect/ui';
+import { Radio } from 'lucide-react';
+import { AccordionItem, Button, EmptyStateAccent, EmptyTab } from '@vim-connect/ui';
 
 export type PreviewEntry = {
   key: string | number;
@@ -97,17 +97,16 @@ export function EventPreviewList({
       {!collapsed && (
         <>
           {entries.length === 0 ? (
-            <div className="empty-tab">
-              <p className="empty-tab-title">
-                <span className="icon-tile icon-tile--heading" aria-hidden="true">
-                  <RadioIcon size={12} />
-                </span>
-                <span>
-                  No {label.toLowerCase()} <span className="empty-tab-accent">yet</span>
-                </span>
-              </p>
-              <p className="empty-tab-body">{emptyText}</p>
-            </div>
+            <EmptyTab
+              bare
+              icon={Radio}
+              title={
+                <>
+                  No {label.toLowerCase()} <EmptyStateAccent>yet</EmptyStateAccent>
+                </>
+              }
+              body={emptyText}
+            />
           ) : (
             newest.map(card)
           )}
