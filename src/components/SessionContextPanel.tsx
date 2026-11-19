@@ -23,15 +23,9 @@ type IdTokenState =
   | { status: 'ok'; token: string; claims: Record<string, unknown> | null }
   | { status: 'error'; code: string };
 
-function KvRows({
-  rows,
-  className = '',
-}: {
-  rows: { label: string; hint?: string | null; title?: string; value: string }[];
-  className?: string;
-}) {
+function KvRows({ rows }: { rows: { label: string; hint?: string | null; title?: string; value: string }[] }) {
   return (
-    <KeyValueList className={className}>
+    <KeyValueList>
       {rows.map(({ label, hint, title, value }) => (
         <KeyValue
           key={title ?? label}
@@ -140,7 +134,6 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
             (idToken.claims ? (
               <div className="session-panel">
                 <KvRows
-                  className="kv-list-claims"
                   rows={Object.entries(idToken.claims).map(([name, value]) => {
                     const { short, meaning } = claimLabel(name);
                     return { label: short, hint: meaning, title: name, value: formatClaim(name, value) };

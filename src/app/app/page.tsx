@@ -1863,7 +1863,7 @@ function AppPageContent() {
             <span className="op-card-name">{op.sdkMethod}</span>
           </Tooltip>
           <DeprecatedTag note={noteOf(op.deprecationStatus)} />
-          <span className="verb-badge verb-get">{op.operationType === "search" ? "search" : "get"}</span>
+          <Badge size="sm" variant="info" className="verb-badge">{op.operationType === "search" ? "search" : "get"}</Badge>
           {apiOpLabel(op) && (
             <Hint text={opReason}>
               <span className="op-status">{apiOpLabel(op)}</span>
@@ -1924,27 +1924,32 @@ function AppPageContent() {
     onToggle: () => void,
     deprecation: string | null = null,
     unfiredHere = false,
-  ) => (
-    // `event-item` / `event-name-label` have no styles: e2e helpers find a row by them.
-    <ListRow
-      key={key}
-      className={`event-item ${subscriptionRefusals.has(key) || unfiredHere ? "updater-unavailable" : ""}`}
-      icon={<Radio />}
-      title={<span className="event-name-label">{label}</span>}
-      badge={
-        <>
-          {description && <InfoTip label={`About ${label}`}>{description}</InfoTip>}
-          <DeprecatedTag note={deprecation} />
-        </>
-      }
-      meta={
-        [unfiredHere ? "This EHR does not fire this event" : null, subscriptionRefusals.get(key) ?? null]
-          .filter(Boolean)
-          .join(" · ") || undefined
-      }
-      actions={<Toggle on={on} onChange={onToggle} label={`Subscribe to ${label}`} />}
-    />
-  );
+  ) => {
+    const why = [unfiredHere && "This EHR does not fire this event", subscriptionRefusals.get(key)].filter(Boolean).join(" · ");
+    return (
+      // `event-item` / `event-name-label` have no styles: e2e helpers find a row by them.
+      <ListRow
+        key={key}
+        className={`event-item ${subscriptionRefusals.has(key) || unfiredHere ? "updater-unavailable" : ""}`}
+        icon={<Radio />}
+        title={<span className="event-name-label">{label}</span>}
+        badge={
+          <>
+            {description && <InfoTip label={`About ${label}`}>{description}</InfoTip>}
+            <DeprecatedTag note={deprecation} />
+          </>
+        }
+        meta={
+          why && (
+            <Tooltip label={why} wrap>
+              <span>{why}</span>
+            </Tooltip>
+          )
+        }
+        actions={<Toggle on={on} onChange={onToggle} label={`Subscribe to ${label}`} />}
+      />
+    );
+  };
 
   /** One disclosure row inside a section: Subscriptions and its event lists. The body mounts only while open. */
   const subItem = (
@@ -2002,9 +2007,9 @@ function AppPageContent() {
       <div className="updater-card-header">
         referral.updateReferral (notes)
         <DeprecatedTag note={noteOf(referralUpdateOp?.deprecationStatus)} />
-        <span className="verb-badge verb-update">update</span>
+        <Badge size="sm" variant="purple" className="verb-badge">update</Badge>
         {apiOpLabel(referralUpdateOp) && (
-          <span className="op-status">{apiOpLabel(referralUpdateOp)}</span>
+          <Badge size="sm" variant="warning" className="op-status">{apiOpLabel(referralUpdateOp)}</Badge>
         )}
       </div>
       <div className="op-signature">
@@ -2051,9 +2056,9 @@ function AppPageContent() {
       <div className="updater-card-header">
         encounter.updateProcedureCodes (CPT)
         <DeprecatedTag note={noteOf(procedureCodesOp?.deprecationStatus)} />
-        <span className="verb-badge verb-update">update</span>
+        <Badge size="sm" variant="purple" className="verb-badge">update</Badge>
         {apiOpLabel(procedureCodesOp) && (
-          <span className="op-status">{apiOpLabel(procedureCodesOp)}</span>
+          <Badge size="sm" variant="warning" className="op-status">{apiOpLabel(procedureCodesOp)}</Badge>
         )}
       </div>
       <div className="op-signature">
@@ -2301,7 +2306,7 @@ function AppPageContent() {
                               id={`__read:${entityType}`}
                               title={`${entityLabel(manifest, entityType)} (${available.length}/${ops.length})`}
                               docsHref={readDocsHref(entityType)}
-                              badge={openEntityTypes.has(entityType) && <span className="entity-open-pill">Open in EHR</span>}
+                              badge={openEntityTypes.has(entityType) && <Badge size="sm" variant="success">Open in EHR</Badge>}
                               expanded={expandedCards.has(`__read:${entityType}`)}
                               onToggle={() => toggleCard(`__read:${entityType}`)}
                             >
@@ -2383,7 +2388,7 @@ function AppPageContent() {
                           id={entityType}
                           title={`${entityLabel(manifest, entityType)} (${available.length}/${entries.length})`}
                           docsHref={writeDocsHref(entityType)}
-                          badge={isEntityOpen(entityType) && <span className="entity-open-pill">Open in EHR</span>}
+                          badge={isEntityOpen(entityType) && <Badge size="sm" variant="success">Open in EHR</Badge>}
                           expanded={expandedCards.has(entityType)}
                           onToggle={() => toggleCard(entityType)}
                           actions={

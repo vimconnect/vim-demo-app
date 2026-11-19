@@ -288,15 +288,13 @@ function AutoRunnerView({
 
       {notice}
 
-      <CollapsibleChipList className="xp-chips" items={counts} limit={counts.length}>
-        {(shown) =>
-          shown.map((c) => (
-            <Badge key={c.label} size="sm" variant={c.live ? 'info' : 'neutral'}>
-              {c.label}
-            </Badge>
-          ))
-        }
-      </CollapsibleChipList>
+      <div className="xp-chips">
+        {counts.map((c) => (
+          <Badge key={c.label} size="sm" variant={c.live ? 'info' : 'neutral'}>
+            {c.label}
+          </Badge>
+        ))}
+      </div>
 
       {/* Context */}
       <section className="xp-section">

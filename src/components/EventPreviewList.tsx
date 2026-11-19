@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { Radio } from 'lucide-react';
+import { ChevronDown, ChevronUp, Radio } from 'lucide-react';
 import { AccordionItem, Button, EmptyStateAccent, EmptyTab } from '@vim-connect/ui';
 
 export type PreviewEntry = {
@@ -112,15 +112,15 @@ export function EventPreviewList({
           )}
           {older.length > 0 && (
             <>
-              <button
-                type="button"
-                className="subsection-header preview-older-toggle"
+              <Button
+                variant="ghost"
+                size="sm"
                 aria-expanded={showOlder}
                 onClick={() => setShowOlder(!showOlder)}
               >
-                <span className={`disclosure-chevron${showOlder ? ' open' : ''}`} aria-hidden="true" />
+                {showOlder ? <ChevronUp aria-hidden="true" /> : <ChevronDown aria-hidden="true" />}
                 {showOlder ? 'Hide older' : `${older.length} older`}
-              </button>
+              </Button>
               {showOlder && older.map(card)}
             </>
           )}
