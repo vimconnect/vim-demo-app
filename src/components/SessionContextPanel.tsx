@@ -3,13 +3,12 @@
 import { useState } from 'react';
 import type { VimSDK } from '@vimconnect/app-sdk';
 import { SectionHeader } from '@/components/SectionHeader';
-import { CopyButton } from '@/components/CodeBlock';
 import { Hint } from '@/components/Hint';
 import { Notice } from '@/components/Notice';
 import { ShieldCheckIcon } from '@/components/icons';
 import { claimLabel, decodeJwtClaims, formatClaim } from '@/lib/jwt-claims';
 import { sessionContextRows } from '@/lib/session-context-rows';
-import { Button, Card, Tooltip } from '@vim-connect/ui';
+import { Button, Card, CopyButton, Tooltip } from '@vim-connect/ui';
 
 type SessionContext = NonNullable<VimSDK['sessionContext']>;
 
@@ -116,7 +115,7 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
             <span className="demo-card-label">{idToken.status === 'ok' && idToken.claims ? 'ID token claims' : 'ID token'}</span>
             <div className="id-token-actions">
               {idToken.status === 'ok' && (
-                <CopyButton text={idToken.token} label="Copy token" iconOnly />
+                <CopyButton value={idToken.token} label="token" />
               )}
               <Hint text="Resolves only on the token endpoint flow">
                 <Button

@@ -1,7 +1,6 @@
 'use client';
 
-import { Breadcrumbs } from '@vim-connect/ui';
-import { IconTip } from '@/components/Hint';
+import { IconButton, TabBar } from '@vim-connect/ui';
 
 export type DemoView = 'main' | 'explorer' | 'docs' | 'manifest';
 
@@ -16,76 +15,30 @@ export function GithubIcon({ className = 'nav-icon' }: { className?: string }) {
   );
 }
 
-function DocsIcon() {
-  return (
-    <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20V3H6.5A2.5 2.5 0 0 0 4 5.5z" />
-      <path d="M4 19.5A2.5 2.5 0 0 0 6.5 22H20v-5" />
-    </svg>
-  );
-}
-
-function FlashIcon() {
-  return (
-    <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M13 2 3 14h9l-1 8 10-12h-9z" />
-    </svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <svg className="nav-icon" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-      <circle cx="12" cy="12" r="3" />
-    </svg>
-  );
-}
-
 type NavTabsProps = {
   view: DemoView;
   onGetCode: () => void;
-  /** Called with 'main' when the open tab is tapped again. */
   onNavigate: (view: DemoView) => void;
 };
 
-/** The app's tab bar, pinned to the top of the panel. */
-export function NavTabs({ view, onGetCode, onNavigate }: NavTabsProps) {
-  // Every tab names what it opens in a themed hint: labels truncate and icons drop in a narrow panel.
-  const tab = (target: Exclude<DemoView, 'main'>, icon: React.ReactNode, label: string, hint: string) => (
-    <IconTip label={hint}>
-      <button
-        type="button"
-        className={`nav-tab ${view === target ? 'active' : ''}`}
-        aria-current={view === target ? 'page' : undefined}
-        onClick={() => onNavigate(view === target ? 'main' : target)}
-      >
-        {icon}
-        <span className="nav-tab-label">{label}</span>
-      </button>
-    </IconTip>
-  );
-  return (
-    <nav className="nav-tabs" aria-label="Demo app">
-      {tab('docs', <DocsIcon />, 'Docs', 'Developer docs')}
-      <IconTip label="This app's source on GitHub">
-        <button type="button" className="nav-tab" onClick={onGetCode}>
-          <GithubIcon />
-          <span className="nav-tab-label">Code</span>
-        </button>
-      </IconTip>
-      {tab('manifest', <EyeIcon />, 'Manifest', 'The manifest this session runs')}
-      {tab('explorer', <FlashIcon />, 'Auto runner', 'Run every SDK capability automatically')}
-    </nav>
-  );
-}
+/** `idPrefix` shared by the view tabs and the `TabPanel` around the current view. */
+export const VIEW_TABS_ID = 'demo-view';
 
-/** Breadcrumb back to the main view, above every sub-page, with the sub-page's actions. */
-export function Breadcrumb({ title, onBack, actions }: { title: string; onBack: () => void; actions?: React.ReactNode }) {
+const VIEW_TABS = [
+  { id: 'main', label: 'Overview' },
+  { id: 'docs', label: 'Docs' },
+  { id: 'manifest', label: 'Manifest' },
+  { id: 'explorer', label: 'Auto runner' },
+] as const satisfies readonly { id: DemoView; label: string }[];
+
+/** The app's top bar: the view tabs (Overview is the home view) and the GitHub icon button that opens the fork dialog. */
+export function NavTabs({ view, onGetCode, onNavigate }: NavTabsProps) {
   return (
-    <div className="breadcrumb-bar">
-      <Breadcrumbs className="mb-0" items={[{ label: 'Demo app', onClick: onBack }, { label: title }]} />
-      {actions && <div className="breadcrumb-actions">{actions}</div>}
+    <div className="nav-bar">
+      <div className="nav-bar-tabs">
+        <TabBar tabs={VIEW_TABS} activeTab={view} onSelect={onNavigate} ariaLabel="Demo app" idPrefix={VIEW_TABS_ID} compact flush noGap />
+      </div>
+      <IconButton size="sm" label="This app's source on GitHub" icon={<GithubIcon />} onClick={onGetCode} />
     </div>
   );
 }

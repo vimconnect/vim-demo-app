@@ -3,12 +3,10 @@ import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-vi.mock('@/lib/clipboard', () => ({ copyText: vi.fn() }));
-
-import { copyText } from '@/lib/clipboard';
 import { SessionContextPanel } from '../SessionContextPanel';
 
-const copyTextMock = vi.mocked(copyText);
+/** Spies on the clipboard the shared CopyButton writes to. Call after `userEvent.setup()`, which installs its own. */
+const spyClipboard = () => vi.spyOn(navigator.clipboard, 'writeText').mockResolvedValue(undefined);
 
 /** Matches the live shape: five data fields plus getIdToken(). */
 function sessionContext(overrides: Partial<Record<string, unknown>> = {}) {
@@ -35,7 +33,6 @@ const getIdTokenButton = () =>
 describe('SessionContextPanel', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    copyTextMock.mockResolvedValue(true);
   });
 
   it('shows each field once, as a row, with no header repeating the account and EHR', () => {
@@ -96,6 +93,7 @@ describe('SessionContextPanel', () => {
 
     it('shows the decoded claims and logs the length, never the token', async () => {
       const user = userEvent.setup();
+      const writeText = spyClipboard();
       const ctx = sessionContext({ getIdToken: vi.fn().mockResolvedValue({ idToken: jwt }) });
       const addLog = renderPanel(ctx);
 
@@ -111,18 +109,19 @@ describe('SessionContextPanel', () => {
       expect(level).toBe('success');
       expect(message).toContain(`${jwt.length}-char JWT, 3 claims`);
       expect(message).not.toContain(jwt);
-      expect(copyTextMock).not.toHaveBeenCalled();
+      expect(writeText).not.toHaveBeenCalled();
     });
 
     it('copies the raw token only from Copy token', async () => {
       const user = userEvent.setup();
+      const writeText = spyClipboard();
       renderPanel(sessionContext({ getIdToken: vi.fn().mockResolvedValue({ idToken: jwt }) }));
 
       await user.click(getIdTokenButton());
       await user.click(await screen.findByRole('button', { name: 'Copy token' }));
 
-      expect(copyTextMock).toHaveBeenCalledWith(jwt);
-      await waitFor(() => expect(screen.getByRole('button', { name: 'Copied' })).toBeInTheDocument());
+      expect(writeText).toHaveBeenCalledWith(jwt);
+      await waitFor(() => expect(screen.getByRole('button', { name: 'token copied' })).toBeInTheDocument());
     });
 
     it('says a non-JWT token has no claims', async () => {

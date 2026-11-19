@@ -50,7 +50,7 @@ import {
   type AutoRunnerCommand,
   type AutoRunnerStatus,
 } from '@/lib/offscreen-auto-runner-protocol';
-import { Badge, Button, Card, Input, Textarea } from '@vim-connect/ui';
+import { Badge, Button, Card, Input, SegmentedControl, Textarea } from '@vim-connect/ui';
 
 type OperationEntry = NonNullable<AppManifest['operations']>[number];
 
@@ -259,27 +259,15 @@ function AutoRunnerView({
               ← Classic demo
             </Button>
           )}
-          <div className="mode-toggle" role="group" aria-label="Where the runner executes">
-            <button
-              type="button"
-              className={`mode-option ${mode === 'app' ? 'active' : ''}`}
-              aria-pressed={mode === 'app'}
-              onClick={() => onModeChange('app')}
-            >
-              In app
-            </button>
-            <Hint text={offscreenUnavailable}>
-              <button
-                type="button"
-                className={`mode-option ${mode === 'offscreen' ? 'active' : ''}`}
-                aria-pressed={mode === 'offscreen'}
-                disabled={offscreenUnavailable !== null}
-                onClick={() => onModeChange('offscreen')}
-              >
-                Offscreen
-              </button>
-            </Hint>
-          </div>
+          <SegmentedControl
+            ariaLabel="Where the runner executes"
+            value={mode}
+            onChange={onModeChange}
+            options={[
+              { value: 'app', label: 'In app' },
+              { value: 'offscreen', label: 'Offscreen', disabledReason: offscreenUnavailable ?? undefined },
+            ]}
+          />
           <Badge variant="success" dot>
             Connected · v{manifest.version ?? '?'}
           </Badge>

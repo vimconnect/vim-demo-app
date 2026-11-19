@@ -2,7 +2,8 @@
 
 import { useState } from 'react';
 import type { JsonLine } from '@/lib/annotated-json';
-import { CopyButton, JsonLines } from '@/components/CodeBlock';
+import { CopyButton } from '@vim-connect/ui';
+import { JsonLines } from '@/components/CodeBlock';
 
 type RawOutputProps = {
   /** Raw text (usually pretty-printed JSON) shown in the block and copied verbatim. */
@@ -34,7 +35,7 @@ export function RawOutput({ value, label = 'raw', defaultOpen = false, tone = 'n
           <span className="raw-output-label">{label}</span>
           <span className={`disclosure-chevron${open ? ' open' : ''}`} aria-hidden="true" />
         </button>
-        <CopyButton text={value} label="Copy result" iconOnly />
+        <CopyButton value={value} label="result" />
       </div>
       {open && <pre className="raw-output-code">{lines ? <JsonLines lines={lines} /> : value}</pre>}
     </div>

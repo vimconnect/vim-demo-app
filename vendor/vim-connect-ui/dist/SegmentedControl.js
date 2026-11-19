@@ -13,6 +13,8 @@ const OPTION = [
     '[transition:background-color_var(--transition-fast),color_var(--transition-fast)]',
     'focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-focus)]',
 ].join(' ');
+// Order matters: DISABLED before SELECTED in `cn`.
+const DISABLED = 'segmented-control__option--disabled opacity-40 cursor-not-allowed hover:[color:var(--color-text-secondary)]';
 const SELECTED = 'segmented-control__option--selected [background:var(--color-cyan-15)] [color:var(--color-cyan-text)] hover:[color:var(--color-cyan-text)]';
 // `motion-safe:` keeps the animation out of the CSS entirely under
 // prefers-reduced-motion. A separate `animation: none` override lost to these
@@ -60,6 +62,11 @@ export function SegmentedControl(props) {
     }
     return (_jsx("div", { className: cn(TRACK, className), role: "group", "aria-label": ariaLabel, children: props.options.map((option) => {
             const selected = option.value === value;
-            return (_jsxs("button", { "data-ui": "segmented-control-button", type: "button", "aria-pressed": selected, onClick: () => onChange(option.value), className: cn(OPTION, 'px-[var(--space-md)] py-[2px]', selected && SELECTED), children: [option.label, option.count !== undefined && (_jsxs(_Fragment, { children: [' ', _jsx("span", { className: "segmented-control__count [font-weight:var(--font-medium)] [color:var(--color-text-muted)]", children: option.count })] }))] }, option.value));
+            const disabled = option.disabled || Boolean(option.disabledReason);
+            const button = (_jsxs("button", { "data-ui": "segmented-control-button", type: "button", "aria-pressed": selected, "aria-disabled": disabled || undefined, onClick: () => {
+                    if (!disabled)
+                        onChange(option.value);
+                }, className: cn(OPTION, 'px-[var(--space-md)] py-[2px]', disabled && DISABLED, selected && SELECTED), children: [option.label, option.count !== undefined && (_jsxs(_Fragment, { children: [' ', _jsx("span", { className: "segmented-control__count [font-weight:var(--font-medium)] [color:var(--color-text-muted)]", children: option.count })] }))] }, option.value));
+            return option.disabledReason ? (_jsx(Tooltip, { label: option.disabledReason, children: button }, option.value)) : (button);
         }) }));
 }

@@ -21,6 +21,10 @@ export interface SegmentedOption<T extends string> {
     value: T;
     label: string;
     count?: number;
+    /** Shown but not pickable: muted, `aria-disabled`, and clicks do nothing. It stays focusable, so its tooltip can say why. */
+    disabled?: boolean;
+    /** Why it can't be picked, in the option's tooltip. A non-empty reason also disables the option. */
+    disabledReason?: string;
 }
 export interface SegmentedIconOption<T extends string> {
     value: T;

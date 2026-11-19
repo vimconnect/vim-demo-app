@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactElement, ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { HoverCard, Tooltip } from '@vim-connect/ui';
 
 /**
@@ -14,11 +14,6 @@ export function Hint({ text, block = false, children }: { text?: string | null; 
       <span className={`hint ${block ? 'hint-block' : ''}`}>{children}</span>
     </Tooltip>
   );
-}
-
-/** The label of an icon-only button, in the shared DS Tooltip; the button keeps its own aria-label. */
-export function IconTip({ label, children }: { label: string; children: ReactElement }) {
-  return <Tooltip label={label}>{children}</Tooltip>;
 }
 
 /** An ⓘ icon that opens `children` (help text, may hold `<code>`) in the shared DS HoverCard. */

@@ -5,14 +5,14 @@ import { useSearchParams } from "next/navigation";
 import { initVimSDK, type VimSDK, type AppManifest, type WorkflowEvent, type AppOpenStatus, type ContextKey, type ContextKeyEntityMap, type EventType } from "@vimconnect/app-sdk";
 import { ErrorScreen } from "@/components/ErrorScreen";
 import { CapabilityAutoRunner } from "@/components/CapabilityAutoRunner";
-import { CodeBlock, CopyButton } from "@/components/CodeBlock";
+import { CodeBlock } from "@/components/CodeBlock";
 import { CollapsibleCard } from "@/components/CollapsibleCard";
 import { EventPreviewList } from "@/components/EventPreviewList";
 import { DocsLink, readDocsHref, writeDocsHref } from "@/components/DocsLink";
 import { DocsView } from "@/components/DocsView";
 import { advanceScroll, type ScrollTracker } from "@/lib/hide-on-scroll";
 import { ManifestView } from "@/components/ManifestView";
-import { Breadcrumb, GithubIcon, NavTabs, type DemoView } from "@/components/NavTabs";
+import { GithubIcon, NavTabs, VIEW_TABS_ID, type DemoView } from "@/components/NavTabs";
 import { getDeveloperDocsUrl, getEnvironment } from "@/lib/sdk-config";
 import { SessionContextPanel } from "@/components/SessionContextPanel";
 import {
@@ -68,7 +68,7 @@ import {
   type AppThemeChoice,
   type ColorScheme,
 } from "@/lib/color-scheme";
-import { Accordion, AccordionItem, Badge, Button, buttonVariants, Card, Input, Modal, SegmentedControl, StatusDot, Tooltip } from "@vim-connect/ui";
+import { Accordion, AccordionItem, Badge, Button, buttonVariants, Card, CopyButton, Input, Modal, SegmentedControl, StatusDot, TabPanel, Tooltip } from "@vim-connect/ui";
 
 type LogEntry = {
   timestamp: string;
@@ -1979,12 +1979,6 @@ function AppPageContent() {
     <SectionHeader title={title} collapsed={collapsed} onToggle={onToggle} docsHref={docsHref} icon={icon} subtitle={subtitle} />
   );
 
-  const subPageTitle: Record<Exclude<DemoView, "main">, string> = {
-    explorer: "Auto runner",
-    docs: "Docs",
-    manifest: "Manifest",
-  };
-
   const referralUpdateOp = writeOps.find(
     (op: any) => op.sdkNamespace === "referral" && op.sdkMethod === "updateReferral",
   );
@@ -2110,953 +2104,944 @@ function AppPageContent() {
           {view !== "main" && <StatusBanner text={statusLine} />}
         </>
       )}
-      {view !== "main" && vimSDK && manifest ? (
-        <div id="demo-search-root" className={`subpage subpage-${view}`}>
-          <Breadcrumb
-            title={subPageTitle[view]}
-            onBack={() => setView("main")}
-            actions={
-              view === "manifest" ? (
-                <CopyButton text={JSON.stringify(manifest, null, 2)} label="Copy manifest" />
-              ) : view === "docs" ? (
-                <CopyButton text={getDeveloperDocsUrl()} label="Copy link" />
-              ) : undefined
-            }
-          />
-          {view === "explorer" && <CapabilityAutoRunner sdk={vimSDK} manifest={manifest} />}
-          {view === "docs" && <DocsView />}
-          {view === "manifest" && <ManifestView manifest={manifest} />}
-        </div>
-      ) : (
-    <div id="demo-search-root" className="demo-container">
-
-      <div className="demo-content">
-        <OverviewCard
-          ehr={vimSDK?.sessionContext?.ehrType ?? null}
-          sdkVersion={manifest?.version || "unknown"}
-          manifestVersion={vimSDK?.manifestVersion ?? null}
-          inContext={[...openEntityTypes].map((e) => entityLabel(manifest, e))}
-        />
-        {/* Read from EHR: subscriptions, what they delivered, and on-demand API reads */}
-        <Card as="section" hover="shadow" className="section-collapsible">
-          {sectionHeader(
-            `Read from EHR (${readAvailable}/${readTotal})`,
-            readCollapsed,
-            () => setReadCollapsed(!readCollapsed),
-            "/docs/app-sdk/ehr-connectivity/",
-            <ReadIcon size={12} />,
-            "What the EHR tells your app, live and on demand",
-          )}
-          <div className={`section-content ${readCollapsed ? "collapsed" : ""}`}>
-            <div className="section-inner">
-              <Accordion>
-                {subItem(
-                  `Subscriptions (${subscriptionAvailable}/${subscriptionTotal})`,
-                  "__subscriptions",
-                  "/docs/app-sdk/ehr-connectivity/",
-                  subscriptionTotal > 0 &&
-                    turnAllToggle(
-                      allSubscriptionsOn,
-                      (on) => {
-                        setAllWorkflowEvents(on);
-                        setAllContextEvents(on);
-                      },
-                      "subscriptions",
-                    ),
-                  <Accordion className="nested-accordion">
-                    {subItem(
-                      `Workflow events (${availableEvents.length}/${supportedEvents.length})`,
-                      "__workflow",
-                      "/docs/app-sdk/ehr-connectivity/workflow-events/",
-                      supportedEvents.length > 0 && turnAllToggle(allWorkflowOn, setAllWorkflowEvents, "workflow events"),
-                      <div className="event-list">
-                        {supportedEvents.length === 0 ? (
-                          <div className="empty-state">No workflow events available</div>
-                        ) : (
-                          supportedEvents.map((evt) =>
-                            subscriptionRow(
-                              evt.id,
-                              evt.name || evt.id,
-                              evt.description,
-                              subscribedWorkflowEvents.has(evt.id),
-                              () => toggleWorkflowEvent(evt.id),
-                              noteOf(evt.deprecationStatus),
-                              !firesHere(evt),
-                            ),
-                          )
-                        )}
-                      </div>
-                    )}
-                    {subItem(
-                      `Context events (${availableContexts.length}/${supportedContexts.length})`,
-                      "__context",
-                      "/docs/app-sdk/ehr-connectivity/context/",
-                      supportedContexts.length > 0 && turnAllToggle(allContextsOn, setAllContextEvents, "context events"),
-                      <div className="event-list">
-                        {supportedContexts.length === 0 ? (
-                          <div className="empty-state">No context events available</div>
-                        ) : (
-                          supportedContexts.map((ctx) =>
-                            subscriptionRow(
-                              ctx.contextKey,
-                              ctx.contextKey,
-                              ctx.description,
-                              subscribedContexts.has(ctx.contextKey),
-                              () => toggleContextEvent(ctx.contextKey),
-                              noteOf(supportedEvents.find((e) => e.id === ctx.eventType)?.deprecationStatus) ??
-                                noteOf(manifest?.supportedEntities.find((e) => e.type === ctx.entityType)?.deprecationStatus),
-                              !firesHere(ctx),
-                            ),
-                          )
-                        )}
-                      </div>
-                    )}
-                  </Accordion>,
+      <TabPanel idPrefix={VIEW_TABS_ID} tabId={view}>
+        {view !== "main" && vimSDK && manifest ? (
+          <div id="demo-search-root" className={`subpage subpage-${view}`}>
+            {(view === "manifest" || view === "docs") && (
+              <div className="subpage-actions">
+                {view === "manifest" ? (
+                  <CopyButton value={JSON.stringify(manifest, null, 2)} label="manifest" showLabel />
+                ) : (
+                  <CopyButton value={getDeveloperDocsUrl()} label="link" showLabel />
                 )}
+              </div>
+            )}
+            {view === "explorer" && <CapabilityAutoRunner sdk={vimSDK} manifest={manifest} />}
+            {view === "docs" && <DocsView />}
+            {view === "manifest" && <ManifestView manifest={manifest} />}
+          </div>
+        ) : (
+      <div id="demo-search-root" className="demo-container">
 
-                <AccordionItem
-                  id="__eventPreview"
-                  title="Event preview"
-                  aside={<CountBadge count={String(eventPreviews.length + contextChanges.length)} complete={false} />}
-                  open={!eventPreviewCollapsed}
-                  onOpenChange={(open) => setEventPreviewCollapsed(!open)}
-                >
-                  {!eventPreviewCollapsed && (
+        <div className="demo-content">
+          <OverviewCard
+            ehr={vimSDK?.sessionContext?.ehrType ?? null}
+            sdkVersion={manifest?.version || "unknown"}
+            manifestVersion={vimSDK?.manifestVersion ?? null}
+            inContext={[...openEntityTypes].map((e) => entityLabel(manifest, e))}
+          />
+          {/* Read from EHR: subscriptions, what they delivered, and on-demand API reads */}
+          <Card as="section" hover="shadow" className="section-collapsible">
+            {sectionHeader(
+              `Read from EHR (${readAvailable}/${readTotal})`,
+              readCollapsed,
+              () => setReadCollapsed(!readCollapsed),
+              "/docs/app-sdk/ehr-connectivity/",
+              <ReadIcon size={12} />,
+              "What the EHR tells your app, live and on demand",
+            )}
+            <div className={`section-content ${readCollapsed ? "collapsed" : ""}`}>
+              <div className="section-inner">
+                <Accordion>
+                  {subItem(
+                    `Subscriptions (${subscriptionAvailable}/${subscriptionTotal})`,
+                    "__subscriptions",
+                    "/docs/app-sdk/ehr-connectivity/",
+                    subscriptionTotal > 0 &&
+                      turnAllToggle(
+                        allSubscriptionsOn,
+                        (on) => {
+                          setAllWorkflowEvents(on);
+                          setAllContextEvents(on);
+                        },
+                        "subscriptions",
+                      ),
                     <Accordion className="nested-accordion">
-                      <EventPreviewList
-                        id="__preview:workflow"
-                        label="Workflow events"
-                        entries={eventPreviews.map((event) => ({
-                          key: event.key,
-                          title: event.type,
-                          meta: `${new Date(event.timestamp).toLocaleTimeString()} • ${event.streamType}`,
-                          body: (
-                            <CodeBlock
-                              code={JSON.stringify(event.data, null, 2)}
-                              lines={annotatedLines(event.data, workflowEventAnnotator(manifest, event.id))}
-                              className="event-preview-body"
-                            />
-                          ),
-                        }))}
-                        emptyText="Open a patient, encounter, order or referral in the EHR."
-                        onClear={() => setEventPreviews([])}
-                        startCollapsed
-                      />
-                      <EventPreviewList
-                        id="__preview:context"
-                        label="Context changes"
-                        entries={contextChanges.map((change) => ({
-                          key: change.key,
-                          title: (
-                            <>
-                              {change.contextKey}{" "}
-                              <span className="event-preview-change">({change.changeType})</span>
-                            </>
-                          ),
-                          meta: new Date(change.timestamp).toLocaleTimeString(),
-                          body:
-                            change.changeType === "closed" ? null : (
+                      {subItem(
+                        `Workflow events (${availableEvents.length}/${supportedEvents.length})`,
+                        "__workflow",
+                        "/docs/app-sdk/ehr-connectivity/workflow-events/",
+                        supportedEvents.length > 0 && turnAllToggle(allWorkflowOn, setAllWorkflowEvents, "workflow events"),
+                        <div className="event-list">
+                          {supportedEvents.length === 0 ? (
+                            <div className="empty-state">No workflow events available</div>
+                          ) : (
+                            supportedEvents.map((evt) =>
+                              subscriptionRow(
+                                evt.id,
+                                evt.name || evt.id,
+                                evt.description,
+                                subscribedWorkflowEvents.has(evt.id),
+                                () => toggleWorkflowEvent(evt.id),
+                                noteOf(evt.deprecationStatus),
+                                !firesHere(evt),
+                              ),
+                            )
+                          )}
+                        </div>
+                      )}
+                      {subItem(
+                        `Context events (${availableContexts.length}/${supportedContexts.length})`,
+                        "__context",
+                        "/docs/app-sdk/ehr-connectivity/context/",
+                        supportedContexts.length > 0 && turnAllToggle(allContextsOn, setAllContextEvents, "context events"),
+                        <div className="event-list">
+                          {supportedContexts.length === 0 ? (
+                            <div className="empty-state">No context events available</div>
+                          ) : (
+                            supportedContexts.map((ctx) =>
+                              subscriptionRow(
+                                ctx.contextKey,
+                                ctx.contextKey,
+                                ctx.description,
+                                subscribedContexts.has(ctx.contextKey),
+                                () => toggleContextEvent(ctx.contextKey),
+                                noteOf(supportedEvents.find((e) => e.id === ctx.eventType)?.deprecationStatus) ??
+                                  noteOf(manifest?.supportedEntities.find((e) => e.type === ctx.entityType)?.deprecationStatus),
+                                !firesHere(ctx),
+                              ),
+                            )
+                          )}
+                        </div>
+                      )}
+                    </Accordion>,
+                  )}
+
+                  <AccordionItem
+                    id="__eventPreview"
+                    title="Event preview"
+                    aside={<CountBadge count={String(eventPreviews.length + contextChanges.length)} complete={false} />}
+                    open={!eventPreviewCollapsed}
+                    onOpenChange={(open) => setEventPreviewCollapsed(!open)}
+                  >
+                    {!eventPreviewCollapsed && (
+                      <Accordion className="nested-accordion">
+                        <EventPreviewList
+                          id="__preview:workflow"
+                          label="Workflow events"
+                          entries={eventPreviews.map((event) => ({
+                            key: event.key,
+                            title: event.type,
+                            meta: `${new Date(event.timestamp).toLocaleTimeString()} • ${event.streamType}`,
+                            body: (
                               <CodeBlock
-                                code={JSON.stringify(change.currentData, null, 2)}
-                                lines={annotatedLines(
-                                  change.currentData,
-                                  contextAnnotator(manifest, change.contextKey.split(":").pop() ?? ""),
-                                )}
+                                code={JSON.stringify(event.data, null, 2)}
+                                lines={annotatedLines(event.data, workflowEventAnnotator(manifest, event.id))}
                                 className="event-preview-body"
                               />
                             ),
-                        }))}
-                        emptyText="Open a patient, encounter, order or referral in the EHR."
-                        onClear={() => setContextChanges([])}
-                      />
-                    </Accordion>
-                  )}
-                </AccordionItem>
+                          }))}
+                          emptyText="Open a patient, encounter, order or referral in the EHR."
+                          onClear={() => setEventPreviews([])}
+                          startCollapsed
+                        />
+                        <EventPreviewList
+                          id="__preview:context"
+                          label="Context changes"
+                          entries={contextChanges.map((change) => ({
+                            key: change.key,
+                            title: (
+                              <>
+                                {change.contextKey}{" "}
+                                <span className="event-preview-change">({change.changeType})</span>
+                              </>
+                            ),
+                            meta: new Date(change.timestamp).toLocaleTimeString(),
+                            body:
+                              change.changeType === "closed" ? null : (
+                                <CodeBlock
+                                  code={JSON.stringify(change.currentData, null, 2)}
+                                  lines={annotatedLines(
+                                    change.currentData,
+                                    contextAnnotator(manifest, change.contextKey.split(":").pop() ?? ""),
+                                  )}
+                                  className="event-preview-body"
+                                />
+                              ),
+                          }))}
+                          emptyText="Open a patient, encounter, order or referral in the EHR."
+                          onClear={() => setContextChanges([])}
+                        />
+                      </Accordion>
+                    )}
+                  </AccordionItem>
 
-                <AccordionItem
-                  id="__apiReads"
-                  title={`API reads (${availableReadOps.length}/${readOps.length})`}
-                  open={!apiReadsCollapsed}
-                  onOpenChange={(open) => setApiReadsCollapsed(!open)}
-                  actions={
-                    readGroupsExpanded &&
-                    !apiReadsCollapsed && (
-                      <Button variant="secondary" size="sm" onClick={collapseReadGroups}>
-                        Collapse all
-                      </Button>
-                    )
-                  }
-                >
-                  {apiReadsCollapsed ? null : readOps.length === 0 ? (
-                    <div className="empty-state">
-                      No read operations (getById / search) are available in this EHR&apos;s collection.
-                    </div>
-                  ) : (
-                    <Accordion className="nested-accordion">
-                      {orderedReadGroups.map(([entityType, ops]) => {
-                        const available = ops.filter((op) => apiOpReason(op) === null);
-                        return (
-                          <CollapsibleCard
-                            key={entityType}
-                            id={`__read:${entityType}`}
-                            title={`${entityLabel(manifest, entityType)} (${available.length}/${ops.length})`}
-                            docsHref={readDocsHref(entityType)}
-                            badge={openEntityTypes.has(entityType) && <span className="entity-open-pill">Open in EHR</span>}
-                            expanded={expandedCards.has(`__read:${entityType}`)}
-                            onToggle={() => toggleCard(`__read:${entityType}`)}
-                          >
-                            <div className="entity-card-ops">{ops.map(renderReadOp)}</div>
-                          </CollapsibleCard>
-                        );
-                      })}
-                    </Accordion>
-                  )}
-                </AccordionItem>
-              </Accordion>
-            </div>
-          </div>
-        </Card>
-
-        {/* Write to EHR */}
-        <Card as="section" hover="shadow" className="section-collapsible">
-          {sectionHeader(
-            `Write to EHR (${availableWritebackEntries.length}/${writebackEntries.length})`,
-            activeUpdatersCollapsed,
-            () => setActiveUpdatersCollapsed(!activeUpdatersCollapsed),
-            "/docs/app-sdk/ehr-connectivity/writeback/",
-            <WriteIcon size={12} />,
-            "Send notes and codes back into the chart",
-          )}
-          <div className={`section-content ${activeUpdatersCollapsed ? "collapsed" : ""}`}>
-            <div className="section-inner">
-              <div className="updater-summary-card">
-                <ToggleAllLabel
-                  label={`Available updaters (${availableWritebackEntries.length}/${writebackEntries.length})`}
-                  count={availableWritebackEntries.length + activeUpdaters.size}
-                  allOn={allUpdatersOn || (availableWritebackEntries.length === 0 && activeUpdaters.size > 0)}
-                  onToggle={(on) => setAllUpdaters(on && availableWritebackEntries.length > 0)}
-                />
-                <div className="section-actions">
-                  <Hint text={writableUpdaters.length === 0
-                        ? "No updater is writable in the current context"
-                        : `Samples the ${writableUpdaters.length} field(s) writable in the current context`}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => sampleAllUpdaters()}
-                      disabled={writableUpdaters.length === 0}
-                    >
-                      Sample all ({writableUpdaters.length})
-                    </Button>
-                  </Hint>
-                  <Hint text={writableWithValue.length === 0
-                        ? "No updater writable in the current context has a value"
-                        : `Writes the ${writableWithValue.length} field(s) writable in the current context`}>
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      onClick={() => void updateAllUpdaters()}
-                      disabled={updatingAll || writableWithValue.length === 0}
-                    >
-                      {updatingAll ? "Updating…" : `Update all (${writableWithValue.length})`}
-                    </Button>
-                  </Hint>
-                </div>
-              </div>
-
-              <Accordion>
-                {writebackEntries.length === 0 ? (
-                  <div className="empty-state">No updaters available</div>
-                ) : (
-                  orderedEntityGroups.map(([entityType, entries]) => {
-                    const available = entries.filter(
-                      (e) => unavailableReasons.get(`${e.entityType}:${e.fieldPath}`) === null,
-                    );
-                    const entityWritable = writableUpdaters.filter((u) => u.entityType === entityType);
-                    const entityWithValue = writableWithValue.filter((u) => u.entityType === entityType);
-                    const entityUpdaters = entries
-                      .map((e) => activeUpdaters.get(entityType)?.get(`${e.entityType}:${e.fieldPath}`))
-                      .filter((u): u is UpdaterInfo => u !== undefined);
-                    return (
-                      <CollapsibleCard
-                        key={entityType}
-                        id={entityType}
-                        title={`${entityLabel(manifest, entityType)} (${available.length}/${entries.length})`}
-                        docsHref={writeDocsHref(entityType)}
-                        badge={isEntityOpen(entityType) && <span className="entity-open-pill">Open in EHR</span>}
-                        expanded={expandedCards.has(entityType)}
-                        onToggle={() => toggleCard(entityType)}
-                        actions={
-                          <>
-                            <Hint text={entityWritable.length === 0
-                                  ? groupReason(entries, "sample")
-                                  : `Fill the ${entityWritable.length} writable ${entityType} field(s) with sample values`}>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => sampleAllUpdaters(entityType)}
-                                disabled={entityWritable.length === 0}
-                              >
-                                Sample ({entityWritable.length})
-                              </Button>
-                            </Hint>
-                            <Hint text={entityWritable.length === 0
-                                  ? groupReason(entries, "update")
-                                  : entityWithValue.length === 0
-                                    ? "Sample or type a value first"
-                                    : `Write the ${entityWithValue.length} ${entityType} field(s) that have a value`}>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() => void updateAllUpdaters(entityType)}
-                                disabled={updatingAll || entityWithValue.length === 0}
-                              >
-                                Update ({entityWithValue.length})
-                              </Button>
-                            </Hint>
-                            {(available.length > 0 || entries.some(isUpdaterOn)) &&
-                              turnAllToggle(
-                                available.length > 0 && available.every(isUpdaterOn),
-                                (on) => setAllUpdaters(on && available.length > 0, entityType),
-                                entityType,
-                              )}
-                          </>
-                        }
-                      >
-                        <Accordion className="nested-accordion nested-card-top">
-                          <CollapsibleCard
-                            id={`__fields:${entityType}`}
-                            title={`Fields (${available.length}/${entries.length})`}
-                            expanded={expandedCards.has(`__fields:${entityType}`)}
-                            onToggle={() => toggleCard(`__fields:${entityType}`)}
-                          >
-                            <div className="event-list">
-                              {entries.map((upd) => {
-                                const reason = unavailableReasons.get(`${upd.entityType}:${upd.fieldPath}`) ?? null;
-                                const isActive = isUpdaterOn(upd);
-                                return (
-                                  <div
-                                    key={`${upd.entityType}-${upd.fieldPath}`}
-                                    className={`event-item ${reason ? "updater-unavailable" : ""}`}
-                                  >
-                                    <div className="event-item-text">
-                                      <Tooltip label={upd.fieldPath}>
-                                        <div className="event-name">
-                                          <span className="event-name-label">{upd.fieldPath}</span>
-                                          <DeprecatedTag note={fieldDeprecation(manifest, upd.entityType, upd.fieldPath)} />
-                                        </div>
-                                      </Tooltip>
-                                      <div className="updater-meta">
-                                        {reason
-                                          ? unavailableReasonText(reason, upd.entityType, "write")
-                                          : upd.disruptive
-                                            ? "Requires permission"
-                                            : "Writable now"}
-                                      </div>
-                                    </div>
-                                    <Toggle
-                                      on={isActive}
-                                      disabled={reason !== null && !isActive}
-                                      onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
-                                      label={`Write ${upd.fieldPath}`}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          </CollapsibleCard>
-                        </Accordion>
-                        {entityUpdaters.length === 0 && (
-                          <p className="empty-state">No field is turned on. Open Fields above to turn some on.</p>
-                        )}
-                        {entityUpdaters.map((updater) => {
-                          const key = `${updater.entityType}:${updater.fieldPath}`;
-                          const cap = updaterCapability(updater);
-                          const detected = cap?.available ?? false;
-                          const { modes } = writeModesFor(
-                            manifest,
-                            updater.entityType,
-                            updater.fieldPath,
-                            declaredModesFor(updater.entityType),
-                          );
-                          const selectedMode = modeFor(updater);
+                  <AccordionItem
+                    id="__apiReads"
+                    title={`API reads (${availableReadOps.length}/${readOps.length})`}
+                    open={!apiReadsCollapsed}
+                    onOpenChange={(open) => setApiReadsCollapsed(!open)}
+                    actions={
+                      readGroupsExpanded &&
+                      !apiReadsCollapsed && (
+                        <Button variant="secondary" size="sm" onClick={collapseReadGroups}>
+                          Collapse all
+                        </Button>
+                      )
+                    }
+                  >
+                    {apiReadsCollapsed ? null : readOps.length === 0 ? (
+                      <div className="empty-state">
+                        No read operations (getById / search) are available in this EHR&apos;s collection.
+                      </div>
+                    ) : (
+                      <Accordion className="nested-accordion">
+                        {orderedReadGroups.map(([entityType, ops]) => {
+                          const available = ops.filter((op) => apiOpReason(op) === null);
                           return (
-                            <div key={key} className={`updater-card ${!detected ? "disabled" : ""}`}>
-                              <div className="updater-card-header">
-                                {updater.fieldPath}
-                                <DeprecatedTag note={fieldDeprecation(manifest, updater.entityType, updater.fieldPath)} />
-                                {!detected && (
-                                  <span className="updater-warning">
-                                    ({cap?.reason === "not_granted"
-                                      ? "not granted to this app"
-                                      : cap?.reason === "not_configured"
-                                        ? "not configured in this EHR"
-                                        : "not in context"})
-                                  </span>
-                                )}
-                              </div>
-                              <Input
-                                type="text"
-                                value={updater.value}
-                                onChange={(e) => updateUpdaterValue(entityType, key, e.target.value)}
-                                placeholder="Enter value..."
-                                disabled={!detected}
-                              />
-                              <div className="update-row">
-                                <Hint text="Fill a sample value in the format this field expects">
-                                  <Button
-                                    variant="secondary"
-                                    size="sm"
-                                    onClick={() =>
-                                      updateUpdaterValue(
-                                        entityType,
-                                        key,
-                                        sampleValueFor(manifest, updater.entityType, updater.fieldPath),
-                                      )
-                                    }
-                                    disabled={!detected}
-                                  >
-                                    Sample
-                                  </Button>
-                                </Hint>
-                                <div className="mode-toggle" role="group" aria-label="Write mode">
-                                  {(["override", "append"] as const).map((mode) => {
-                                    const offered = modes.includes(mode);
-                                    return (
-                                      <Hint
-                                        key={mode}
-                                        text={
-                                          !offered
-                                            ? mode === "override"
-                                              ? "Writes to this list add items; it has no replace mode"
-                                              : "No append mode is declared for this field, so a write replaces it"
-                                            : null
-                                        }
-                                      >
-                                        <button
-                                          type="button"
-                                          className={`mode-option ${mode === selectedMode ? "active" : ""}`}
-                                          aria-pressed={mode === selectedMode}
-                                          disabled={!offered || !detected}
-                                          onClick={() => setWriteModeChoice((prev) => ({ ...prev, [key]: mode }))}
-                                        >
-                                          {mode === "override" ? "Override" : "Append"}
-                                        </button>
-                                      </Hint>
-                                    );
-                                  })}
-                                </div>
-                                <Button
-                                  variant="secondary"
-                                  size="sm"
-                                  className="update-row-submit"
-                                  onClick={() => executeUpdate(updater)}
-                                  disabled={!detected}
-                                >
-                                  Update
-                                </Button>
-                              </div>
-                            </div>
+                            <CollapsibleCard
+                              key={entityType}
+                              id={`__read:${entityType}`}
+                              title={`${entityLabel(manifest, entityType)} (${available.length}/${ops.length})`}
+                              docsHref={readDocsHref(entityType)}
+                              badge={openEntityTypes.has(entityType) && <span className="entity-open-pill">Open in EHR</span>}
+                              expanded={expandedCards.has(`__read:${entityType}`)}
+                              onToggle={() => toggleCard(`__read:${entityType}`)}
+                            >
+                              <div className="entity-card-ops">{ops.map(renderReadOp)}</div>
+                            </CollapsibleCard>
                           );
                         })}
-                        {entityType === "referral" && referralUpdateOp && (
-                          <>
-                            <div className="demo-card-label api-writes-label">API writes</div>
-                            {referralWritesCard}
-                          </>
-                        )}
-                        {entityType === apiWritesEntity && (
-                          <>
-                            <div className="demo-card-label api-writes-label">
-                              API writes ({availableEntityWriteOps.length}/{entityWriteOps.length})
-                              <InfoTip label="About API writes">
-                                <code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.
-                              </InfoTip>
-                            </div>
-                            {apiWritesCard}
-                          </>
-                        )}
-                      </CollapsibleCard>
-                    );
-                  })
-                )}
-
-                {!orderedEntityGroups.some(([entityType]) => entityType === apiWritesEntity) && (
-                  <CollapsibleCard
-                    id="__api_writes"
-                    title={`API writes (${availableEntityWriteOps.length}/${entityWriteOps.length})`}
-                    info={<><code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.</>}
-                    expanded={expandedCards.has("__api_writes")}
-                    onToggle={() => toggleCard("__api_writes")}
-                  >
-                    {apiWritesCard}
-                  </CollapsibleCard>
-                )}
-
-                {referralUpdateOp && !orderedEntityGroups.some(([entityType]) => entityType === "referral") && (
-                  <CollapsibleCard
-                    id="__referral_api_writes"
-                    title="Referral API writes"
-                    info={<><code>sdk.ehr.api.referral.updateReferral()</code> writes by referral ID, on EHRs that implement it.</>}
-                    expanded={expandedCards.has("__referral_api_writes")}
-                    onToggle={() => toggleCard("__referral_api_writes")}
-                  >
-                    {referralWritesCard}
-                  </CollapsibleCard>
-                )}
-              </Accordion>
+                      </Accordion>
+                    )}
+                  </AccordionItem>
+                </Accordion>
+              </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Hub Controls */}
-        <Card as="section" hover="shadow" className="section-collapsible">
-          {sectionHeader(
-            "Hub Controls",
-            hubControlsCollapsed,
-            () => setHubControlsCollapsed(!hubControlsCollapsed),
-            "/docs/app-sdk/vim-hub/",
-            <BellIcon size={12} />,
-            "Your app's icon, badges and notifications in the hub",
-          )}
-          <div
-            className={`section-content ${hubControlsCollapsed ? "collapsed" : ""}`}
-          >
-            <div className="section-inner">
-              <div className="demo-card-section">
-                <div className="demo-card-label">Activation Status</div>
-                <SegmentedControl
-                  ariaLabel="Activation status"
-                  value={hubActivationStatus}
-                  onChange={hubSetActivationStatus}
-                  options={[
-                    { value: "ENABLED", label: "Enabled" },
-                    { value: "LOADING", label: "Loading" },
-                    { value: "DISABLED", label: "Disabled" },
-                  ]}
-                />
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">Tooltip Text</div>
-                <div className="input-group">
-                  <Input
-                    type="text"
-                    value={tooltipText}
-                    onChange={(e) => setTooltipText(e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") hubApplyTooltip();
-                    }}
-                    placeholder="Enter tooltip text, then Set"
+          {/* Write to EHR */}
+          <Card as="section" hover="shadow" className="section-collapsible">
+            {sectionHeader(
+              `Write to EHR (${availableWritebackEntries.length}/${writebackEntries.length})`,
+              activeUpdatersCollapsed,
+              () => setActiveUpdatersCollapsed(!activeUpdatersCollapsed),
+              "/docs/app-sdk/ehr-connectivity/writeback/",
+              <WriteIcon size={12} />,
+              "Send notes and codes back into the chart",
+            )}
+            <div className={`section-content ${activeUpdatersCollapsed ? "collapsed" : ""}`}>
+              <div className="section-inner">
+                <div className="updater-summary-card">
+                  <ToggleAllLabel
+                    label={`Available updaters (${availableWritebackEntries.length}/${writebackEntries.length})`}
+                    count={availableWritebackEntries.length + activeUpdaters.size}
+                    allOn={allUpdatersOn || (availableWritebackEntries.length === 0 && activeUpdaters.size > 0)}
+                    onToggle={(on) => setAllUpdaters(on && availableWritebackEntries.length > 0)}
                   />
-                  <Button
-                    variant="secondary"
-                    onClick={hubApplyTooltip}
-                  >
-                    Set
-                  </Button>
-                  <Button variant="secondary" onClick={hubClearTooltip}>
-                    Clear
-                  </Button>
-                </div>
-                <p className="tooltip-applied" aria-live="polite">
-                  Hub shows:{" "}
-                  {appliedTooltipText ? (
-                    <code>{appliedTooltipText}</code>
-                  ) : (
-                    "app name (default)"
-                  )}
-                  {tooltipText !== appliedTooltipText &&
-                    tooltipText.trim() &&
-                    " · press Enter or Set to apply"}
-                </p>
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">
-                  Notification Badge
-                  <InfoTip label="About the notification badge">
-                    <code>set(count)</code> shows the count; <code>set(0)</code> shows a badge with no number.
-                    Turn it off to call <code>hide()</code>.
-                  </InfoTip>
-                </div>
-                <div className="input-group">
-                  <Toggle
-                    on={notificationBadgeActive}
-                    onChange={hubToggleNotificationBadge}
-                    label="Show notification badge"
-                  >
-                    {notificationBadgeActive ? "Showing" : "Hidden"}
-                  </Toggle>
-                  <Input
-                    type="number"
-                    value={notificationBadgeCount}
-                    min={0}
-                    onChange={(e) =>
-                      hubChangeNotificationBadgeCount(Math.max(0, parseInt(e.target.value) || 0))
-                    }
-                    className="input-number"
-                    style={{ marginLeft: "auto" }}
-                  />
-                </div>
-              </div>
-
-              <div className="demo-card-section demo-badge-row">
-                <div>
-                  <div className="demo-card-label">Microphone Badge</div>
-                  <Toggle on={microphoneBadgeActive} onChange={hubToggleMicrophoneBadge} label="Show microphone badge">
-                    {microphoneBadgeActive ? "Showing" : "Hidden"}
-                  </Toggle>
-                </div>
-
-                <div>
-                  <div className="demo-card-label">Camera Badge</div>
-                  <Toggle on={cameraBadgeActive} onChange={hubToggleCameraBadge} label="Show camera badge">
-                    {cameraBadgeActive ? "Showing" : "Hidden"}
-                  </Toggle>
-                </div>
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">Push Notification</div>
-                <Input
-                  type="text"
-                  value={pushNotificationText}
-                  onChange={(e) => setPushNotificationText(e.target.value)}
-                  placeholder="Notification text..."
-                  style={{ marginBottom: "var(--space-sm)" }}
-                />
-                <div className="input-group">
-                  <Input
-                    type="number"
-                    value={pushNotificationTimeout}
-                    onChange={(e) =>
-                      setPushNotificationTimeout(parseInt(e.target.value) || 12)
-                    }
-                    placeholder="Timeout (sec)"
-                    className="input-number"
-                  />
-                  <Button
-                    variant="secondary"
-                    onClick={hubShowPushNotification}
-                    style={{ flex: 1 }}
-                  >
-                    Show
-                  </Button>
-                  <Button
-                    variant="secondary"
-                    onClick={hubHidePushNotification}
-                  >
-                    Hide
-                  </Button>
-                </div>
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">
-                  Multi-notification testing
-                </div>
-                {/* Fire N at once */}
-                <div style={{ marginBottom: "var(--space-sm)" }}>
-                  <div className="field-hint">
-                    Fire burst (timeout 30s each)
-                  </div>
-                  <div className="btn-group">
-                    {[1, 2, 3, 4, 5, 6].map((n) => (
+                  <div className="section-actions">
+                    <Hint text={writableUpdaters.length === 0
+                          ? "No updater is writable in the current context"
+                          : `Samples the ${writableUpdaters.length} field(s) writable in the current context`}>
                       <Button
                         variant="secondary"
                         size="sm"
-                        key={n}
-                        onClick={() => hubFireCount(n)}
+                        onClick={() => sampleAllUpdaters()}
+                        disabled={writableUpdaters.length === 0}
                       >
-                        ×{n}
+                        Sample all ({writableUpdaters.length})
                       </Button>
-                    ))}
+                    </Hint>
+                    <Hint text={writableWithValue.length === 0
+                          ? "No updater writable in the current context has a value"
+                          : `Writes the ${writableWithValue.length} field(s) writable in the current context`}>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        onClick={() => void updateAllUpdaters()}
+                        disabled={updatingAll || writableWithValue.length === 0}
+                      >
+                        {updatingAll ? "Updating…" : `Update all (${writableWithValue.length})`}
+                      </Button>
+                    </Hint>
+                  </div>
+                </div>
+
+                <Accordion>
+                  {writebackEntries.length === 0 ? (
+                    <div className="empty-state">No updaters available</div>
+                  ) : (
+                    orderedEntityGroups.map(([entityType, entries]) => {
+                      const available = entries.filter(
+                        (e) => unavailableReasons.get(`${e.entityType}:${e.fieldPath}`) === null,
+                      );
+                      const entityWritable = writableUpdaters.filter((u) => u.entityType === entityType);
+                      const entityWithValue = writableWithValue.filter((u) => u.entityType === entityType);
+                      const entityUpdaters = entries
+                        .map((e) => activeUpdaters.get(entityType)?.get(`${e.entityType}:${e.fieldPath}`))
+                        .filter((u): u is UpdaterInfo => u !== undefined);
+                      return (
+                        <CollapsibleCard
+                          key={entityType}
+                          id={entityType}
+                          title={`${entityLabel(manifest, entityType)} (${available.length}/${entries.length})`}
+                          docsHref={writeDocsHref(entityType)}
+                          badge={isEntityOpen(entityType) && <span className="entity-open-pill">Open in EHR</span>}
+                          expanded={expandedCards.has(entityType)}
+                          onToggle={() => toggleCard(entityType)}
+                          actions={
+                            <>
+                              <Hint text={entityWritable.length === 0
+                                    ? groupReason(entries, "sample")
+                                    : `Fill the ${entityWritable.length} writable ${entityType} field(s) with sample values`}>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => sampleAllUpdaters(entityType)}
+                                  disabled={entityWritable.length === 0}
+                                >
+                                  Sample ({entityWritable.length})
+                                </Button>
+                              </Hint>
+                              <Hint text={entityWritable.length === 0
+                                    ? groupReason(entries, "update")
+                                    : entityWithValue.length === 0
+                                      ? "Sample or type a value first"
+                                      : `Write the ${entityWithValue.length} ${entityType} field(s) that have a value`}>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  onClick={() => void updateAllUpdaters(entityType)}
+                                  disabled={updatingAll || entityWithValue.length === 0}
+                                >
+                                  Update ({entityWithValue.length})
+                                </Button>
+                              </Hint>
+                              {(available.length > 0 || entries.some(isUpdaterOn)) &&
+                                turnAllToggle(
+                                  available.length > 0 && available.every(isUpdaterOn),
+                                  (on) => setAllUpdaters(on && available.length > 0, entityType),
+                                  entityType,
+                                )}
+                            </>
+                          }
+                        >
+                          <Accordion className="nested-accordion nested-card-top">
+                            <CollapsibleCard
+                              id={`__fields:${entityType}`}
+                              title={`Fields (${available.length}/${entries.length})`}
+                              expanded={expandedCards.has(`__fields:${entityType}`)}
+                              onToggle={() => toggleCard(`__fields:${entityType}`)}
+                            >
+                              <div className="event-list">
+                                {entries.map((upd) => {
+                                  const reason = unavailableReasons.get(`${upd.entityType}:${upd.fieldPath}`) ?? null;
+                                  const isActive = isUpdaterOn(upd);
+                                  return (
+                                    <div
+                                      key={`${upd.entityType}-${upd.fieldPath}`}
+                                      className={`event-item ${reason ? "updater-unavailable" : ""}`}
+                                    >
+                                      <div className="event-item-text">
+                                        <Tooltip label={upd.fieldPath}>
+                                          <div className="event-name">
+                                            <span className="event-name-label">{upd.fieldPath}</span>
+                                            <DeprecatedTag note={fieldDeprecation(manifest, upd.entityType, upd.fieldPath)} />
+                                          </div>
+                                        </Tooltip>
+                                        <div className="updater-meta">
+                                          {reason
+                                            ? unavailableReasonText(reason, upd.entityType, "write")
+                                            : upd.disruptive
+                                              ? "Requires permission"
+                                              : "Writable now"}
+                                        </div>
+                                      </div>
+                                      <Toggle
+                                        on={isActive}
+                                        disabled={reason !== null && !isActive}
+                                        onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
+                                        label={`Write ${upd.fieldPath}`}
+                                      />
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </CollapsibleCard>
+                          </Accordion>
+                          {entityUpdaters.length === 0 && (
+                            <p className="empty-state">No field is turned on. Open Fields above to turn some on.</p>
+                          )}
+                          {entityUpdaters.map((updater) => {
+                            const key = `${updater.entityType}:${updater.fieldPath}`;
+                            const cap = updaterCapability(updater);
+                            const detected = cap?.available ?? false;
+                            const { modes } = writeModesFor(
+                              manifest,
+                              updater.entityType,
+                              updater.fieldPath,
+                              declaredModesFor(updater.entityType),
+                            );
+                            const selectedMode = modeFor(updater);
+                            return (
+                              <div key={key} className={`updater-card ${!detected ? "disabled" : ""}`}>
+                                <div className="updater-card-header">
+                                  {updater.fieldPath}
+                                  <DeprecatedTag note={fieldDeprecation(manifest, updater.entityType, updater.fieldPath)} />
+                                  {!detected && (
+                                    <span className="updater-warning">
+                                      ({cap?.reason === "not_granted"
+                                        ? "not granted to this app"
+                                        : cap?.reason === "not_configured"
+                                          ? "not configured in this EHR"
+                                          : "not in context"})
+                                    </span>
+                                  )}
+                                </div>
+                                <Input
+                                  type="text"
+                                  value={updater.value}
+                                  onChange={(e) => updateUpdaterValue(entityType, key, e.target.value)}
+                                  placeholder="Enter value..."
+                                  disabled={!detected}
+                                />
+                                <div className="update-row">
+                                  <Hint text="Fill a sample value in the format this field expects">
+                                    <Button
+                                      variant="secondary"
+                                      size="sm"
+                                      onClick={() =>
+                                        updateUpdaterValue(
+                                          entityType,
+                                          key,
+                                          sampleValueFor(manifest, updater.entityType, updater.fieldPath),
+                                        )
+                                      }
+                                      disabled={!detected}
+                                    >
+                                      Sample
+                                    </Button>
+                                  </Hint>
+                                  <SegmentedControl
+                                    ariaLabel="Write mode"
+                                    value={selectedMode}
+                                    onChange={(mode) => setWriteModeChoice((prev) => ({ ...prev, [key]: mode }))}
+                                    options={(["override", "append"] as const).map((mode) => {
+                                      const offered = modes.includes(mode);
+                                      return {
+                                        value: mode,
+                                        label: mode === "override" ? "Override" : "Append",
+                                        disabled: !detected,
+                                        disabledReason: offered
+                                          ? undefined
+                                          : mode === "override"
+                                            ? "Writes to this list add items; it has no replace mode"
+                                            : "No append mode is declared for this field, so a write replaces it",
+                                      };
+                                    })}
+                                  />
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    className="update-row-submit"
+                                    onClick={() => executeUpdate(updater)}
+                                    disabled={!detected}
+                                  >
+                                    Update
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {entityType === "referral" && referralUpdateOp && (
+                            <>
+                              <div className="demo-card-label api-writes-label">API writes</div>
+                              {referralWritesCard}
+                            </>
+                          )}
+                          {entityType === apiWritesEntity && (
+                            <>
+                              <div className="demo-card-label api-writes-label">
+                                API writes ({availableEntityWriteOps.length}/{entityWriteOps.length})
+                                <InfoTip label="About API writes">
+                                  <code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.
+                                </InfoTip>
+                              </div>
+                              {apiWritesCard}
+                            </>
+                          )}
+                        </CollapsibleCard>
+                      );
+                    })
+                  )}
+
+                  {!orderedEntityGroups.some(([entityType]) => entityType === apiWritesEntity) && (
+                    <CollapsibleCard
+                      id="__api_writes"
+                      title={`API writes (${availableEntityWriteOps.length}/${entityWriteOps.length})`}
+                      info={<><code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.</>}
+                      expanded={expandedCards.has("__api_writes")}
+                      onToggle={() => toggleCard("__api_writes")}
+                    >
+                      {apiWritesCard}
+                    </CollapsibleCard>
+                  )}
+
+                  {referralUpdateOp && !orderedEntityGroups.some(([entityType]) => entityType === "referral") && (
+                    <CollapsibleCard
+                      id="__referral_api_writes"
+                      title="Referral API writes"
+                      info={<><code>sdk.ehr.api.referral.updateReferral()</code> writes by referral ID, on EHRs that implement it.</>}
+                      expanded={expandedCards.has("__referral_api_writes")}
+                      onToggle={() => toggleCard("__referral_api_writes")}
+                    >
+                      {referralWritesCard}
+                    </CollapsibleCard>
+                  )}
+                </Accordion>
+              </div>
+            </div>
+          </Card>
+
+          {/* Hub Controls */}
+          <Card as="section" hover="shadow" className="section-collapsible">
+            {sectionHeader(
+              "Hub Controls",
+              hubControlsCollapsed,
+              () => setHubControlsCollapsed(!hubControlsCollapsed),
+              "/docs/app-sdk/vim-hub/",
+              <BellIcon size={12} />,
+              "Your app's icon, badges and notifications in the hub",
+            )}
+            <div
+              className={`section-content ${hubControlsCollapsed ? "collapsed" : ""}`}
+            >
+              <div className="section-inner">
+                <div className="demo-card-section">
+                  <div className="demo-card-label">Activation Status</div>
+                  <SegmentedControl
+                    ariaLabel="Activation status"
+                    value={hubActivationStatus}
+                    onChange={hubSetActivationStatus}
+                    options={[
+                      { value: "ENABLED", label: "Enabled" },
+                      { value: "LOADING", label: "Loading" },
+                      { value: "DISABLED", label: "Disabled" },
+                    ]}
+                  />
+                </div>
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">Tooltip Text</div>
+                  <div className="input-group">
+                    <Input
+                      type="text"
+                      value={tooltipText}
+                      onChange={(e) => setTooltipText(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") hubApplyTooltip();
+                      }}
+                      placeholder="Enter tooltip text, then Set"
+                    />
                     <Button
-                      variant="danger"
-                      size="sm"
+                      variant="secondary"
+                      onClick={hubApplyTooltip}
+                    >
+                      Set
+                    </Button>
+                    <Button variant="secondary" onClick={hubClearTooltip}>
+                      Clear
+                    </Button>
+                  </div>
+                  <p className="tooltip-applied" aria-live="polite">
+                    Hub shows:{" "}
+                    {appliedTooltipText ? (
+                      <code>{appliedTooltipText}</code>
+                    ) : (
+                      "app name (default)"
+                    )}
+                    {tooltipText !== appliedTooltipText &&
+                      tooltipText.trim() &&
+                      " · press Enter or Set to apply"}
+                  </p>
+                </div>
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">
+                    Notification Badge
+                    <InfoTip label="About the notification badge">
+                      <code>set(count)</code> shows the count; <code>set(0)</code> shows a badge with no number.
+                      Turn it off to call <code>hide()</code>.
+                    </InfoTip>
+                  </div>
+                  <div className="input-group">
+                    <Toggle
+                      on={notificationBadgeActive}
+                      onChange={hubToggleNotificationBadge}
+                      label="Show notification badge"
+                    >
+                      {notificationBadgeActive ? "Showing" : "Hidden"}
+                    </Toggle>
+                    <Input
+                      type="number"
+                      value={notificationBadgeCount}
+                      min={0}
+                      onChange={(e) =>
+                        hubChangeNotificationBadgeCount(Math.max(0, parseInt(e.target.value) || 0))
+                      }
+                      className="input-number"
+                      style={{ marginLeft: "auto" }}
+                    />
+                  </div>
+                </div>
+
+                <div className="demo-card-section demo-badge-row">
+                  <div>
+                    <div className="demo-card-label">Microphone Badge</div>
+                    <Toggle on={microphoneBadgeActive} onChange={hubToggleMicrophoneBadge} label="Show microphone badge">
+                      {microphoneBadgeActive ? "Showing" : "Hidden"}
+                    </Toggle>
+                  </div>
+
+                  <div>
+                    <div className="demo-card-label">Camera Badge</div>
+                    <Toggle on={cameraBadgeActive} onChange={hubToggleCameraBadge} label="Show camera badge">
+                      {cameraBadgeActive ? "Showing" : "Hidden"}
+                    </Toggle>
+                  </div>
+                </div>
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">Push Notification</div>
+                  <Input
+                    type="text"
+                    value={pushNotificationText}
+                    onChange={(e) => setPushNotificationText(e.target.value)}
+                    placeholder="Notification text..."
+                    style={{ marginBottom: "var(--space-sm)" }}
+                  />
+                  <div className="input-group">
+                    <Input
+                      type="number"
+                      value={pushNotificationTimeout}
+                      onChange={(e) =>
+                        setPushNotificationTimeout(parseInt(e.target.value) || 12)
+                      }
+                      placeholder="Timeout (sec)"
+                      className="input-number"
+                    />
+                    <Button
+                      variant="secondary"
+                      onClick={hubShowPushNotification}
+                      style={{ flex: 1 }}
+                    >
+                      Show
+                    </Button>
+                    <Button
+                      variant="secondary"
                       onClick={hubHidePushNotification}
                     >
-                      Hide all
+                      Hide
                     </Button>
                   </div>
                 </div>
-                {/* Individual presets */}
-                <div className="field-hint">
-                  Individual presets
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">
+                    Multi-notification testing
+                  </div>
+                  {/* Fire N at once */}
+                  <div style={{ marginBottom: "var(--space-sm)" }}>
+                    <div className="field-hint">
+                      Fire burst (timeout 30s each)
+                    </div>
+                    <div className="btn-group">
+                      {[1, 2, 3, 4, 5, 6].map((n) => (
+                        <Button
+                          variant="secondary"
+                          size="sm"
+                          key={n}
+                          onClick={() => hubFireCount(n)}
+                        >
+                          ×{n}
+                        </Button>
+                      ))}
+                      <Button
+                        variant="danger"
+                        size="sm"
+                        onClick={hubHidePushNotification}
+                      >
+                        Hide all
+                      </Button>
+                    </div>
+                  </div>
+                  {/* Individual presets */}
+                  <div className="field-hint">
+                    Individual presets
+                  </div>
+                  <div className="preset-list">
+                    {MULTI_NOTIF_PRESETS.map((preset, i) => (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="preset-row"
+                        key={i}
+                        onClick={() => hubFirePreset(i)}
+                      >
+                        <span className="preset-index">{i + 1}</span>
+                        <span className={`preset-dot preset-dot-${"type" in preset ? preset.type : "plain"}`} aria-hidden="true" />
+                        {preset.label}
+                      </Button>
+                    ))}
+                  </div>
                 </div>
-                <div className="preset-list">
-                  {MULTI_NOTIF_PRESETS.map((preset, i) => (
+
+                <div className="demo-card-section" ref={deviceSectionRef}>
+                  <div className="demo-card-label">
+                    Microphone &amp; video
+                    <InfoTip label="About microphone and video">
+                      Calls <code>navigator.mediaDevices.getUserMedia()</code>. The hub delegates the device only when the
+                      manifest turns on Allow Microphone / Allow Video Capture; Chrome then asks the provider the first time.
+                    </InfoTip>
+                  </div>
+                  <DeviceAccessControls
+                    addLog={addLog}
+                    sdk={vimSDK}
+                    onResume={() => {
+                      setHubControlsCollapsed(false);
+                      setRevealDevices(true);
+                    }}
+                    onMicrophoneLiveChange={setMicrophoneBadge}
+                    onCameraLiveChange={setCameraBadge}
+                  />
+                </div>
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">App Control</div>
+                  <Button
+                    variant="danger"
+                    onClick={hubCloseApp}
+                    style={{ width: "100%" }}
+                  >
+                    Close App
+                  </Button>
+                </div>
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">App State Subscription</div>
+                  {!appStateSubscribed ? (
+                    <Button
+                      variant="secondary"
+                      onClick={hubSubscribeAppState}
+                      style={{ width: "100%" }}
+                    >
+                      Subscribe
+                    </Button>
+                  ) : (
+                    <>
+                      <div className="status-panel">
+                        <div className="status-panel-head">
+                          <span
+                            className={`status-line ${appStateIsOpen === null ? "is-waiting" : appStateIsOpen ? "is-live" : "is-off"}`}
+                            aria-live="polite"
+                          >
+                            <StatusDot tone={appStateIsOpen ? "success" : "neutral"} motion={appStateIsOpen === null ? "blink" : "none"} />
+                            {appStateIsOpen === null
+                              ? "Waiting for a change"
+                              : appStateIsOpen
+                                ? "App is open"
+                                : "App is closed"}
+                          </span>
+                          <Button variant="secondary" size="sm" onClick={hubUnsubscribeAppState}>
+                            Unsubscribe
+                          </Button>
+                        </div>
+                        {appStateLog.length > 0 && (
+                          <ol className="status-history">
+                            {appStateLog.map((entry, i) => (
+                              <li key={i} className="status-history-row">
+                                <span className="log-timestamp">{entry.timestamp}</span>
+                                <Badge variant={entry.isOpen ? "success" : "neutral"}>
+                                  {entry.isOpen ? "Opened" : "Closed"}
+                                </Badge>
+                                {entry.trigger && <span className="log-trigger">{entry.trigger}</span>}
+                              </li>
+                            ))}
+                          </ol>
+                        )}
+                      </div>
+                    </>
+                  )}
+                </div>
+
+                <div className="demo-card-section">
+                  <div className="demo-card-label">
+                    Color Scheme
+                    <InfoTip label="About the color scheme">
+                      <code>hub.colorScheme</code> reports the light or dark theme the clinician chose for the Vim Hub.
+                      The app can follow it or pick its own theme; the Hub&apos;s theme is the clinician&apos;s to change.
+                    </InfoTip>
+                  </div>
+                  <div className="section-hint" style={{ marginBottom: "var(--space-xs)" }}>
+                    This app&apos;s theme
+                  </div>
+                  <SegmentedControl
+                    className="theme-choice"
+                    ariaLabel="App theme"
+                    value={appTheme}
+                    onChange={chooseAppTheme}
+                    options={[
+                      { value: "hub", label: "Follow Hub" },
+                      { value: "light", label: "Light" },
+                      { value: "dark", label: "Dark" },
+                    ]}
+                  />
+                  {!vimSDK?.hub.colorScheme ? (
+                    <div className="section-hint">
+                      This extension doesn&apos;t report a color scheme: <code>hub.colorScheme</code> is undefined.
+                    </div>
+                  ) : (
+                    <>
+                      <div style={{ display: "flex", gap: "var(--space-sm)", marginBottom: "var(--space-sm)" }}>
+                        <Button variant="secondary" onClick={hubReadColorScheme} style={{ flex: 1 }}>
+                          Read current
+                        </Button>
+                        {!colorSchemeSubscribed ? (
+                          <Button variant="secondary" onClick={hubSubscribeColorScheme} style={{ flex: 1 }}>
+                            Subscribe
+                          </Button>
+                        ) : (
+                          <Button variant="secondary" onClick={hubUnsubscribeColorScheme} style={{ flex: 1 }}>
+                            Unsubscribe
+                          </Button>
+                        )}
+                      </div>
+                      {(colorSchemeRead || colorSchemeSubscribed) && (
+                        <div className="updater-card" style={{ marginBottom: "var(--space-sm)" }}>
+                          {colorSchemeRead && (
+                            <div style={{ marginBottom: "var(--space-xs)" }}>
+                              Current: <strong>{colorSchemeRead.scheme}</strong>{" "}
+                              <span className="log-timestamp">read at {colorSchemeRead.timestamp}</span>
+                            </div>
+                          )}
+                          {colorSchemeSubscribed && colorSchemeLog.length === 0 && (
+                            <div className="section-hint" style={{ margin: 0 }}>
+                              Subscribed. Switch the Hub&apos;s light/dark toggle to see changes.
+                            </div>
+                          )}
+                          {colorSchemeLog.map((entry, i) => (
+                            <div key={i} className="log-entry">
+                              <span className="log-timestamp">{entry.timestamp}</span>
+                              <span style={{ fontWeight: "var(--font-semibold)" }}>changed → {entry.scheme}</span>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      <CodeBlock code={COLOR_SCHEME_SNIPPET} />
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <SessionContextPanel
+            sessionContext={vimSDK?.sessionContext ?? null}
+            addLog={addLog}
+          />
+
+          <Card as="section" hover="shadow" className="section-collapsible">
+            {sectionHeader(
+              "Worker App",
+              workerCollapsed,
+              () => setWorkerCollapsed(!workerCollapsed),
+              "/docs/app-sdk/worker-apps/",
+              <CpuIcon size={12} />,
+              "Work that keeps running when the panel is closed",
+            )}
+            <div className={`section-content ${workerCollapsed ? "collapsed" : ""}`}>
+              <div className="section-inner">
+                <div className="worker-panel">
+                  <div className="worker-panel-head">
+                    <span className={`worker-state ${workerData ? "is-live" : "is-waiting"}`} aria-live="polite">
+                      <StatusDot tone={workerData ? "success" : "neutral"} motion={workerData ? "none" : "blink"} />
+                      {workerData ? "Worker is running" : "Waiting for the Worker…"}
+                    </span>
                     <Button
                       variant="secondary"
                       size="sm"
-                      className="preset-row"
-                      key={i}
-                      onClick={() => hubFirePreset(i)}
+                      onClick={refreshWorkerData}
+                      disabled={!appEventsSupported}
                     >
-                      <span className="preset-index">{i + 1}</span>
-                      <span className={`preset-dot preset-dot-${"type" in preset ? preset.type : "plain"}`} aria-hidden="true" />
-                      {preset.label}
+                      Refresh
                     </Button>
-                  ))}
-                </div>
-              </div>
-
-              <div className="demo-card-section" ref={deviceSectionRef}>
-                <div className="demo-card-label">
-                  Microphone &amp; video
-                  <InfoTip label="About microphone and video">
-                    Calls <code>navigator.mediaDevices.getUserMedia()</code>. The hub delegates the device only when the
-                    manifest turns on Allow Microphone / Allow Video Capture; Chrome then asks the provider the first time.
-                  </InfoTip>
-                </div>
-                <DeviceAccessControls
-                  addLog={addLog}
-                  sdk={vimSDK}
-                  onResume={() => {
-                    setHubControlsCollapsed(false);
-                    setRevealDevices(true);
-                  }}
-                  onMicrophoneLiveChange={setMicrophoneBadge}
-                  onCameraLiveChange={setCameraBadge}
-                />
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">App Control</div>
-                <Button
-                  variant="danger"
-                  onClick={hubCloseApp}
-                  style={{ width: "100%" }}
-                >
-                  Close App
-                </Button>
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">App State Subscription</div>
-                {!appStateSubscribed ? (
-                  <Button
-                    variant="secondary"
-                    onClick={hubSubscribeAppState}
-                    style={{ width: "100%" }}
-                  >
-                    Subscribe
-                  </Button>
-                ) : (
-                  <>
-                    <div className="status-panel">
-                      <div className="status-panel-head">
-                        <span
-                          className={`status-line ${appStateIsOpen === null ? "is-waiting" : appStateIsOpen ? "is-live" : "is-off"}`}
-                          aria-live="polite"
-                        >
-                          <StatusDot tone={appStateIsOpen ? "success" : "neutral"} motion={appStateIsOpen === null ? "blink" : "none"} />
-                          {appStateIsOpen === null
-                            ? "Waiting for a change"
-                            : appStateIsOpen
-                              ? "App is open"
-                              : "App is closed"}
-                        </span>
-                        <Button variant="secondary" size="sm" onClick={hubUnsubscribeAppState}>
-                          Unsubscribe
-                        </Button>
-                      </div>
-                      {appStateLog.length > 0 && (
-                        <ol className="status-history">
-                          {appStateLog.map((entry, i) => (
-                            <li key={i} className="status-history-row">
-                              <span className="log-timestamp">{entry.timestamp}</span>
-                              <Badge variant={entry.isOpen ? "success" : "neutral"}>
-                                {entry.isOpen ? "Opened" : "Closed"}
-                              </Badge>
-                              {entry.trigger && <span className="log-trigger">{entry.trigger}</span>}
-                            </li>
-                          ))}
-                        </ol>
-                      )}
-                    </div>
-                  </>
-                )}
-              </div>
-
-              <div className="demo-card-section">
-                <div className="demo-card-label">
-                  Color Scheme
-                  <InfoTip label="About the color scheme">
-                    <code>hub.colorScheme</code> reports the light or dark theme the clinician chose for the Vim Hub.
-                    The app can follow it or pick its own theme; the Hub&apos;s theme is the clinician&apos;s to change.
-                  </InfoTip>
-                </div>
-                <div className="section-hint" style={{ marginBottom: "var(--space-xs)" }}>
-                  This app&apos;s theme
-                </div>
-                <SegmentedControl
-                  className="theme-choice"
-                  ariaLabel="App theme"
-                  value={appTheme}
-                  onChange={chooseAppTheme}
-                  options={[
-                    { value: "hub", label: "Follow Hub" },
-                    { value: "light", label: "Light" },
-                    { value: "dark", label: "Dark" },
-                  ]}
-                />
-                {!vimSDK?.hub.colorScheme ? (
-                  <div className="section-hint">
-                    This extension doesn&apos;t report a color scheme: <code>hub.colorScheme</code> is undefined.
                   </div>
-                ) : (
-                  <>
-                    <div style={{ display: "flex", gap: "var(--space-sm)", marginBottom: "var(--space-sm)" }}>
-                      <Button variant="secondary" onClick={hubReadColorScheme} style={{ flex: 1 }}>
-                        Read current
-                      </Button>
-                      {!colorSchemeSubscribed ? (
-                        <Button variant="secondary" onClick={hubSubscribeColorScheme} style={{ flex: 1 }}>
-                          Subscribe
-                        </Button>
-                      ) : (
-                        <Button variant="secondary" onClick={hubUnsubscribeColorScheme} style={{ flex: 1 }}>
-                          Unsubscribe
-                        </Button>
-                      )}
-                    </div>
-                    {(colorSchemeRead || colorSchemeSubscribed) && (
-                      <div className="updater-card" style={{ marginBottom: "var(--space-sm)" }}>
-                        {colorSchemeRead && (
-                          <div style={{ marginBottom: "var(--space-xs)" }}>
-                            Current: <strong>{colorSchemeRead.scheme}</strong>{" "}
-                            <span className="log-timestamp">read at {colorSchemeRead.timestamp}</span>
-                          </div>
-                        )}
-                        {colorSchemeSubscribed && colorSchemeLog.length === 0 && (
-                          <div className="section-hint" style={{ margin: 0 }}>
-                            Subscribed. Switch the Hub&apos;s light/dark toggle to see changes.
-                          </div>
-                        )}
-                        {colorSchemeLog.map((entry, i) => (
-                          <div key={i} className="log-entry">
-                            <span className="log-timestamp">{entry.timestamp}</span>
-                            <span style={{ fontWeight: "var(--font-semibold)" }}>changed → {entry.scheme}</span>
-                          </div>
-                        ))}
+                  {workerData && (
+                    <dl className="kv-list worker-kv">
+                      <div className="kv-row">
+                        <dt className="kv-label">Refresh #</dt>
+                        <dd className="kv-row-value kv-value">{workerData.refreshCount}</dd>
                       </div>
-                    )}
-                    <CodeBlock code={COLOR_SCHEME_SNIPPET} />
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </Card>
-
-        <SessionContextPanel
-          sessionContext={vimSDK?.sessionContext ?? null}
-          addLog={addLog}
-        />
-
-        <Card as="section" hover="shadow" className="section-collapsible">
-          {sectionHeader(
-            "Worker App",
-            workerCollapsed,
-            () => setWorkerCollapsed(!workerCollapsed),
-            "/docs/app-sdk/worker-apps/",
-            <CpuIcon size={12} />,
-            "Work that keeps running when the panel is closed",
-          )}
-          <div className={`section-content ${workerCollapsed ? "collapsed" : ""}`}>
-            <div className="section-inner">
-              <div className="worker-panel">
-                <div className="worker-panel-head">
-                  <span className={`worker-state ${workerData ? "is-live" : "is-waiting"}`} aria-live="polite">
-                    <StatusDot tone={workerData ? "success" : "neutral"} motion={workerData ? "none" : "blink"} />
-                    {workerData ? "Worker is running" : "Waiting for the Worker…"}
-                  </span>
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={refreshWorkerData}
-                    disabled={!appEventsSupported}
-                  >
-                    Refresh
-                  </Button>
-                </div>
-                {workerData && (
-                  <dl className="kv-list worker-kv">
-                    <div className="kv-row">
-                      <dt className="kv-label">Refresh #</dt>
-                      <dd className="kv-row-value kv-value">{workerData.refreshCount}</dd>
-                    </div>
-                    <div className="kv-row">
-                      <dt className="kv-label">Generated</dt>
-                      <dd className="kv-row-value kv-value">{new Date(workerData.generatedAt).toLocaleTimeString()}</dd>
-                    </div>
-                    <div className="kv-row">
-                      <dt className="kv-label">Token</dt>
-                      <dd className="kv-row-value kv-value">{workerData.token}</dd>
-                    </div>
-                  </dl>
-                )}
-                <div className="worker-panel-foot">
-                  <Badge variant={appEventsSupported ? "success" : "neutral"} dot>
-                    appEvents {appEventsSupported ? "supported" : "not supported"}
-                  </Badge>
-                  {!appEventsSupported && <span className="field-hint">Refresh needs an extension that sends appEvents.</span>}
+                      <div className="kv-row">
+                        <dt className="kv-label">Generated</dt>
+                        <dd className="kv-row-value kv-value">{new Date(workerData.generatedAt).toLocaleTimeString()}</dd>
+                      </div>
+                      <div className="kv-row">
+                        <dt className="kv-label">Token</dt>
+                        <dd className="kv-row-value kv-value">{workerData.token}</dd>
+                      </div>
+                    </dl>
+                  )}
+                  <div className="worker-panel-foot">
+                    <Badge variant={appEventsSupported ? "success" : "neutral"} dot>
+                      appEvents {appEventsSupported ? "supported" : "not supported"}
+                    </Badge>
+                    {!appEventsSupported && <span className="field-hint">Refresh needs an extension that sends appEvents.</span>}
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
 
-        {/* Activity Log */}
-        <Card as="section" hover="shadow" className="section-collapsible">
-          {sectionHeader(
-            `Activity Log (${logEntries.length})`,
-            activityLogCollapsed,
-            () => setActivityLogCollapsed(!activityLogCollapsed),
-            undefined,
-            <ActivityIcon size={12} />,
-            "Everything the SDK did, newest first",
-          )}
-          <div
-            className={`section-content ${activityLogCollapsed ? "collapsed" : ""}`}
-          >
-            <div className="section-inner">
-              <div className="log-toolbar">
-                <div className="field-hint">
-                  {logEntries.length} log entr
-                  {logEntries.length !== 1 ? "ies" : "y"}
+          {/* Activity Log */}
+          <Card as="section" hover="shadow" className="section-collapsible">
+            {sectionHeader(
+              `Activity Log (${logEntries.length})`,
+              activityLogCollapsed,
+              () => setActivityLogCollapsed(!activityLogCollapsed),
+              undefined,
+              <ActivityIcon size={12} />,
+              "Everything the SDK did, newest first",
+            )}
+            <div
+              className={`section-content ${activityLogCollapsed ? "collapsed" : ""}`}
+            >
+              <div className="section-inner">
+                <div className="log-toolbar">
+                  <div className="field-hint">
+                    {logEntries.length} log entr
+                    {logEntries.length !== 1 ? "ies" : "y"}
+                  </div>
+                  {logEntries.length > 0 && (
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      onClick={() => setLogEntries([])}
+                    >
+                      Clear
+                    </Button>
+                  )}
                 </div>
-                {logEntries.length > 0 && (
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={() => setLogEntries([])}
-                  >
-                    Clear
-                  </Button>
-                )}
-              </div>
-              <div className="activity-log">
-                {logEntries.length === 0 ? (
-                  <p className="empty-state">No activity yet</p>
-                ) : (
-                  logEntries.map((entry, index) => (
-                    <div key={index} className={`log-entry ${entry.type}`}>
-                      <span className="log-timestamp">{entry.timestamp}</span>{" "}
-                      {entry.message}
-                    </div>
-                  ))
-                )}
+                <div className="activity-log">
+                  {logEntries.length === 0 ? (
+                    <p className="empty-state">No activity yet</p>
+                  ) : (
+                    logEntries.map((entry, index) => (
+                      <div key={index} className={`log-entry ${entry.type}`}>
+                        <span className="log-timestamp">{entry.timestamp}</span>{" "}
+                        {entry.message}
+                      </div>
+                    ))
+                  )}
+                </div>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
+
       </div>
-
-    </div>
-      )}
+        )}
+      </TabPanel>
 
       {redirectUrl && (
         <Modal
