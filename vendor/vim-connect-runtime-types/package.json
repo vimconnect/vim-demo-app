@@ -1,0 +1,21 @@
+{
+  "name": "@vim-connect/runtime-types",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The @vim-connect/runtime-types modules @vim-connect/ui imports, vendored for this template.",
+  "type": "module",
+  "exports": {
+    "./app-description": {
+      "types": "./dist/app-description.d.ts",
+      "import": "./dist/app-description.js"
+    },
+    "./app-icon": {
+      "types": "./dist/app-icon.d.ts",
+      "import": "./dist/app-icon.js"
+    },
+    "./date-of-birth": {
+      "types": "./dist/date-of-birth.d.ts",
+      "import": "./dist/date-of-birth.js"
+    }
+  }
+}

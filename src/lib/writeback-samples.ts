@@ -9,8 +9,8 @@ export interface WritebackEntry {
 const PRIMITIVE_TYPES = new Set(['string', 'number', 'boolean', 'date']);
 
 /**
- * Must match `getUpdatableFieldPaths` in `@vim-connect/runtime-types`; the demo app ships as a
- * public template and can't depend on that package.
+ * Must match `getUpdatableFieldPaths` in `@vim-connect/runtime-types`; do not import that package
+ * here (the public template vendors only the modules @vim-connect/ui needs).
  */
 function writablePaths(properties: Record<string, FieldSchema> | undefined, prefix: string): string[] {
   const out: string[] = [];

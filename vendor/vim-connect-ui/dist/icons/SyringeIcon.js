@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function SyringeIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M23.2188 4.78125L21.7812 6.21875L22.1562 6.59375L19.875 8.875L21.2812 10.3125L23.5625 8L25 9.4375L22.6875 11.7188L24.125 13.125L26.4062 10.8438L26.7812 11.2188L28.2188 9.78125L23.2188 4.78125ZM17.7188 8.28125L16.2812 9.71875L16.9375 10.375L7 20.3438L6.65625 20.6875L6.71875 21.1562L7.0625 24.3438L7.09375 24.6875L7.1875 24.75L3.9375 28H6.78125L8.8125 25.9688L11.8438 26.2812L12.3125 26.3438L12.6562 26L22.625 16.0625L23.2812 16.7188L24.7188 15.2812L17.7188 8.28125ZM18.375 11.8125L21.1875 14.625L11.5938 24.25L9.21875 23.9688L9.03125 23.7812L8.75 21.4062L18.375 11.8125Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

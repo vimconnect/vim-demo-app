@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useId } from 'react';
+export function DemoIcon({ width = 32, height = 32, ...props }) {
+    const uid = useId();
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("g", { clipPath: `url(#${uid}-DemoIcon_clip0_835_40)`, children: _jsx("path", { d: "M25.8637 13.71C27.3788 14.8692 27.3788 17.1308 25.8637 18.29C21.2849 21.7931 16.172 24.5542 10.7165 26.47L9.71983 26.82C7.81308 27.4896 5.79905 26.214 5.54092 24.2679C4.81969 18.8304 4.81969 13.1696 5.54092 7.73211C5.79905 5.78597 7.81309 4.5104 9.71983 5.17999L10.7165 5.52999C16.172 7.44582 21.2849 10.2069 25.8637 13.71ZM24.4615 16.4982C24.7912 16.246 24.7912 15.754 24.4615 15.5018C20.0748 12.1456 15.1764 9.50032 9.94965 7.66485L8.95299 7.31485C8.45663 7.14054 7.8862 7.47275 7.81272 8.0267C7.11744 13.2687 7.11744 18.7313 7.81272 23.9733C7.8862 24.5273 8.45663 24.8595 8.95299 24.6852L9.94964 24.3352C15.1764 22.4997 20.0748 19.8544 24.4615 16.4982Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }), _jsx("defs", { children: _jsx("clipPath", { id: `${uid}-DemoIcon_clip0_835_40`, children: _jsx("rect", { width: "32", height: "32", fill: "white" }) }) })] }));
+}

@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function MicroscopeIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M18 6V4H22V6H18ZM17 8C17 7.44772 17.4477 7 18 7H22C22.5523 7 23 7.44772 23 8V16C23 16.5523 22.5523 17 22 17H18C17.4477 17 17 16.5523 17 16V11H15C13.3438 11 12 12.3438 12 14V18.1875C12.8398 18.4922 13.5078 19.1602 13.8125 20H25V22H13.8125C13.5078 22.8438 12.8438 23.5078 12 23.8125V26H25V28H8V26H10V23.8125C8.84375 23.3945 8 22.293 8 21C8 19.707 8.84375 18.6055 10 18.1875V14C10 11.2539 12.2539 9 15 9H17V8ZM19 9H21V15H19V9ZM12 21C12 20.4375 11.5625 20 11 20C10.4375 20 10 20.4375 10 21C10 21.5625 10.4375 22 11 22C11.5625 22 12 21.5625 12 21Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

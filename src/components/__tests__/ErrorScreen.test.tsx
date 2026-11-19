@@ -1,5 +1,5 @@
 import '@testing-library/jest-dom/vitest';
-import { describe, it, expect, vi } from 'vitest';
+import { afterEach, describe, it, expect, vi } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ErrorScreen, formatDiagnostics } from '../ErrorScreen';
@@ -35,60 +35,34 @@ describe('ErrorScreen', () => {
     ],
   };
 
-  it('shows the friendly heading and message and hides diagnostics by default', () => {
-    render(<ErrorScreen {...baseProps} />);
+  it('shows the friendly heading and message with the diagnostics folded away', () => {
+    const { container } = render(<ErrorScreen {...baseProps} />);
 
     expect(screen.getByRole('heading', { name: 'Connection Error' })).toBeInTheDocument();
     expect(screen.getByText(baseProps.message)).toBeInTheDocument();
-    expect(screen.queryByText(/SDK init timed out/)).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Show Diagnostics' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
+    const details = container.querySelector('details');
+    expect(details).not.toBeNull();
+    expect(details).not.toHaveAttribute('open');
+    expect(screen.getByText('Error details')).toBeInTheDocument();
   });
 
-  it('reveals diagnostics, flips aria-expanded, and toggles back on second click', async () => {
+  it('reveals the aligned diagnostics when "Error details" is opened', async () => {
     const user = userEvent.setup();
-    render(<ErrorScreen {...baseProps} />);
+    const { container } = render(<ErrorScreen {...baseProps} />);
 
-    const toggle = screen.getByRole('button', { name: 'Show Diagnostics' });
-    await user.click(toggle);
-
-    expect(screen.getByRole('button', { name: 'Hide Diagnostics' })).toHaveAttribute(
-      'aria-expanded',
-      'true',
-    );
-    expect(screen.getByText(/SDK init timed out/)).toBeInTheDocument();
+    await user.click(screen.getByText('Error details'));
+    expect(container.querySelector('details')).toHaveAttribute('open');
+    expect(screen.getByText(/SDK init timed out/)).toBeVisible();
     expect(screen.getByText(/Browser:.*TestAgent\/1\.0/)).toBeInTheDocument();
-
-    await user.click(screen.getByRole('button', { name: 'Hide Diagnostics' }));
-    expect(screen.getByRole('button', { name: 'Show Diagnostics' })).toHaveAttribute(
-      'aria-expanded',
-      'false',
-    );
-    expect(screen.queryByText(/SDK init timed out/)).not.toBeInTheDocument();
   });
 
-  it('wires aria-controls to the rendered diagnostics panel id', async () => {
-    const user = userEvent.setup();
-    render(<ErrorScreen {...baseProps} diagnosticsPanelId="custom-panel-id" />);
-
-    const toggle = screen.getByRole('button', { name: 'Show Diagnostics' });
-    expect(toggle).toHaveAttribute('aria-controls', 'custom-panel-id');
-
-    await user.click(toggle);
-    expect(document.getElementById('custom-panel-id')).toBeInTheDocument();
-  });
-
-  describe('retry button', () => {
+  describe('retry', () => {
     it('renders and invokes onClick when retry prop is provided', async () => {
       const user = userEvent.setup();
       const onRetry = vi.fn();
       render(<ErrorScreen {...baseProps} retry={{ label: 'Retry', onClick: onRetry }} />);
 
-      const retry = screen.getByRole('button', { name: 'Retry' });
-      await user.click(retry);
-
+      await user.click(screen.getByRole('button', { name: 'Retry' }));
       expect(onRetry).toHaveBeenCalledTimes(1);
     });
 
@@ -98,36 +72,41 @@ describe('ErrorScreen', () => {
     });
   });
 
-  describe('clipboard copy', () => {
+  describe('copy', () => {
+    const originalClipboard = Object.getOwnPropertyDescriptor(navigator, 'clipboard');
+    afterEach(() => {
+      if (originalClipboard) Object.defineProperty(navigator, 'clipboard', originalClipboard);
+      else delete (navigator as unknown as { clipboard?: unknown }).clipboard;
+      delete (document as unknown as { execCommand?: unknown }).execCommand;
+    });
+
     it('writes the formatted diagnostics text to the clipboard', async () => {
       const user = userEvent.setup();
-      const writeText = vi.spyOn(navigator.clipboard, 'writeText');
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
       render(<ErrorScreen {...baseProps} />);
 
-      await user.click(screen.getByRole('button', { name: 'Show Diagnostics' }));
-      await user.click(screen.getByRole('button', { name: 'Copy to Clipboard' }));
+      await user.click(screen.getByRole('button', { name: /copy diagnostics/i }));
 
       expect(writeText).toHaveBeenCalledTimes(1);
-      const written = writeText.mock.calls[0][0];
+      const written = writeText.mock.calls[0][0] as string;
       expect(written).toContain('Error:   SDK init timed out');
       expect(written).toContain('Code:    TIMEOUT');
       expect(written).toContain('Browser: TestAgent/1.0');
     });
 
-    it('swallows clipboard rejection without throwing', async () => {
+    it('still copies when the iframe blocks navigator.clipboard', async () => {
       const user = userEvent.setup();
-      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
-      vi.spyOn(navigator.clipboard, 'writeText').mockRejectedValue(
-        new Error('permission denied'),
-      );
-
+      const writeText = vi.fn().mockRejectedValue(new Error('blocked by permissions policy'));
+      Object.defineProperty(navigator, 'clipboard', { value: { writeText }, configurable: true });
+      const execCommand = vi.fn().mockReturnValue(true);
+      Object.defineProperty(document, 'execCommand', { value: execCommand, configurable: true });
       render(<ErrorScreen {...baseProps} />);
-      await user.click(screen.getByRole('button', { name: 'Show Diagnostics' }));
 
-      const copy = screen.getByRole('button', { name: 'Copy to Clipboard' });
-      await expect(user.click(copy)).resolves.not.toThrow();
-      await new Promise((r) => setTimeout(r, 0));
-      expect(consoleError).toHaveBeenCalled();
+      await user.click(screen.getByRole('button', { name: /copy diagnostics/i }));
+
+      expect(execCommand).toHaveBeenCalledWith('copy');
+      expect(await screen.findByRole('button', { name: /diagnostics copied/i })).toBeInTheDocument();
     });
   });
 });

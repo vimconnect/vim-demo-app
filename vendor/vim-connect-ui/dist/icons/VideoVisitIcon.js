@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function VideoVisitIcon({ width = 30, height = 30, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 30 30", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M18.3561 13.1695V11.1013C18.3561 10.2711 17.6833 9.59961 16.8533 9.59961H7.50274C6.67309 9.59961 6 10.2719 6 11.1013V18.8979C6 19.7281 6.6728 20.3996 7.50274 20.3996H16.8533C17.683 20.3996 18.3561 19.7273 18.3561 18.8979V16.8498L22.6709 19.0989C23.4051 19.4816 24 19.1203 24 18.2921V11.7272C24 10.9001 23.4049 10.5378 22.6709 10.9204L18.3561 13.1695ZM0 1.79792C0 0.804956 0.806304 0 1.79792 0H28.2021C29.195 0 30 0.806304 30 1.79792V28.2021C30 29.195 29.1937 30 28.2021 30H1.79792C0.804956 30 0 29.1937 0 28.2021V1.79792V1.79792Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

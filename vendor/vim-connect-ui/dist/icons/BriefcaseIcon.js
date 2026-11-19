@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function BriefcaseIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M16 4C14.1367 4 12.6016 5.27734 12.1562 7H7C4.79086 7 3 8.79086 3 11V25C3 26.1046 3.89543 27 5 27H27C28.1046 27 29 26.1046 29 25V11C29 8.79086 27.2091 7 25 7H19.8438C19.3984 5.27734 17.8633 4 16 4ZM16 6C16.8086 6 17.4297 6.38672 17.75 7H14.25C14.5703 6.38672 15.1914 6 16 6ZM5 11C5 9.89543 5.89543 9 7 9H25C26.1046 9 27 9.89543 27 11V18H5V11ZM16 15C15.4492 15 15 15.4492 15 16C15 16.5508 15.4492 17 16 17C16.5508 17 17 16.5508 17 16C17 15.4492 16.5508 15 16 15ZM5 20H27V24C27 24.5523 26.5523 25 26 25H6C5.44772 25 5 24.5523 5 24V20Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

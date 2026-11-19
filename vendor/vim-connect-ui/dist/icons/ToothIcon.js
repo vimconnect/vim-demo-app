@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export function ToothIcon({ width = 32, height = 32, ...props }) {
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("path", { d: "M12.7613 21.9853C12.1969 23.2131 12.0134 24.5819 11.5336 25.8379C11.2547 26.8823 10.2888 26.6099 9.65667 26.0214C5.8096 21.7345 2.89541 11.342 7.45518 6.51842C9.78605 3.92482 12 7.55892 16 7.55893C20 7.55893 22.2434 3.94878 24.5591 6.51842C29.1209 11.3791 26.1231 21.7304 22.2588 26.0214C21.6638 26.664 20.6367 26.8545 20.3678 25.8379C19.888 24.5819 19.7186 23.2131 19.1541 21.9853C17.8978 18.9611 14.0558 19.0798 12.7613 21.9853Z", strokeWidth: "1.6", strokeMiterlimit: "10", stroke: "currentColor" }), _jsx("path", { d: "M22.6666 8C24 8.66667 24 10 24 10.6667", strokeLinecap: "round", stroke: "currentColor" })] }));
+}

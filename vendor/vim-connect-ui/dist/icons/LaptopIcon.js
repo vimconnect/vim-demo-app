@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function LaptopIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M7 6C5.89543 6 5 6.89543 5 8V19.5625L2.71875 21.875C2.26562 22.3281 2 22.9531 2 23.5938C2 24.9141 3.08594 26 4.40625 26H27.5938C28.9141 26 30 24.9141 30 23.5938C30 22.9531 29.7344 22.3281 29.2812 21.875L27 19.5625V8C27 6.89543 26.1046 6 25 6H7ZM7 9C7 8.44772 7.44772 8 8 8H24C24.5523 8 25 8.44772 25 9V19H7V9ZM6.4375 21H25.5625L27.875 23.2812C27.9531 23.3594 28 23.4844 28 23.5938C28 23.8359 27.8359 24 27.5938 24H4.40625C4.16406 24 4 23.8359 4 23.5938C4 23.4844 4.04688 23.3594 4.125 23.2812L6.4375 21Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

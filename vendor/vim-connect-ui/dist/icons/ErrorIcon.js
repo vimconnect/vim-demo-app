@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function ErrorIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M17.246 9.42242C17.2089 9.1838 17.0024 9 16.752 9H15.248L15.1564 9.00836C14.9189 9.0523 14.7411 9.26391 14.7482 9.51422L15.0042 18.5142L15.0145 18.6021C15.0617 18.8299 15.2635 19 15.504 19H16.496L16.5842 18.9922C16.8132 18.9515 16.989 18.7547 16.9958 18.5142L17.2518 9.51422L17.246 9.42242ZM17.38 21.5C17.38 20.7439 16.7561 20.12 16 20.12C15.2439 20.12 14.62 20.7439 14.62 21.5C14.62 22.2443 15.2479 22.88 16 22.88C16.7521 22.88 17.38 22.2443 17.38 21.5Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

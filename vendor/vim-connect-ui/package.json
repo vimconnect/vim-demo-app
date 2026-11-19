@@ -1,0 +1,33 @@
+{
+  "name": "@vim-connect/ui",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Vim design-system components, vendored from the vim-connect monorepo for this template.",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./icons": {
+      "types": "./dist/icons/index.d.ts",
+      "import": "./dist/icons/index.js"
+    }
+  },
+  "dependencies": {
+    "@vim-connect/runtime-types": "file:../vim-connect-runtime-types",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "dompurify": "^3.4.17",
+    "flag-icons": "^7.5.0",
+    "i18n-iso-countries": "^7.14.0",
+    "tailwind-merge": "^2.6.0"
+  },
+  "peerDependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "lucide-react": ">=0.511.0"
+  }
+}

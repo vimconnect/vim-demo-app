@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { Button, CopyButton, ErrorPage } from '@vim-connect/ui';
 
 export type DiagnosticsField = {
   label: string;
@@ -15,9 +15,9 @@ type ErrorScreenProps = {
     label: string;
     onClick: () => void;
   };
-  diagnosticsPanelId?: string;
 };
 
+/** One aligned "Label  value" line per field: what the diagnostics show and copy. */
 export function formatDiagnostics(fields: DiagnosticsField[]): string {
   const maxLabel = fields.reduce((max, f) => Math.max(max, f.label.length), 0);
   return fields
@@ -25,56 +25,30 @@ export function formatDiagnostics(fields: DiagnosticsField[]): string {
     .join('\n');
 }
 
-export function ErrorScreen({
-  heading,
-  message,
-  diagnostics,
-  retry,
-  diagnosticsPanelId = 'error-diagnostics-panel',
-}: ErrorScreenProps) {
-  const [showDiagnostics, setShowDiagnostics] = useState(false);
+/**
+ * A friendly error on the shared DS ErrorPage (@vim-connect/ui): heading, one
+ * plain sentence, Retry, and the raw diagnostics folded under "Error details"
+ * with a copy action, so developers can paste them into a bug report. Copy
+ * this pattern in production apps: never surface raw SDK errors to end users.
+ */
+export function ErrorScreen({ heading, message, diagnostics, retry }: ErrorScreenProps) {
   const diagnosticsText = formatDiagnostics(diagnostics);
-
   return (
-    <div className="error-container">
-      <div className="error-content">
-        <h2>{heading}</h2>
-        <p>{message}</p>
-        <div className="error-actions">
+    <ErrorPage
+      kind="error"
+      title={heading}
+      description={message}
+      details={diagnosticsText}
+      actions={
+        <>
           {retry && (
-            <button
-              type="button"
-              onClick={retry.onClick}
-              className="btn btn-primary"
-            >
+            <Button variant="primary" onClick={retry.onClick}>
               {retry.label}
-            </button>
+            </Button>
           )}
-          <button
-            type="button"
-            onClick={() => setShowDiagnostics((prev) => !prev)}
-            className="btn"
-            aria-expanded={showDiagnostics}
-            aria-controls={diagnosticsPanelId}
-          >
-            {showDiagnostics ? 'Hide Diagnostics' : 'Show Diagnostics'}
-          </button>
-        </div>
-        {showDiagnostics && (
-          <div id={diagnosticsPanelId} className="error-diagnostics">
-            <pre className="error-diagnostics-code">{diagnosticsText}</pre>
-            <button
-              type="button"
-              onClick={() =>
-                navigator.clipboard.writeText(diagnosticsText).catch(console.error)
-              }
-              className="btn btn-sm error-diagnostics-copy"
-            >
-              Copy to Clipboard
-            </button>
-          </div>
-        )}
-      </div>
-    </div>
+          <CopyButton value={diagnosticsText} label="diagnostics" showLabel size="default" />
+        </>
+      }
+    />
   );
 }

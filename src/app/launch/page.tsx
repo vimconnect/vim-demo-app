@@ -92,7 +92,6 @@ function LaunchPageContent() {
           { label: 'Time:', value: error.timestamp },
           { label: 'Browser:', value: error.userAgent },
         ]}
-        diagnosticsPanelId="launch-error-diagnostics-panel"
       />
     );
   }

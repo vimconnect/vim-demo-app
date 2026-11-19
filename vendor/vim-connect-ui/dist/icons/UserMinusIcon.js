@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function UserMinusIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M12 2C8.1 2 5 5.1 5 9C5 11.4 6.19961 13.6008 8.09961 14.8008C4.49961 16.3008 2 19.9 2 24H4C4 19.6 7.6 16 12 16C13.4 16 14.7008 16.4 15.8008 17C14.7008 18.4 14 20.1 14 22C14 26.4 17.6 30 22 30C26.4 30 30 26.4 30 22C30 17.6 26.4 14 22 14C20.3 14 18.6008 14.6 17.3008 15.5C16.9008 15.2 16.4004 15.0008 15.9004 14.8008C17.8004 13.5008 19 11.4 19 9C19 5.1 15.9 2 12 2ZM12 4C14.8 4 17 6.2 17 9C17 11.8 14.8 14 12 14C9.2 14 7 11.8 7 9C7 6.2 9.2 4 12 4ZM22 16C25.3 16 28 18.7 28 22C28 25.3 25.3 28 22 28C18.7 28 16 25.3 16 22C16 18.7 18.7 16 22 16ZM18 21V23H26V21H18Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

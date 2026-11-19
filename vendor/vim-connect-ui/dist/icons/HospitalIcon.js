@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function HospitalIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M16 4.90625L3.625 10.0625L3 10.3438V27H29V10.3438L28.375 10.0625L16 4.90625ZM16 7.09375L27 11.6875V25H5V11.6875L16 7.09375ZM15 13V16H12V18H15V21H17V18H20V16H17V13H15Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

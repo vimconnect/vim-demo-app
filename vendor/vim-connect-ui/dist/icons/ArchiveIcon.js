@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function ArchiveIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M4 5V11H5V27H27V11H28V5H4ZM6 7H26V9H6V7ZM7 11H25V25H7V11ZM12.8125 13C12.2617 13.0508 11.8555 13.543 11.9062 14.0938C11.957 14.6445 12.4492 15.0508 13 15H19C19.3594 15.0039 19.6953 14.8164 19.8789 14.5039C20.0586 14.1914 20.0586 13.8086 19.8789 13.4961C19.6953 13.1836 19.3594 12.9961 19 13H13C12.9688 13 12.9375 13 12.9062 13C12.875 13 12.8438 13 12.8125 13Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

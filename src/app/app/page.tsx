@@ -1633,7 +1633,7 @@ function AppPageContent() {
     /*
      * UX split: show a friendly message for end users (providers/patients)
      * who should never see raw SDK internals. Technical details live behind
-     * "Show Diagnostics" so developers can expand and copy them into bug
+     * "Error details" (with "Copy diagnostics") so developers can copy them into bug
      * reports. Copy this pattern in production apps — never surface raw SDK
      * error messages directly to end users.
      */

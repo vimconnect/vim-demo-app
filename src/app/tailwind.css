@@ -11,5 +11,4 @@
 @layer theme, base, components, utilities;
 @import 'tailwindcss/theme.css' layer(theme);
 @import 'tailwindcss/utilities.css' layer(utilities) source(none);
-@source '../../../packages/ui/src/**/*.tsx';
-@source not '../../../packages/ui/src/**/*.test.tsx';
+@source '../../vendor/vim-connect-ui/dist/**/*.js';

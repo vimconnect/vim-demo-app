@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useId } from 'react';
+export function PlayIcon({ width = 32, height = 32, ...props }) {
+    const uid = useId();
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("g", { clipPath: `url(#${uid}-PlayIcon_clip0_1734_378)`, children: _jsx("path", { d: "M4.54817 7.45729C4.87537 4.99139 7.4199 3.38112 9.83137 4.2278L10.8284 4.57741C16.3667 6.52229 21.5575 9.32543 26.2064 12.8821C28.1582 14.3755 28.1583 17.295 26.2064 18.7883C21.5575 22.345 16.3667 25.1481 10.8284 27.093L9.83137 27.4426C7.4199 28.2893 4.87537 26.6791 4.54817 24.2132C3.81728 18.7027 3.81728 12.9677 4.54817 7.45729ZM9.27864 5.803C7.87681 5.31072 6.39368 6.25093 6.20442 7.67702C5.49286 13.0417 5.49286 18.6288 6.20442 23.9934C6.39368 25.4195 7.87681 26.3597 9.27864 25.8674L10.2747 25.5178C15.6475 23.6311 20.683 20.9116 25.1917 17.4622C26.27 16.6372 26.27 15.0332 25.1917 14.2083C20.683 10.7588 15.6475 8.03938 10.2747 6.1526L9.27864 5.803Z", fill: "currentColor" }) }), _jsx("defs", { children: _jsx("clipPath", { id: `${uid}-PlayIcon_clip0_1734_378`, children: _jsx("rect", { width: "32", height: "32", fill: "white" }) }) })] }));
+}

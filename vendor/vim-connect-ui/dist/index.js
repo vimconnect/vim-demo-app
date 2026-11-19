@@ -1,0 +1,98 @@
+/**
+ * @vim-connect/ui — shared design-system components for every Vim product.
+ *
+ * Tailwind + cva on the shared design tokens (the write-ui-component recipe).
+ * There is no stylesheet to import: each product's Tailwind scans this
+ * package's component source (packages/ui/src, *.tsx, tests excluded) and the
+ * product loads shared/styles/design-tokens.css.
+ */
+export { AppIcon, appIconBox, appIconVariants } from './AppIcon.js';
+export { Avatar, avatarInitials, avatarVariants } from './Avatar.js';
+export { FileUpload, FileItem, formatFileSize, fileMatchesAccept } from './FileUpload.js';
+export { FormSection, FormSectionHeader, FormRow } from './FormSection.js';
+export { markLabellable, isLabellable } from './labellable.js';
+export { ThemeSwitcher, useThemePreference, applyBodyLightMode, getSystemTheme, THEME_SYSTEM_LIGHT_QUERY, THEME_SYSTEM_FALLBACK, } from './ThemeSwitcher.js';
+export { SearchInput } from './SearchInput.js';
+export { Badge, badgeVariants } from './Badge.js';
+export { Button, buttonVariants } from './Button.js';
+export { IconButton } from './IconButton.js';
+export { TextLink, textLinkVariants } from './TextLink.js';
+export { FilterChip, filterChipVariants, filterChipCountClasses } from './FilterChip.js';
+export { FilterBar, filterBarVariants } from './FilterBar.js';
+export { HorizontalScroller } from './HorizontalScroller.js';
+export { Input, Textarea, fieldVariants } from './Input.js';
+export { Label } from './Label.js';
+export { CharacterCount, characterCountShowFrom, characterCountShows } from './CharacterCount.js';
+export { RichText, richTextVariants, sanitizeRichTextHtml } from './RichText.js';
+export { Field } from './Field.js';
+export { Checkbox } from './Checkbox.js';
+export { Radio } from './Radio.js';
+export { RadioGroup } from './RadioGroup.js';
+export { choiceControlVariants, choiceControlLabelClasses } from './choiceControlVariants.js';
+export { Notice, noticeVariants } from './Notice.js';
+export { Select } from './Select.js';
+export { computeDropdownRect } from './dropdownRect.js';
+export { cn } from './cn.js';
+export { Tooltip, TOOLTIP_BUBBLE_CLASS, TOOLTIP_WRAP_STYLE } from './Tooltip.js';
+export { DisabledTooltip } from './DisabledTooltip.js';
+export { Breadcrumbs } from './Breadcrumbs.js';
+export { StatCard } from './StatCard.js';
+export { DateTimePicker } from './DateTimePicker.js';
+export { TimeField } from './TimeField.js';
+export { Modal } from './Modal.js';
+export { Card, CardHeader, cardProps, cardVariants, CARD_TITLE_CLASSES } from './Card.js';
+export { List, ListRow, listRowIconVariants } from './ListRow.js';
+export { Table, TablePagination } from './Table.js';
+export { usePagination, usePageSizePreference, PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from './usePagination.js';
+export { useVirtualRows } from './useVirtualRows.js';
+export { toastOptions, toastStyle, ToastIcon } from './toast.js';
+export { ErrorPage } from './ErrorPage.js';
+export { EmptyState, EmptyStateAccent, EmptyStateBlueprint, EMPTY_STATE_BLUEPRINTS } from './EmptyState.js';
+export { EmptyTab } from './EmptyTab.js';
+export { Toggle } from './Toggle.js';
+export { SegmentedControl } from './SegmentedControl.js';
+export { AnchoredPanel } from './AnchoredPanel.js';
+export { zFloatingPanel } from './floatingLayers.js';
+export { Popover } from './Popover.js';
+export { ActionMenu, ACTION_MENU_DIVIDER } from './ActionMenu.js';
+export { PatientHeader, patientDetails } from './PatientHeader.js';
+export { HubNotification } from './HubNotification.js';
+export { useHoverPanel, useKeyedHoverPanel, HOVER_CLOSE_GRACE_MS } from './useHoverPanel.js';
+export { MissingFieldsPanel, MissingFieldsHover } from './MissingFields.js';
+export { PageHeader } from './PageHeader.js';
+export { AccountMenu, AccountMenuSection, AccountMenuItem, AccountMenuTheme } from './AccountMenu.js';
+export { Scrim } from './Scrim.js';
+export { Timeline } from './Timeline.js';
+export { KeyValueList, KeyValue } from './KeyValue.js';
+export { SidePanel, SidePanelHeader, SidePanelBody, SidePanelFooter } from './SidePanel.js';
+export { ClampedText } from './ClampedText.js';
+export { TruncatedText } from './TruncatedText.js';
+export { CopyButton, COPIED_MS } from './CopyButton.js';
+export { copyText } from './copyText.js';
+export { CodeBlock } from './CodeBlock.js';
+export { Skeleton, SkeletonListPage, SkeletonGridPage, SkeletonDetailPage, SkeletonTablePage } from './Skeleton.js';
+export { ProgressBar } from './ProgressBar.js';
+export { SectionIconBadge } from './SectionIconBadge.js';
+export { Spinner, LoadingSpinner } from './Spinner.js';
+export { IconTile } from './IconTile.js';
+export { Divider } from './Divider.js';
+export { SaveStatusIndicator } from './SaveStatusIndicator.js';
+export { ConfirmDialog, ConfirmDialogProvider, useConfirmDialog, useOptionalConfirmDialog } from './ConfirmDialog.js';
+export { StatusDot, statusDotVariants } from './StatusDot.js';
+export { CountBadge, countBadgeVariants, formatCount } from './CountBadge.js';
+export { Stepper, stepStatus } from './Stepper.js';
+export { TabButton, tabButtonVariants } from './TabButton.js';
+export { TabBar, TabPanel, tabBarVariants, tabButtonId, tabPanelId } from './TabBar.js';
+export { HoverCard } from './HoverCard.js';
+export { Kbd } from './Kbd.js';
+export { Accordion, AccordionItem } from './Accordion.js';
+export { CollapsibleChipList } from './CollapsibleChipList.js';
+export { PrivateAppPill, privateAppTooltip } from './PrivateAppPill.js';
+export { VimAppPill } from './VimAppPill.js';
+export { VIM_HEART_PATH } from './vimHeart.js';
+export { VimLogo } from './VimLogo.js';
+export { AppShell, SIDE_NAV_WIDTH, SIDE_NAV_COLLAPSED_WIDTH, TOP_BAR_HEIGHT } from './AppShell.js';
+export { SideNav, SideNavItem, SideNavGroup, SideNavFooterItem, useSideNavCollapsed } from './SideNav.js';
+export { TopBar } from './TopBar.js';
+export { Banner } from './Banner.js';
+export { CountryFlag, useCountryFlagResolver } from './CountryFlag.js';

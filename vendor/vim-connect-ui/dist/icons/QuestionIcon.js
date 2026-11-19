@@ -1,0 +1,6 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useId } from 'react';
+export function QuestionIcon({ width = 32, height = 32, ...props }) {
+    const uid = useId();
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("g", { clipPath: `url(#${uid}-QuestionIcon_clip0_0_400)`, children: _jsx("path", { d: "M16 4C9.38281 4 4 9.38281 4 16C4 22.6172 9.38281 28 16 28C22.6172 28 28 22.6172 28 16C28 9.38281 22.6172 4 16 4ZM16 6C21.5352 6 26 10.4648 26 16C26 21.5352 21.5352 26 16 26C10.4648 26 6 21.5352 6 16C6 10.4648 10.4648 6 16 6ZM16 10C13.8008 10 12 11.8008 12 14H14C14 12.8828 14.8828 12 16 12C17.1172 12 18 12.8828 18 14C18 14.7656 17.5078 15.4453 16.7812 15.6875L16.375 15.8125C15.5586 16.082 15 16.8633 15 17.7188V19H17V17.7188L17.4062 17.5938C18.9453 17.082 20 15.6211 20 14C20 11.8008 18.1992 10 16 10ZM15 20V22H17V20H15Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }), _jsx("defs", { children: _jsx("clipPath", { id: `${uid}-QuestionIcon_clip0_0_400`, children: _jsx("rect", { width: "32", height: "32", fill: "white" }) }) })] }));
+}

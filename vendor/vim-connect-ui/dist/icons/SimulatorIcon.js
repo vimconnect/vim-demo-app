@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export function SimulatorIcon({ width = 32, height = 32, ...props }) {
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("path", { d: "M11 16C11 9.37548 13.2318 4 16 4C18.7682 4 21 9.37548 21 16C21 22.6245 18.7586 28 16 28C14.1992 28 12.6188 25.7147 11.7375 22.2914", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" }), _jsx("path", { d: "M22.4786 11.7854C25.7988 12.6762 28 14.228 28 16C28 18.7586 22.6266 21 16.0046 21C9.38266 21 4 18.7586 4 16C4 13.2414 9.37341 11 15.9954 11", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" })] }));
+}

@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export function SynchronizeIcon({ width = 32, height = 32, ...props }) {
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("path", { d: "M25 21C25 22.6569 23.6569 24 22 24H11C9.34315 24 8 22.6569 8 21V17V15", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" }), _jsx("path", { d: "M8 10C8 8.34315 9.34315 7 11 7H22C23.6569 7 25 8.34315 25 10V16", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" }), _jsx("path", { d: "M5 16.998L8 14.998L11 16.998", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" }), _jsx("path", { d: "M22 13.998L25 15.998L28 13.998", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" })] }));
+}

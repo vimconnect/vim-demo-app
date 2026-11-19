@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function EllipsisVIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M16 6C14.8945 6 14 6.89453 14 8C14 9.10547 14.8945 10 16 10C17.1055 10 18 9.10547 18 8C18 6.89453 17.1055 6 16 6ZM16 14C14.8945 14 14 14.8945 14 16C14 17.1055 14.8945 18 16 18C17.1055 18 18 17.1055 18 16C18 14.8945 17.1055 14 16 14ZM16 22C14.8945 22 14 22.8945 14 24C14 25.1055 14.8945 26 16 26C17.1055 26 18 25.1055 18 24C18 22.8945 17.1055 22 16 22Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

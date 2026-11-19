@@ -1,0 +1,4 @@
+import { jsx as _jsx } from "react/jsx-runtime";
+export function RefreshIcon({ width = 32, height = 32, ...props }) {
+    return (_jsx("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: _jsx("path", { d: "M16.3437 7C12.5088 7 9.30663 9.3701 8 12.7187L9.3828 13.2812C10.4756 10.4804 13.1269 8.49999 16.3437 8.49999C18.7753 8.49999 20.9433 9.69236 22.2968 11.5H19.3437V13H24.5936V7.74999H23.0936V10.0703C21.4501 8.18651 19.0214 7 16.3437 7ZM23.3046 18.7188C22.2118 21.5196 19.5605 23.5 16.3437 23.5C13.8857 23.5 11.7265 22.2901 10.3672 20.5001H13.3437V19.0001H8.09376V24.25H9.59375V21.9297C11.2344 23.7901 13.6396 25 16.3437 25C20.1786 25 23.3808 22.6299 24.6874 19.2813L23.3046 18.7188Z", fillRule: "evenodd", clipRule: "evenodd", fill: "currentColor" }) }));
+}

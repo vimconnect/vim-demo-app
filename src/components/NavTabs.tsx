@@ -1,5 +1,6 @@
 'use client';
 
+import { Breadcrumbs } from '@vim-connect/ui';
 import { IconTip } from '@/components/Hint';
 
 export type DemoView = 'main' | 'explorer' | 'docs' | 'manifest';
@@ -79,17 +80,11 @@ export function NavTabs({ view, onGetCode, onNavigate }: NavTabsProps) {
   );
 }
 
-/** Breadcrumb back to the main view, above every sub-page. */
+/** Breadcrumb back to the main view, above every sub-page, with the sub-page's actions. */
 export function Breadcrumb({ title, onBack, actions }: { title: string; onBack: () => void; actions?: React.ReactNode }) {
   return (
     <div className="breadcrumb-bar">
-      <nav className="breadcrumb" aria-label="Breadcrumb">
-        <button type="button" className="breadcrumb-link" onClick={onBack}>
-          ← Demo app
-        </button>
-        <span className="breadcrumb-sep" aria-hidden="true">/</span>
-        <span className="breadcrumb-current" aria-current="page">{title}</span>
-      </nav>
+      <Breadcrumbs className="mb-0" items={[{ label: 'Demo app', onClick: onBack }, { label: title }]} />
       {actions && <div className="breadcrumb-actions">{actions}</div>}
     </div>
   );

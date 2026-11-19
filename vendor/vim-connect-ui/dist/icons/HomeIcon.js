@@ -1,0 +1,4 @@
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+export function HomeIcon({ width = 32, height = 32, ...props }) {
+    return (_jsxs("svg", { width: width, height: height, viewBox: "0 0 32 32", fill: "none", xmlns: "http://www.w3.org/2000/svg", "aria-hidden": true, ...props, children: [_jsx("path", { d: "M7.86957 13.5V26C7.86957 26.5523 8.29782 27 8.82609 27H23.1739C23.7022 27 24.1304 26.5523 24.1304 26V13.5", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" }), _jsx("path", { d: "M5 16.5L16 5L27 16.5", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" }), _jsx("path", { d: "M14.087 19H17.913C18.4413 19 18.8696 19.4477 18.8696 20V27H13.1304V20C13.1304 19.4477 13.5587 19 14.087 19Z", strokeWidth: "1.6", strokeLinecap: "round", strokeLinejoin: "round", stroke: "currentColor" })] }));
+}
