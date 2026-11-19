@@ -287,6 +287,8 @@ function AppPageContent() {
   // API Writes (SDK ehr.api.*) state
   const [cptEncounterId, setCptEncounterId] = useState("");
   const [cptCode, setCptCode] = useState('[{"code":"77770"},{"code":"01234"}]');
+  const [referralWriteId, setReferralWriteId] = useState("");
+  const [referralWriteNotes, setReferralWriteNotes] = useState("");
 
   // API Reads (SDK ehr.api.* getById/search) state.
   // Per-operation search inputs, keyed by `${sdkNamespace}.${sdkMethod}.<field>`
@@ -1261,6 +1263,61 @@ function AppPageContent() {
     }
   }
 
+  async function executeUpdateReferral() {
+    if (!vimSDK) return;
+    if (referralInputHint) {
+      addLog(referralInputHint, "error");
+      return;
+    }
+    const referralId = referralWriteId.trim();
+    const notes = referralWriteNotes.trim();
+    const referralApi = (vimSDK.ehr.api as any).referral;
+    if (!referralApi) {
+      addLog(
+        "referral.updateReferral is not in this session's manifest — the EHR was likely not detected when the app launched. Reopen the app on the EHR.",
+        "error",
+      );
+      return;
+    }
+    try {
+      const cap = referralApi.getCapability("updateReferral");
+      if (!cap.available) {
+        addLog(`updateReferral not available in this EHR (${cap.reason})`, "error");
+        return;
+      }
+      if (cap.disruptive && cap.permissionState !== "granted") {
+        addLog("Requesting permission for updateReferral…", "info");
+        const result = await referralApi.requestPermission("updateReferral");
+        if (result !== "granted") {
+          addLog(`Permission ${result} for updateReferral`, "error");
+          return;
+        }
+        addLog("Permission granted — invoking updateReferral", "success");
+      }
+    } catch (err: any) {
+      addLog(`Permission flow threw: ${err.message}`, "error");
+      return;
+    }
+    try {
+      addLog(
+        `API call: ehr.api.referral.updateReferral(${referralId}, ${JSON.stringify({ basicInformation: { notes } })})`,
+        "info",
+      );
+      const result = await referralApi.updateReferral(
+        { referralId },
+        { basicInformation: { notes } },
+      );
+      if (result && result.success === false) {
+        const detail = result.error ?? result.apiError ?? JSON.stringify(result).slice(0, 500);
+        addLog(`updateReferral failed: ${detail}`, "error");
+        return;
+      }
+      addLog(`updateReferral succeeded for referral ${referralId}`, "success");
+    } catch (err: any) {
+      addLog(`updateReferral threw: ${err.message}`, "error");
+    }
+  }
+
   // SDK API read — catalog-based getById/search operations (non-disruptive, so
   // no permission lifecycle). Data-driven from manifest.operations, so this lists
   // whatever read ops the active EHR's collection exposes (e.g. patient.getPatient,
@@ -1908,6 +1965,65 @@ function AppPageContent() {
     manifest: "Manifest",
   };
 
+  const referralUpdateOp = writeOps.find(
+    (op: any) => op.sdkNamespace === "referral" && op.sdkMethod === "updateReferral",
+  );
+  const referralUpdateReason = referralUpdateOp
+    ? apiOpReason(referralUpdateOp)
+    : "This EHR doesn't implement it";
+  const referralInputHint = !referralWriteId.trim()
+    ? "Enter the referral ID to write to"
+    : !referralWriteNotes.trim()
+      ? "Enter the notes to write"
+      : undefined;
+  const referralWritesCard = (
+    <div className={`updater-card ${referralUpdateReason ? "op-unavailable" : ""}`}>
+      <div className="updater-card-header">
+        referral.updateReferral (notes)
+        <DeprecatedTag note={noteOf(referralUpdateOp?.deprecationStatus)} />
+        <span className="verb-badge verb-update">update</span>
+        {apiOpLabel(referralUpdateOp) && (
+          <span className="op-status">{apiOpLabel(referralUpdateOp)}</span>
+        )}
+      </div>
+      <div className="op-signature">
+        Calls vimSDK.ehr.api.referral.updateReferral — the active EHR&apos;s
+        apiAutomation handles the call. Independent of the user&apos;s current view.
+      </div>
+      <div className="input-group" style={{ marginBottom: "var(--space-sm)" }}>
+        <input
+          type="text"
+          value={referralWriteId}
+          onChange={(e) => setReferralWriteId(e.target.value)}
+          placeholder="Referral ID (required)"
+          className="input"
+        />
+      </div>
+      <div className="input-group" style={{ marginBottom: "var(--space-sm)" }}>
+        <input
+          type="text"
+          value={referralWriteNotes}
+          onChange={(e) => setReferralWriteNotes(e.target.value)}
+          placeholder="Notes"
+          className="input"
+        />
+      </div>
+      {!referralUpdateReason && referralInputHint && (
+        <div className="op-reason">{referralInputHint}</div>
+      )}
+      <Hint block text={referralUpdateReason ?? referralInputHint}>
+        <button
+          onClick={executeUpdateReferral}
+          className="btn btn-primary"
+          style={{ width: "100%" }}
+          disabled={referralUpdateReason !== null || referralInputHint !== undefined}
+        >
+          Update Referral
+        </button>
+      </Hint>
+    </div>
+  );
+
   const apiWritesEntity = procedureCodesOp?.entityTypeId ?? "encounter";
   const entityWriteOps = writeOps.filter((op: any) => op.entityTypeId === apiWritesEntity);
   const availableEntityWriteOps = entityWriteOps.filter((op: any) => apiOpReason(op) === null);
@@ -2437,6 +2553,12 @@ function AppPageContent() {
                           </div>
                         );
                       })}
+                      {entityType === "referral" && referralUpdateOp && (
+                        <>
+                          <div className="demo-card-label api-writes-label">API writes</div>
+                          {referralWritesCard}
+                        </>
+                      )}
                       {entityType === apiWritesEntity && (
                         <>
                           <div className="demo-card-label api-writes-label">
@@ -2461,6 +2583,17 @@ function AppPageContent() {
                   onToggle={() => toggleCard("__api_writes")}
                 >
                   {apiWritesCard}
+                </CollapsibleCard>
+              )}
+
+              {referralUpdateOp && !orderedEntityGroups.some(([entityType]) => entityType === "referral") && (
+                <CollapsibleCard
+                  title="Referral API writes"
+                  info={<><code>sdk.ehr.api.referral.updateReferral()</code> writes by referral ID, on EHRs that implement it.</>}
+                  expanded={expandedCards.has("__referral_api_writes")}
+                  onToggle={() => toggleCard("__referral_api_writes")}
+                >
+                  {referralWritesCard}
                 </CollapsibleCard>
               )}
             </div>
