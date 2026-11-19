@@ -1,5 +1,5 @@
 import type { ReactNode } from 'react';
-import { Notice as SharedNotice, type NoticeVariant } from '@vim-connect/ui';
+import { Notice as SharedNotice, StatusDot, type NoticeVariant } from '@vim-connect/ui';
 
 type NoticeTone = 'blue' | 'purple' | 'orange' | 'error';
 
@@ -22,7 +22,7 @@ export function Notice({ tone = 'blue', children }: { tone?: NoticeTone; childre
 export function StatusLine({ tone = 'live', children }: { tone?: 'live' | 'waiting' | 'off'; children: ReactNode }) {
   return (
     <span className={`status-line is-${tone}`}>
-      <span className="status-line-dot" aria-hidden="true" />
+      <StatusDot tone={tone === 'live' ? 'success' : 'neutral'} motion={tone === 'waiting' ? 'blink' : 'none'} />
       {children}
     </span>
   );

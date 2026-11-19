@@ -1,5 +1,7 @@
 'use client';
 
+import { Badge, StatusDot, Tooltip } from '@vim-connect/ui';
+
 type OverviewCardProps = {
   /** EHR system identifier from the session context (e.g. "athena"); null on builds that send none. */
   ehr: string | null;
@@ -25,28 +27,27 @@ export function OverviewCard({ ehr, sdkVersion, manifestVersion, inContext }: Ov
     <section className="overview-card" aria-label="Connection overview">
       <div className="overview-head">
         <h2 className="overview-title">
-          <span className="status-dot" aria-hidden="true" />
+          <StatusDot tone="success" motion="pulse" />
           Connected
         </h2>
         <span className="overview-meta" title={details}>
           {details}
         </span>
         {manifestVersion && (
-          <span
-            className="badge badge-purple overview-status"
-            title={`Manifest v${manifestVersion.version}`}
-          >
-            v{manifestVersion.version} · {sentenceCase(manifestVersion.status)}
-          </span>
+          <Tooltip label={`Manifest v${manifestVersion.version}`}>
+            <Badge variant="purple" className="overview-status">
+              v{manifestVersion.version} · {sentenceCase(manifestVersion.status)}
+            </Badge>
+          </Tooltip>
         )}
       </div>
 
       {inContext.length > 0 && (
         <div className="overview-row">
           {inContext.map((label) => (
-            <span key={label} className="badge badge-info badge-dot">
+            <Badge key={label} variant="info" dot>
               {label}
-            </span>
+            </Badge>
           ))}
         </div>
       )}

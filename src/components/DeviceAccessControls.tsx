@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { Button } from '@vim-connect/ui';
 
 type Device = 'microphone' | 'camera';
 type LogType = 'info' | 'success' | 'error';
@@ -274,9 +275,10 @@ export function DeviceAccessControls({
     const live = state.status === 'live';
     return (
       <div className="device-control" key={device}>
-        <button
-          type="button"
-          className={`btn btn-sm ${live ? 'btn-danger' : 'btn-secondary'} device-control-btn`}
+        <Button
+          variant={live ? 'danger' : 'secondary'}
+          size="sm"
+          className="device-control-btn"
           disabled={state.status === 'requesting'}
           onClick={() => (live ? stop(device) : void start(device))}
         >
@@ -285,7 +287,7 @@ export function DeviceAccessControls({
             : live
               ? `Stop ${DEVICE_LABEL[device].toLowerCase()}`
               : `Start ${DEVICE_LABEL[device].toLowerCase()}`}
-        </button>
+        </Button>
         {state.status === 'live' && (device === 'microphone' ? <MicLevel stream={state.stream} /> : <VideoPreview stream={state.stream} />)}
       </div>
     );
@@ -296,9 +298,10 @@ export function DeviceAccessControls({
   return (
     <>
       <div className="device-controls">{(['microphone', 'camera'] as const).map(control)}</div>
-      <button
-        type="button"
-        className={`btn btn-sm ${anyLive ? 'btn-danger' : 'btn-primary'} device-control-btn device-visit-btn`}
+      <Button
+        variant={anyLive ? 'danger' : 'primary'}
+        size="sm"
+        className="device-control-btn device-visit-btn"
         disabled={anyRequesting}
         onClick={() => {
           if (!anyLive) return void startVisit();
@@ -308,7 +311,7 @@ export function DeviceAccessControls({
         }}
       >
         {anyLive ? 'Stop video visit' : 'Start video visit (mic + camera)'}
-      </button>
+      </Button>
       {wakeLock && <div className="updater-meta device-wake-lock">{wakeLock}</div>}
     </>
   );

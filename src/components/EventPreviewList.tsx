@@ -2,6 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { RadioIcon } from '@/components/icons';
+import { Button } from '@vim-connect/ui';
 
 export type PreviewEntry = {
   key: string | number;
@@ -86,9 +87,9 @@ export function EventPreviewList({
           {label} ({entries.length})
         </button>
         {entries.length > 0 && !collapsed && (
-          <button onClick={onClear} className="btn btn-sm">
+          <Button variant="secondary" size="sm" onClick={onClear}>
             Clear
-          </button>
+          </Button>
         )}
       </div>
       {!collapsed && (

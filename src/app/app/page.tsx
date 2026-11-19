@@ -68,6 +68,7 @@ import {
   type AppThemeChoice,
   type ColorScheme,
 } from "@/lib/color-scheme";
+import { Badge, Button, buttonVariants, Input, StatusDot, Tooltip } from "@vim-connect/ui";
 
 type LogEntry = {
   timestamp: string;
@@ -1826,7 +1827,7 @@ function AppPageContent() {
         : []),
     ];
     const input = ({ key, placeholder, title }: (typeof fields)[number]) => (
-      <input
+      <Input
         key={key}
         type="text"
         value={readOpInputs[key] ?? ""}
@@ -1834,13 +1835,13 @@ function AppPageContent() {
         placeholder={placeholder}
         title={title}
         aria-label={placeholder}
-        className="input"
       />
     );
     const lastField = fields[fields.length - 1];
     // Collapsed by default, like the event cards: an entity with seven reads is a
     // seven-line list, not seven forms to scroll past.
     const open = expandedCards.has(`__op:${opKey}`);
+    const lastRun = readOpRanAt[opKey] ? `Last run: ${readOpRanAt[opKey]}` : null;
     return (
       <div className={`updater-card op-card ${open ? "expanded" : ""} ${opReason ? "op-unavailable" : ""}`} key={opKey}>
         <button
@@ -1860,7 +1861,12 @@ function AppPageContent() {
               {apiOpLabel(op)}
             </span>
           )}
-          {readOpRanAt[opKey] && !open && <span className="op-ran-dot" title={`Last run: ${readOpRanAt[opKey]}`} />}
+          {lastRun && !open && (
+            // The dot's label is its accessible name; the Tooltip only shows it on hover (no aria-describedby).
+            <Tooltip label={lastRun}>
+              <StatusDot tone="info" size="sm" className="op-ran-dot" label={lastRun} />
+            </Tooltip>
+          )}
         </button>
         {!open ? null : (
           <>
@@ -1873,13 +1879,14 @@ function AppPageContent() {
         <div className="op-input-row">
           {lastField && input(lastField)}
           <Hint text={runBlocked} block={!lastField}>
-            <button
+            <Button
+              variant="secondary"
               onClick={() => executeReadOperation(op)}
-              className={`btn btn-secondary ${lastField ? "op-run-btn" : "op-run-btn-full"}`}
+              className={lastField ? "op-run-btn" : "op-run-btn-full"}
               disabled={readOpRunning[opKey] || runBlocked !== null}
             >
               {readOpRunning[opKey] ? "Running…" : "Run"}
-            </button>
+            </Button>
           </Hint>
         </div>
         {!opReason && runBlocked && <div className="op-reason">{runBlocked}</div>}
@@ -1991,35 +1998,33 @@ function AppPageContent() {
         apiAutomation handles the call. Independent of the user&apos;s current view.
       </div>
       <div className="input-group" style={{ marginBottom: "var(--space-sm)" }}>
-        <input
+        <Input
           type="text"
           value={referralWriteId}
           onChange={(e) => setReferralWriteId(e.target.value)}
           placeholder="Referral ID (required)"
-          className="input"
         />
       </div>
       <div className="input-group" style={{ marginBottom: "var(--space-sm)" }}>
-        <input
+        <Input
           type="text"
           value={referralWriteNotes}
           onChange={(e) => setReferralWriteNotes(e.target.value)}
           placeholder="Notes"
-          className="input"
         />
       </div>
       {!referralUpdateReason && referralInputHint && (
         <div className="op-reason">{referralInputHint}</div>
       )}
       <Hint block text={referralUpdateReason ?? referralInputHint}>
-        <button
+        <Button
+          variant="primary"
           onClick={executeUpdateReferral}
-          className="btn btn-primary"
           style={{ width: "100%" }}
           disabled={referralUpdateReason !== null || referralInputHint !== undefined}
         >
           Update Referral
-        </button>
+        </Button>
       </Hint>
     </div>
   );
@@ -2043,21 +2048,19 @@ function AppPageContent() {
         the user&apos;s current view.
       </div>
       <div className="input-group" style={{ marginBottom: "var(--space-sm)" }}>
-        <input
+        <Input
           type="text"
           value={cptEncounterId}
           onChange={(e) => setCptEncounterId(e.target.value)}
           placeholder="Encounter ID (required)"
-          className="input"
         />
       </div>
       <div className="input-group" style={{ marginBottom: "var(--space-sm)" }}>
-        <input
+        <Input
           type="text"
           value={cptCode}
           onChange={(e) => setCptCode(e.target.value)}
           placeholder='CPT code (e.g. 99213) or JSON array [{"code":"99213"}]'
-          className="input"
         />
       </div>
       {!procedureCodesReason && !cptEncounterId.trim() && (
@@ -2069,14 +2072,14 @@ function AppPageContent() {
             : !cptCode.trim()
               ? "Enter a CPT code"
               : undefined)}>
-        <button
+        <Button
+          variant="secondary"
           onClick={executeUpdateProcedureCodes}
-          className="btn btn-secondary"
           style={{ width: "100%" }}
           disabled={procedureCodesReason !== null || !cptEncounterId.trim() || !cptCode.trim()}
         >
           Update Procedure Codes
-        </button>
+        </Button>
       </Hint>
     </div>
   );
@@ -2287,9 +2290,9 @@ function AppPageContent() {
                     API reads ({availableReadOps.length}/{readOps.length})
                   </button>
                   {readGroupsExpanded && !apiReadsCollapsed && (
-                    <button onClick={collapseReadGroups} className="btn btn-sm">
+                    <Button variant="secondary" size="sm" onClick={collapseReadGroups}>
                       Collapse all
-                    </button>
+                    </Button>
                   )}
                 </div>
               {apiReadsCollapsed ? null : readOps.length === 0 ? (
@@ -2341,26 +2344,26 @@ function AppPageContent() {
                   <Hint text={writableUpdaters.length === 0
                         ? "No updater is writable in the current context"
                         : `Samples the ${writableUpdaters.length} field(s) writable in the current context`}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => sampleAllUpdaters()}
                       disabled={writableUpdaters.length === 0}
                     >
                       Sample all ({writableUpdaters.length})
-                    </button>
+                    </Button>
                   </Hint>
                   <Hint text={writableWithValue.length === 0
                         ? "No updater writable in the current context has a value"
                         : `Writes the ${writableWithValue.length} field(s) writable in the current context`}>
-                    <button
-                      type="button"
-                      className="btn btn-secondary btn-sm"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       onClick={() => void updateAllUpdaters()}
                       disabled={updatingAll || writableWithValue.length === 0}
                     >
                       {updatingAll ? "Updating…" : `Update all (${writableWithValue.length})`}
-                    </button>
+                    </Button>
                   </Hint>
                 </div>
               </div>
@@ -2390,28 +2393,28 @@ function AppPageContent() {
                           <Hint text={entityWritable.length === 0
                                 ? groupReason(entries, "sample")
                                 : `Fill the ${entityWritable.length} writable ${entityType} field(s) with sample values`}>
-                            <button
-                              type="button"
-                              className="btn btn-sm"
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               onClick={() => sampleAllUpdaters(entityType)}
                               disabled={entityWritable.length === 0}
                             >
                               Sample ({entityWritable.length})
-                            </button>
+                            </Button>
                           </Hint>
                           <Hint text={entityWritable.length === 0
                                 ? groupReason(entries, "update")
                                 : entityWithValue.length === 0
                                   ? "Sample or type a value first"
                                   : `Write the ${entityWithValue.length} ${entityType} field(s) that have a value`}>
-                            <button
-                              type="button"
-                              className="btn btn-secondary btn-sm"
+                            <Button
+                              variant="secondary"
+                              size="sm"
                               onClick={() => void updateAllUpdaters(entityType)}
                               disabled={updatingAll || entityWithValue.length === 0}
                             >
                               Update ({entityWithValue.length})
-                            </button>
+                            </Button>
                           </Hint>
                           {(available.length > 0 || entries.some(isUpdaterOn)) &&
                             turnAllToggle(
@@ -2491,17 +2494,17 @@ function AppPageContent() {
                                 </span>
                               )}
                             </div>
-                            <input
+                            <Input
                               type="text"
                               value={updater.value}
                               onChange={(e) => updateUpdaterValue(entityType, key, e.target.value)}
                               placeholder="Enter value..."
                               disabled={!detected}
-                              className="input"
                             />
                             <div className="update-row">
-                              <button
-                                type="button"
+                              <Button
+                                variant="secondary"
+                                size="sm"
                                 onClick={() =>
                                   updateUpdaterValue(
                                     entityType,
@@ -2510,11 +2513,10 @@ function AppPageContent() {
                                   )
                                 }
                                 disabled={!detected}
-                                className="btn btn-sm"
                                 title="Fill a sample value in the format this field expects"
                               >
                                 Sample
-                              </button>
+                              </Button>
                               <div className="mode-toggle" role="group" aria-label="Write mode">
                                 {(["override", "append"] as const).map((mode) => {
                                   const offered = modes.includes(mode);
@@ -2542,13 +2544,15 @@ function AppPageContent() {
                                   );
                                 })}
                               </div>
-                              <button
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                className="update-row-submit"
                                 onClick={() => executeUpdate(updater)}
                                 disabled={!detected}
-                                className="btn btn-secondary btn-sm update-row-submit"
                               >
                                 Update
-                              </button>
+                              </Button>
                             </div>
                           </div>
                         );
@@ -2639,7 +2643,7 @@ function AppPageContent() {
               <div className="demo-card-section">
                 <div className="demo-card-label">Tooltip Text</div>
                 <div className="input-group">
-                  <input
+                  <Input
                     type="text"
                     value={tooltipText}
                     onChange={(e) => setTooltipText(e.target.value)}
@@ -2647,17 +2651,16 @@ function AppPageContent() {
                       if (e.key === "Enter") hubApplyTooltip();
                     }}
                     placeholder="Enter tooltip text, then Set"
-                    className="input"
                   />
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={hubApplyTooltip}
-                    className="btn btn-secondary btn-sm"
                   >
                     Set
-                  </button>
-                  <button onClick={hubClearTooltip} className="btn btn-sm">
+                  </Button>
+                  <Button variant="secondary" onClick={hubClearTooltip}>
                     Clear
-                  </button>
+                  </Button>
                 </div>
                 <p className="tooltip-applied" aria-live="polite">
                   Hub shows:{" "}
@@ -2688,14 +2691,14 @@ function AppPageContent() {
                   >
                     {notificationBadgeActive ? "Showing" : "Hidden"}
                   </Toggle>
-                  <input
+                  <Input
                     type="number"
                     value={notificationBadgeCount}
                     min={0}
                     onChange={(e) =>
                       hubChangeNotificationBadgeCount(Math.max(0, parseInt(e.target.value) || 0))
                     }
-                    className="input input-number"
+                    className="input-number"
                     style={{ marginLeft: "auto" }}
                   />
                 </div>
@@ -2719,37 +2722,36 @@ function AppPageContent() {
 
               <div className="demo-card-section">
                 <div className="demo-card-label">Push Notification</div>
-                <input
+                <Input
                   type="text"
                   value={pushNotificationText}
                   onChange={(e) => setPushNotificationText(e.target.value)}
                   placeholder="Notification text..."
-                  className="input"
                   style={{ marginBottom: "var(--space-sm)" }}
                 />
                 <div className="input-group">
-                  <input
+                  <Input
                     type="number"
                     value={pushNotificationTimeout}
                     onChange={(e) =>
                       setPushNotificationTimeout(parseInt(e.target.value) || 12)
                     }
                     placeholder="Timeout (sec)"
-                    className="input input-number"
+                    className="input-number"
                   />
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={hubShowPushNotification}
-                    className="btn btn-secondary"
                     style={{ flex: 1 }}
                   >
                     Show
-                  </button>
-                  <button
+                  </Button>
+                  <Button
+                    variant="secondary"
                     onClick={hubHidePushNotification}
-                    className="btn btn-sm"
                   >
                     Hide
-                  </button>
+                  </Button>
                 </div>
               </div>
 
@@ -2764,20 +2766,22 @@ function AppPageContent() {
                   </div>
                   <div className="btn-group">
                     {[1, 2, 3, 4, 5, 6].map((n) => (
-                      <button
+                      <Button
+                        variant="secondary"
+                        size="sm"
                         key={n}
                         onClick={() => hubFireCount(n)}
-                        className="btn btn-sm btn-secondary"
                       >
                         ×{n}
-                      </button>
+                      </Button>
                     ))}
-                    <button
+                    <Button
+                      variant="danger"
+                      size="sm"
                       onClick={hubHidePushNotification}
-                      className="btn btn-sm btn-danger"
                     >
                       Hide all
-                    </button>
+                    </Button>
                   </div>
                 </div>
                 {/* Individual presets */}
@@ -2786,15 +2790,17 @@ function AppPageContent() {
                 </div>
                 <div className="preset-list">
                   {MULTI_NOTIF_PRESETS.map((preset, i) => (
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="preset-row"
                       key={i}
                       onClick={() => hubFirePreset(i)}
-                      className="btn btn-sm preset-row"
                     >
                       <span className="preset-index">{i + 1}</span>
                       <span className={`preset-dot preset-dot-${"type" in preset ? preset.type : "plain"}`} aria-hidden="true" />
                       {preset.label}
-                    </button>
+                    </Button>
                   ))}
                 </div>
               </div>
@@ -2821,25 +2827,25 @@ function AppPageContent() {
 
               <div className="demo-card-section">
                 <div className="demo-card-label">App Control</div>
-                <button
+                <Button
+                  variant="danger"
                   onClick={hubCloseApp}
-                  className="btn btn-danger"
                   style={{ width: "100%" }}
                 >
                   Close App
-                </button>
+                </Button>
               </div>
 
               <div className="demo-card-section">
                 <div className="demo-card-label">App State Subscription</div>
                 {!appStateSubscribed ? (
-                  <button
+                  <Button
+                    variant="secondary"
                     onClick={hubSubscribeAppState}
-                    className="btn btn-secondary"
                     style={{ width: "100%" }}
                   >
                     Subscribe
-                  </button>
+                  </Button>
                 ) : (
                   <>
                     <div className="status-panel">
@@ -2848,25 +2854,25 @@ function AppPageContent() {
                           className={`status-line ${appStateIsOpen === null ? "is-waiting" : appStateIsOpen ? "is-live" : "is-off"}`}
                           aria-live="polite"
                         >
-                          <span className="status-line-dot" aria-hidden="true" />
+                          <StatusDot tone={appStateIsOpen ? "success" : "neutral"} motion={appStateIsOpen === null ? "blink" : "none"} />
                           {appStateIsOpen === null
                             ? "Waiting for a change"
                             : appStateIsOpen
                               ? "App is open"
                               : "App is closed"}
                         </span>
-                        <button onClick={hubUnsubscribeAppState} className="btn btn-sm">
+                        <Button variant="secondary" size="sm" onClick={hubUnsubscribeAppState}>
                           Unsubscribe
-                        </button>
+                        </Button>
                       </div>
                       {appStateLog.length > 0 && (
                         <ol className="status-history">
                           {appStateLog.map((entry, i) => (
                             <li key={i} className="status-history-row">
                               <span className="log-timestamp">{entry.timestamp}</span>
-                              <span className={`badge ${entry.isOpen ? "badge-success" : "badge-neutral"}`}>
+                              <Badge variant={entry.isOpen ? "success" : "neutral"}>
                                 {entry.isOpen ? "Opened" : "Closed"}
-                              </span>
+                              </Badge>
                               {entry.trigger && <span className="log-trigger">{entry.trigger}</span>}
                             </li>
                           ))}
@@ -2914,17 +2920,17 @@ function AppPageContent() {
                 ) : (
                   <>
                     <div style={{ display: "flex", gap: "var(--space-sm)", marginBottom: "var(--space-sm)" }}>
-                      <button onClick={hubReadColorScheme} className="btn" style={{ flex: 1 }}>
+                      <Button variant="secondary" onClick={hubReadColorScheme} style={{ flex: 1 }}>
                         Read current
-                      </button>
+                      </Button>
                       {!colorSchemeSubscribed ? (
-                        <button onClick={hubSubscribeColorScheme} className="btn btn-secondary" style={{ flex: 1 }}>
+                        <Button variant="secondary" onClick={hubSubscribeColorScheme} style={{ flex: 1 }}>
                           Subscribe
-                        </button>
+                        </Button>
                       ) : (
-                        <button onClick={hubUnsubscribeColorScheme} className="btn" style={{ flex: 1 }}>
+                        <Button variant="secondary" onClick={hubUnsubscribeColorScheme} style={{ flex: 1 }}>
                           Unsubscribe
-                        </button>
+                        </Button>
                       )}
                     </div>
                     {(colorSchemeRead || colorSchemeSubscribed) && (
@@ -2975,16 +2981,17 @@ function AppPageContent() {
               <div className="worker-panel">
                 <div className="worker-panel-head">
                   <span className={`worker-state ${workerData ? "is-live" : "is-waiting"}`} aria-live="polite">
-                    <span className="worker-state-dot" aria-hidden="true" />
+                    <StatusDot tone={workerData ? "success" : "neutral"} motion={workerData ? "none" : "blink"} />
                     {workerData ? "Worker is running" : "Waiting for the Worker…"}
                   </span>
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={refreshWorkerData}
                     disabled={!appEventsSupported}
-                    className="btn btn-secondary btn-sm"
                   >
                     Refresh
-                  </button>
+                  </Button>
                 </div>
                 {workerData && (
                   <dl className="kv-list worker-kv">
@@ -3003,9 +3010,9 @@ function AppPageContent() {
                   </dl>
                 )}
                 <div className="worker-panel-foot">
-                  <span className={`badge badge-dot ${appEventsSupported ? "badge-success" : "badge-neutral"}`}>
+                  <Badge variant={appEventsSupported ? "success" : "neutral"} dot>
                     appEvents {appEventsSupported ? "supported" : "not supported"}
-                  </span>
+                  </Badge>
                   {!appEventsSupported && <span className="field-hint">Refresh needs an extension that sends appEvents.</span>}
                 </div>
               </div>
@@ -3033,12 +3040,13 @@ function AppPageContent() {
                   {logEntries.length !== 1 ? "ies" : "y"}
                 </div>
                 {logEntries.length > 0 && (
-                  <button
+                  <Button
+                    variant="secondary"
+                    size="sm"
                     onClick={() => setLogEntries([])}
-                    className="btn btn-sm"
                   >
                     Clear
-                  </button>
+                  </Button>
                 )}
               </div>
               <div className="activity-log">
@@ -3097,20 +3105,21 @@ function AppPageContent() {
               ))}
             </code>
             <div className="redirect-actions">
-              <button
-                type="button"
-                className="btn btn-primary btn-sm"
+              <Button
+                variant="primary"
+                size="sm"
                 onClick={() => copyRedirect("command", DEMO_APP_FORK_COMMAND)}
               >
                 {redirectCopy?.target === "command" && redirectCopy.ok
                   ? "Copied ✓"
                   : "Copy command"}
-              </button>
+              </Button>
               <a
                 href={redirectUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-secondary btn-sm"
+                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                data-ui="button"
                 onClick={() => addLog("Link: opening the template repo (target=_blank)", "info")}
               >
                 Open ↗

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Hint } from '@/components/Hint';
+import { StatusDot } from '@vim-connect/ui';
 
 /** One-line status under the tab bar; only when it is cut off does the full text show in a themed hint on hover. */
 export function StatusBanner({ text }: { text: string }) {
@@ -32,7 +33,7 @@ export function StatusBanner({ text }: { text: string }) {
 
   return (
     <p className="status-banner">
-      <span className="status-dot" aria-hidden="true" />
+      <StatusDot tone="success" size="sm" motion="pulse" />
       <Hint block text={truncated ? text : null}>
         <span ref={textRef} className="status-banner-text">
           {text}

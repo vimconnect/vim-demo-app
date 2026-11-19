@@ -50,6 +50,7 @@ import {
   type AutoRunnerCommand,
   type AutoRunnerStatus,
 } from '@/lib/offscreen-auto-runner-protocol';
+import { Badge, Button, Input, Textarea } from '@vim-connect/ui';
 
 type OperationEntry = NonNullable<AppManifest['operations']>[number];
 
@@ -254,9 +255,9 @@ function AutoRunnerView({
         </div>
         <div className="xp-header-side">
           {onSwitchMode && (
-            <button type="button" className="btn btn-secondary btn-sm" onClick={onSwitchMode}>
+            <Button variant="secondary" size="sm" onClick={onSwitchMode}>
               ← Classic demo
-            </button>
+            </Button>
           )}
           <div className="mode-toggle" role="group" aria-label="Where the runner executes">
             <button
@@ -279,9 +280,9 @@ function AutoRunnerView({
               </button>
             </Hint>
           </div>
-          <span className="status-badge">
-            <span className="status-dot" /> Connected · v{manifest.version ?? '?'}
-          </span>
+          <Badge variant="success" dot>
+            Connected · v{manifest.version ?? '?'}
+          </Badge>
           <Toggle on={autoRunDisruptive} onChange={runner.setAutoRunDisruptive} label="Auto-run disruptive reads">
             Auto-run disruptive reads
           </Toggle>
@@ -372,16 +373,16 @@ function AutoRunnerView({
                       <DeprecatedTag note={noteOf(opEntryByKey.get(op.key)?.deprecationStatus)} />
                     </span>
                     <span className="xp-badges">
-                      <span className="xp-badge xp-badge-read">{op.kind}</span>
-                      {op.disruptive && <span className="xp-badge xp-badge-disruptive">disruptive</span>}
+                      <Badge size="sm" variant="info">{op.kind}</Badge>
+                      {op.disruptive && <Badge size="sm" variant="error">disruptive</Badge>}
                     </span>
                   </div>
                   <BindingLine binding={binding} />
                   <div className="xp-card-foot">
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
-                    <button type="button" className="btn btn-sm" disabled={binding.status !== 'ready'} onClick={() => runner.runRead(op.key)}>
+                    <Button variant="secondary" size="sm" disabled={binding.status !== 'ready'} onClick={() => runner.runRead(op.key)}>
                       {result ? 'Re-run' : 'Run'}
-                    </button>
+                    </Button>
                   </div>
                   <ResultOutput
                     result={result}
@@ -419,28 +420,28 @@ function AutoRunnerView({
                       <DeprecatedTag note={noteOf(opEntryByKey.get(op.key)?.deprecationStatus)} />
                     </span>
                     <span className="xp-badges">
-                      <span className="xp-badge xp-badge-write">{op.kind}</span>
-                      {op.disruptive && <span className="xp-badge xp-badge-disruptive">disruptive</span>}
+                      <Badge size="sm" variant="purple">{op.kind}</Badge>
+                      {op.disruptive && <Badge size="sm" variant="error">disruptive</Badge>}
                     </span>
                   </div>
                   <BindingLine binding={binding} />
                   {hint && <div className="xp-card-meta">fields: {hint}</div>}
-                  <textarea
-                    className="input xp-payload"
+                  <Textarea
+                    className="xp-payload"
                     spellCheck={false}
                     value={writePayloads[op.key] ?? '{}'}
                     onChange={(e) => setWritePayloads((prev) => ({ ...prev, [op.key]: e.target.value }))}
                   />
                   <div className="xp-card-foot">
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
-                    <button
-                      type="button"
-                      className="btn btn-sm btn-secondary"
+                    <Button
+                      variant="secondary"
+                      size="sm"
                       disabled={op.kind !== 'create' && binding.status !== 'ready'}
                       onClick={() => runner.runWrite(op.key, writePayloads[op.key] ?? '{}')}
                     >
                       Run
-                    </button>
+                    </Button>
                   </div>
                   <ResultOutput result={result} />
                 </div>
@@ -473,8 +474,8 @@ function AutoRunnerView({
                       ))}
                     </span>
                     <span className="xp-badges">
-                      <span className="xp-badge xp-badge-write">writeback</span>
-                      {target.disruptive && <span className="xp-badge xp-badge-disruptive">disruptive</span>}
+                      <Badge size="sm" variant="purple">writeback</Badge>
+                      {target.disruptive && <Badge size="sm" variant="error">disruptive</Badge>}
                     </span>
                   </div>
                   {boundEntity ? (
@@ -483,8 +484,7 @@ function AutoRunnerView({
                     <Notice>Waiting for {target.entity}. Open one in the EHR.</Notice>
                   )}
                   <div className="input-group xp-writeback-row">
-                    <input
-                      className="input"
+                    <Input
                       placeholder="Value (JSON or text)"
                       value={input.value}
                       onChange={(e) => setWritebackInputs((prev) => ({ ...prev, [key]: { ...input, value: e.target.value } }))}
@@ -502,9 +502,9 @@ function AutoRunnerView({
                   </div>
                   <div className="xp-card-foot">
                     <StateChip state={result?.state ?? 'idle'} at={result?.at} />
-                    <button type="button" className="btn btn-sm btn-secondary" onClick={() => runner.runWriteback(target, input.value, input.mode)}>
+                    <Button variant="secondary" size="sm" onClick={() => runner.runWriteback(target, input.value, input.mode)}>
                       Run
-                    </button>
+                    </Button>
                   </div>
                   <ResultOutput result={result} />
                 </div>

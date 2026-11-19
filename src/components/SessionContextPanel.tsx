@@ -2,13 +2,13 @@
 
 import { useState } from 'react';
 import type { VimSDK } from '@vimconnect/app-sdk';
-import { copyText } from '@/lib/clipboard';
 import { SectionHeader } from '@/components/SectionHeader';
-import { IconTip } from '@/components/Hint';
+import { CopyButton } from '@/components/CodeBlock';
 import { Notice } from '@/components/Notice';
-import { CheckIcon, CopyIcon, ShieldCheckIcon } from '@/components/icons';
+import { ShieldCheckIcon } from '@/components/icons';
 import { claimLabel, decodeJwtClaims, formatClaim } from '@/lib/jwt-claims';
 import { sessionContextRows } from '@/lib/session-context-rows';
+import { Button } from '@vim-connect/ui';
 
 type SessionContext = NonNullable<VimSDK['sessionContext']>;
 
@@ -51,7 +51,6 @@ function KvRows({
 export function SessionContextPanel({ sessionContext, addLog }: SessionContextPanelProps) {
   const [collapsed, setCollapsed] = useState(true);
   const [idToken, setIdToken] = useState<IdTokenState>({ status: 'idle' });
-  const [copyState, setCopyState] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   // Resolves only on the token endpoint flow: an app that passed accessToken to
   // initVimSDK(), or whose token endpoint omitted id_token, has none captured
@@ -74,12 +73,6 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
       setIdToken({ status: 'error', code });
       addLog(`getIdToken() rejected: ${code}`, 'error');
     }
-  }
-
-  async function copyToken(token: string) {
-    const ok = await copyText(token);
-    setCopyState(ok ? 'copied' : 'failed');
-    setTimeout(() => setCopyState('idle'), 2000);
   }
 
   const rows = sessionContextRows(sessionContext);
@@ -116,21 +109,13 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
             <span className="demo-card-label">{idToken.status === 'ok' && idToken.claims ? 'ID token claims' : 'ID token'}</span>
             <div className="id-token-actions">
               {idToken.status === 'ok' && (
-                <IconTip label={copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy token'}>
-                  <button
-                    type="button"
-                    className={`btn btn-sm btn-icon${copyState === 'copied' ? ' is-done' : ''}`}
-                    onClick={() => void copyToken(idToken.token)}
-                    aria-label={copyState === 'copied' ? 'Copied' : copyState === 'failed' ? 'Copy failed' : 'Copy token'}
-                  >
-                    {copyState === 'copied' ? <CheckIcon size={14} /> : <CopyIcon size={14} />}
-                  </button>
-                </IconTip>
+                <CopyButton text={idToken.token} label="Copy token" iconOnly />
               )}
-              <button
+              <Button
+                variant="secondary"
+                size="sm"
                 onClick={fetchIdToken}
                 disabled={!sessionContext || idToken.status === 'pending'}
-                className="btn btn-secondary btn-sm"
                 title="Resolves only on the token endpoint flow"
               >
                 {idToken.status === 'pending'
@@ -138,7 +123,7 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
                   : idToken.status === 'ok'
                     ? 'Refresh ID Token'
                     : 'Get ID Token'}
-              </button>
+              </Button>
             </div>
           </div>
           {idToken.status === 'error' && (
