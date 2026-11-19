@@ -4,11 +4,12 @@ import { useState } from 'react';
 import type { VimSDK } from '@vimconnect/app-sdk';
 import { SectionHeader } from '@/components/SectionHeader';
 import { CopyButton } from '@/components/CodeBlock';
+import { Hint } from '@/components/Hint';
 import { Notice } from '@/components/Notice';
 import { ShieldCheckIcon } from '@/components/icons';
 import { claimLabel, decodeJwtClaims, formatClaim } from '@/lib/jwt-claims';
 import { sessionContextRows } from '@/lib/session-context-rows';
-import { Button } from '@vim-connect/ui';
+import { Button, Card, Tooltip } from '@vim-connect/ui';
 
 type SessionContext = NonNullable<VimSDK['sessionContext']>;
 
@@ -34,13 +35,17 @@ function KvRows({
     <dl className={`kv-list kv-list-compact ${className}`}>
       {rows.map(({ label, hint, title, value }) => (
         <div className="kv-row" key={title ?? label}>
-          <dt className="kv-label" title={title}>
-            <span>{label}</span>
+          <dt className="kv-label">
+            <Hint text={title}>
+              <span>{label}</span>
+            </Hint>
             {hint && <span className="kv-hint">{hint}</span>}
           </dt>
-          <dd className="kv-row-value" title={value}>
-            <span className="kv-value">{value}</span>
-          </dd>
+          <Tooltip label={value} wrap>
+            <dd className="kv-row-value">
+              <span className="kv-value">{value}</span>
+            </dd>
+          </Tooltip>
         </div>
       ))}
     </dl>
@@ -78,7 +83,7 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
   const rows = sessionContextRows(sessionContext);
 
   return (
-    <div className="section-collapsible">
+    <Card as="section" className="section-collapsible">
       <SectionHeader
         title={`Session Context${sessionContext ? ` (${rows.length})` : ''}`}
         collapsed={collapsed}
@@ -90,16 +95,18 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
       <div className={`section-content ${collapsed ? 'collapsed' : ''}`}>
         <div className="section-inner">
           {sessionContext ? (
-            <div className="session-card">
+            <Card className="session-card">
               <dl className="session-ids">
                 {rows.map(({ key, label, value }) => (
                   <div className="session-id" key={key}>
                     <dt>{label}</dt>
-                    <dd title={value}>{value}</dd>
+                    <Tooltip label={value} wrap>
+                      <dd>{value}</dd>
+                    </Tooltip>
                   </div>
                 ))}
               </dl>
-            </div>
+            </Card>
           ) : (
             <div className="empty-state" style={{ margin: 0 }}>
               No session context — older extension builds send none.
@@ -111,19 +118,20 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
               {idToken.status === 'ok' && (
                 <CopyButton text={idToken.token} label="Copy token" iconOnly />
               )}
-              <Button
-                variant="secondary"
-                size="sm"
-                onClick={fetchIdToken}
-                disabled={!sessionContext || idToken.status === 'pending'}
-                title="Resolves only on the token endpoint flow"
-              >
-                {idToken.status === 'pending'
-                  ? 'Fetching…'
-                  : idToken.status === 'ok'
-                    ? 'Refresh ID Token'
-                    : 'Get ID Token'}
-              </Button>
+              <Hint text="Resolves only on the token endpoint flow">
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  onClick={fetchIdToken}
+                  disabled={!sessionContext || idToken.status === 'pending'}
+                >
+                  {idToken.status === 'pending'
+                    ? 'Fetching…'
+                    : idToken.status === 'ok'
+                      ? 'Refresh ID Token'
+                      : 'Get ID Token'}
+                </Button>
+              </Hint>
             </div>
           </div>
           {idToken.status === 'error' && (
@@ -149,6 +157,6 @@ export function SessionContextPanel({ sessionContext, addLog }: SessionContextPa
             ))}
         </div>
       </div>
-    </div>
+    </Card>
   );
 }

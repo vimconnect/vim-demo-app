@@ -89,7 +89,8 @@ body {
     color: var(--color-cyan-text);
   }
 
-  :focus-visible {
+  /* Not on script-only focus targets (tabindex="-1"), e.g. the body of an open HoverCard. */
+  :focus-visible:not([tabindex='-1']) {
     outline: none;
     box-shadow: var(--shadow-focus);
   }
@@ -180,16 +181,6 @@ body:not(.light-mode) .nav-tab.active {
   box-shadow: inset var(--shadow-focus);
 }
 
-/* Each tab sits in its tooltip wrapper; the wrapper is the grid cell */
-.nav-tabs > .hint {
-  display: flex;
-  min-width: 0;
-}
-
-.nav-tabs > .hint > .nav-tab {
-  flex: 1;
-}
-
 /* Too narrow for icon + name: keep the names, drop the icons */
 .nav-tabs {
   container-type: inline-size;
@@ -248,35 +239,24 @@ body:not(.light-mode) .nav-tab.active {
   position: relative;
   margin-bottom: var(--space-sm);
   padding: 0 var(--space-lg);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  transition: box-shadow var(--transition-base);
-}
-
-/* DS .card--static.card--hover-shadow: a container, not one click target, so shadow only */
-.section-collapsible:hover {
-  box-shadow: var(--shadow-card-hover);
 }
 
 .section-header {
-  position: relative;
-  display: flex;
-  align-items: flex-start;
-  gap: var(--space-sm);
-  padding: var(--space-md) var(--space-2xl) var(--space-md) 0;
+  margin-bottom: 0;
+  padding: var(--space-md) 0;
   cursor: pointer;
   user-select: none;
-  border-radius: var(--radius-md);
 }
 
-.section-title {
-  margin: 0;
-  font-family: var(--font-sans);
-  font-size: var(--text-base); /* same as the overview card's "Connected" */
-  font-weight: var(--font-semibold);
-  line-height: 1.35;
-  color: var(--color-text-primary);
+/* Top-aligned: the icon badge, docs link and chevron sit on the title's line when the hint wraps. */
+.section-header,
+.section-header > [data-ui="card-header-main"] {
+  align-items: flex-start;
+}
+
+.section-header > [data-ui="card-header-actions"] {
+  min-height: 28px;
+  align-items: center;
 }
 
 /* No height cap when open: a fixed max-height clips sections that grow with the manifest. */
@@ -300,11 +280,6 @@ body:not(.light-mode) .nav-tab.active {
   color: var(--color-text-muted);
 }
 
-.section-divider {
-  margin: var(--space-sm) 0;
-  border: none;
-}
-
 .section-actions {
   display: flex;
   flex-wrap: wrap;
@@ -314,9 +289,6 @@ body:not(.light-mode) .nav-tab.active {
 
 /* Expand arrow: the DS Select's Lucide chevron (round caps, 1.5 stroke), drawn as a mask so it
    takes the text colour. Down when closed, flips up when open. */
-.section-chevron,
-.entity-card-chevron,
-.subsection-chevron,
 .disclosure-chevron {
   position: absolute;
   right: 0;
@@ -330,33 +302,13 @@ body:not(.light-mode) .nav-tab.active {
   transition: transform var(--transition-base), background-color var(--transition-fast);
 }
 
-.section-chevron.open,
-.subsection-chevron.open,
-.disclosure-chevron.open,
-.entity-card.expanded > .entity-card-header .entity-card-chevron {
+.disclosure-chevron.open {
   transform: rotate(180deg);
 }
 
-.section-header:hover .section-chevron,
-.entity-card-header:hover > .entity-card-toggle .entity-card-chevron,
-.subsection-header:hover .subsection-chevron,
 button:hover .disclosure-chevron,
-summary:hover .disclosure-chevron,
-.subsection-row:hover .disclosure-chevron {
+summary:hover .disclosure-chevron {
   background-color: var(--color-text-primary);
-}
-
-/* Every row that holds an arrow is positioned and keeps room for it on the right. */
-
-/* Sub-header rows (title button + actions): the arrow goes after the actions */
-.subsection-row:has(> .subsection-header) {
-  position: relative;
-  padding-right: var(--space-2xl);
-}
-
-.subsection-row > .subsection-header {
-  position: static;
-  padding-right: 0;
 }
 
 /* Event preview cards and raw-output bars */
@@ -370,51 +322,10 @@ summary:hover .disclosure-chevron,
   position: static;
 }
 
-/* Section title block: DS heading icon tile, title row, plain-language subtitle */
-.section-heading {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
 .section-title-row {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
-}
-
-.section-subtitle {
-  font-size: var(--text-xs);
-  font-weight: var(--font-normal);
-  line-height: 1.4;
-  color: var(--color-text-muted);
-}
-
-.section-header .icon-tile--heading {
-  margin-top: 1px;
-}
-
-/* The arrow lines up with the icon tile / title row, not the middle of the whole header */
-.section-header .section-chevron {
-  top: calc(var(--space-md) + 11px);
-}
-
-/* Learn ↗ sits bottom-right, under the arrow, on the subtitle's line */
-.section-header .docs-link {
-  position: absolute;
-  right: 0;
-  bottom: calc(var(--space-md) - 2px);
-  margin-left: 0;
-}
-
-.section-header:has(.docs-link) .section-heading {
-  padding-right: 52px;
-}
-
-/* A header with no subtitle keeps the title row clear of the link */
-.section-header:has(.docs-link):not(:has(.section-subtitle)) {
-  padding-bottom: calc(var(--space-md) + 18px);
 }
 
 /* ── DS icon tile: flat cyan tint, never a gradient ────────────── */
@@ -445,9 +356,6 @@ summary:hover .disclosure-chevron,
 .overview-card {
   margin-bottom: var(--space-sm);
   padding: var(--space-md) var(--space-lg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  background: var(--color-bg-card);
 }
 
 .overview-head {
@@ -518,20 +426,11 @@ summary:hover .disclosure-chevron,
 }
 
 /* ── Nested cards: flat rows with hairline dividers, never lift ── */
-.entity-card,
 .updater-summary-card {
   margin-bottom: var(--space-sm);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-bg-card);
-}
-
-.section-collapsible .entity-card {
-  margin: 0;
-  border: 0;
-  border-top: 1px solid var(--color-border-light);
-  border-radius: 0;
-  background: none;
 }
 
 .updater-summary-card {
@@ -546,17 +445,6 @@ summary:hover .disclosure-chevron,
 
 .updater-summary-card .section-actions {
   margin-bottom: 0;
-}
-
-.entity-card-header {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
-  min-height: 44px;
-  padding: var(--space-sm) var(--space-2xl) var(--space-sm) 0;
 }
 
 .entity-card-toggle {
@@ -574,18 +462,6 @@ summary:hover .disclosure-chevron,
   cursor: pointer;
 }
 
-.entity-card-body {
-  padding: 0 var(--space-md) var(--space-md);
-}
-
-.section-collapsible .entity-card-body {
-  padding: 0 0 var(--space-md);
-}
-
-.entity-card-body > .event-list {
-  margin-top: var(--space-xs);
-}
-
 .entity-card-ops {
   display: flex;
   flex-direction: column;
@@ -597,47 +473,8 @@ summary:hover .disclosure-chevron,
   margin-bottom: 0;
 }
 
-/* Sub-card title: one step under the section title */
-.updater-group-title {
-  font-size: var(--text-base);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-}
-
-.updater-group-actions {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: flex-end;
-  gap: var(--space-sm);
-  margin-left: auto;
-}
-
-.entity-card-toggle > .entity-open-pill {
-  flex-shrink: 0;
-}
-
-.updater-group + .updater-group {
-  margin-top: var(--space-lg);
-}
-
-.nested-card {
-  margin-top: var(--space-md);
-}
-
 .nested-card-top {
   margin: var(--space-sm) 0 var(--space-md);
-}
-
-.nested-card-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 0;
-  margin-top: var(--space-xs);
-}
-
-.nested-card .entity-card {
-  margin-bottom: 0;
 }
 
 /* Subsection (Event preview) */
@@ -657,33 +494,6 @@ summary:hover .disclosure-chevron,
   font-weight: var(--font-semibold);
   text-align: left;
   cursor: pointer;
-}
-
-/* Upstream's sub-header rows put actions beside the title: the divider spans the row, not the button. */
-.subsection-row:has(> .subsection-header) {
-  border-top: 1px solid var(--color-border-light);
-}
-
-.subsection-row > .subsection-header {
-  width: auto;
-  flex: 1;
-  border-top: 0;
-}
-
-.subsection-body {
-  margin-top: var(--space-xs);
-  padding-bottom: var(--space-md);
-}
-
-.subsection-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: var(--space-sm);
-}
-
-.subsection-row .demo-card-label {
-  margin-bottom: 0;
 }
 
 /* ── Eyebrow labels: one compact size everywhere (10px, as in the side panel's VCR page) ── */
@@ -717,22 +527,6 @@ summary:hover .disclosure-chevron,
   margin-bottom: var(--space-xs);
   font-size: var(--text-xs);
   color: var(--color-text-muted);
-}
-
-/* Legacy card wrapper */
-.demo-card {
-  margin-bottom: var(--space-xl);
-  padding: var(--space-xl);
-  background: var(--color-bg-card);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  color: var(--color-text-primary);
-}
-
-.demo-card h2 {
-  margin-bottom: var(--space-lg);
-  font-size: var(--text-lg);
-  font-weight: var(--font-semibold);
 }
 
 .demo-card-section {
@@ -813,45 +607,9 @@ summary:hover .disclosure-chevron,
 }
 
 /* ── Buttons: DS recipes ───────────────────────────────────────── */
-/* .btn alone = neutral secondary: card surface, medium border, cyan on hover. */
-.btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-sm);
-  min-height: 32px;
-  padding: var(--space-sm) var(--space-lg);
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  font-family: var(--font-sans);
-  font-size: var(--text-sm);
-  font-weight: var(--font-semibold);
-  line-height: 1;
-  text-decoration: none;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all var(--transition-base);
-}
 
-.btn:hover {
-  border-color: var(--color-cyan);
-  background: var(--color-cyan-05);
-}
-
-.btn:active {
-  transform: translateY(1px);
-}
-
-/* Disabled: clearly inert, no hover lift or colour change */
-.btn:disabled,
-.btn:disabled:hover {
-  opacity: 0.4;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-  pointer-events: none;
+.theme-choice {
+  margin-bottom: var(--space-sm);
 }
 
 .btn-group {
@@ -878,50 +636,6 @@ summary:hover .disclosure-chevron,
 .docs-link:hover {
   color: var(--color-cyan-text);
   background: var(--color-cyan-08);
-}
-
-/* Activation status: DS segmented control */
-.activation-group {
-  display: flex;
-  gap: 2px;
-  padding: 2px;
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-elevated);
-}
-
-.btn-activation {
-  display: flex;
-  flex: 1 1 0;
-  align-items: center;
-  justify-content: center;
-  gap: var(--space-xs);
-  min-width: 0;
-  min-height: 28px;
-  padding: var(--space-xs) var(--space-sm);
-  border: none;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: var(--color-text-muted);
-  font-size: var(--text-xs);
-  font-weight: var(--font-semibold);
-  white-space: nowrap;
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-
-.btn-activation:hover {
-  color: var(--color-text-primary);
-}
-
-.btn-activation.enabled {
-  background: var(--color-cyan-15);
-  color: var(--color-cyan-text);
-}
-
-.btn-activation.loading,
-.btn-activation.disabled {
-  color: var(--color-text-muted);
 }
 
 /* Write mode: same segmented control */
@@ -1184,7 +898,7 @@ summary:hover .disclosure-chevron,
   margin: var(--space-md) 0 var(--space-sm);
 }
 
-.entity-card-body .updater-card [data-ui="input"] {
+[data-ui="accordion-item"] .updater-card [data-ui="input"] {
   margin-bottom: var(--space-sm);
 }
 
@@ -1264,23 +978,11 @@ summary:hover .disclosure-chevron,
   color: var(--color-text-muted);
 }
 
-/* ── Code payloads: DS code block ──────────────────────────────── */
+/* ── Code payloads: the shared DS CodeBlock; placement only here ── */
 .code-block {
-  /* Matches the global ::-webkit-scrollbar width. */
-  --code-scrollbar-width: 8px;
-  position: relative;
   margin-top: var(--space-sm);
 }
 
-/* Clear of the payload's vertical scrollbar, which sits inside the pre's border box. */
-.code-block .copy-button {
-  position: absolute;
-  top: var(--space-sm);
-  right: calc(var(--space-sm) + var(--code-scrollbar-width));
-  z-index: 1;
-}
-
-.code-block-pre,
 .raw-output-code {
   margin: 0;
   padding: var(--space-lg);
@@ -1294,12 +996,6 @@ summary:hover .disclosure-chevron,
   white-space: pre-wrap;
   word-break: break-word;
   overflow: auto;
-}
-
-.code-block-pre {
-  padding-top: calc(var(--space-lg) + var(--space-lg));
-  max-height: 480px;
-  scrollbar-gutter: stable;
 }
 
 /* Vim's blueprint loader. The `.vim-blueprint*` rules are copied from shared/styles/auth-loading.css;
@@ -1843,9 +1539,7 @@ body.light-mode .video-preview {
 /* Session context: an identity card - who and where on top, then every ID in full */
 .session-card {
   overflow: hidden;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-card);
+  padding: 0;
 }
 
 .session-ids {
@@ -1963,27 +1657,12 @@ body.light-mode .video-preview {
   flex: 1;
 }
 
-.hint-bubble {
-  position: fixed;
-  z-index: var(--z-tooltip);
-  width: max-content;
-  padding: var(--space-sm) var(--space-md);
-  border: 1px solid var(--glass-border-raised);
-  border-radius: var(--radius-md);
-  background: var(--glass-bg-float);
-  backdrop-filter: var(--glass-blur-md);
-  -webkit-backdrop-filter: var(--glass-blur-md);
-  box-shadow: var(--glass-shadow-raised);
-  color: var(--color-text-primary);
-  font-size: var(--text-xs);
-  font-weight: var(--font-normal);
-  line-height: 1.45;
-  white-space: normal;
-  pointer-events: none;
+.info-tip-wrap {
+  display: inline-flex;
 }
 
-.hint-bubble code {
-  font-size: 0.95em;
+.info-tip-text {
+  margin: 0;
 }
 
 .info-tip {
@@ -2006,102 +1685,12 @@ body.light-mode .video-preview {
   height: 14px;
 }
 
-/* ── Modals: DS glass float ────────────────────────────────────── */
-.modal-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: var(--z-modal);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: var(--space-2xl);
-  background: color-mix(in srgb, var(--color-bg-primary) 45%, transparent);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-}
-
-body.light-mode .modal-overlay {
-  background: color-mix(in srgb, var(--color-brand-navy) 45%, transparent);
-}
-
-.modal-content {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  max-width: 800px;
-  max-height: 80vh;
-  border: 1px solid var(--glass-border-raised);
-  border-radius: var(--radius-2xl);
-  background: var(--color-bg-card);
-  box-shadow: var(--glass-shadow-float);
-}
-
-.modal-title {
-  margin: 0;
-  font-family: var(--font-title);
-  font-size: var(--text-2xl);
-  font-weight: var(--font-semibold);
-  color: var(--color-text-primary);
-}
-
-.modal-close {
-  padding: var(--space-sm);
-  border: none;
-  border-radius: var(--radius-md);
-  background: none;
-  color: var(--color-text-muted);
-  font-size: var(--text-3xl);
-  line-height: 1;
-  cursor: pointer;
-  transition: color var(--transition-fast), background var(--transition-fast);
-}
-
-.modal-close:hover {
-  color: var(--color-text-primary);
-  background: var(--color-cyan-08);
-}
-
-/* Sized for the narrow Hub side panel. */
-.redirect-modal {
-  position: relative;
-  max-width: 360px;
-  gap: var(--space-md);
-  padding: var(--space-2xl);
-}
-
-.redirect-close {
-  position: absolute;
-  top: var(--space-sm);
-  right: var(--space-sm);
-  font-size: var(--text-xl);
-}
-
-.redirect-hero {
-  display: flex;
-  align-items: center;
-  gap: var(--space-md);
-}
-
-.redirect-github {
-  flex-shrink: 0;
-  width: 36px;
-  height: 36px;
-  color: var(--color-text-primary);
-}
-
-.redirect-modal .modal-title {
-  font-size: var(--text-xl);
-}
-
-.redirect-tagline,
+/* ── "Fork this app" dialog body (the shared Modal draws the dialog) ── */
 .redirect-points {
-  margin: 0;
+  margin: 0 0 var(--space-md);
   font-size: var(--text-sm);
   line-height: 1.55;
   color: var(--color-text-secondary);
-}
-
-.redirect-points {
   padding-left: var(--space-lg);
 }
 
@@ -2121,20 +1710,8 @@ body.light-mode .modal-overlay {
   white-space: nowrap;
 }
 
-.redirect-actions {
-  display: flex;
-  gap: var(--space-sm);
-}
-
-.redirect-actions .btn {
-  flex: 1 1 0;
-  min-width: 0;
-  min-height: 32px;
-  font-size: var(--text-sm);
-}
-
 .redirect-hint {
-  margin: 0;
+  margin: var(--space-sm) 0 0;
   font-size: var(--text-xs);
   color: var(--color-error);
 }
@@ -2296,15 +1873,6 @@ body.light-mode .modal-overlay {
   flex-direction: column;
   gap: var(--space-sm);
   padding: var(--space-lg);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
-  background: var(--color-bg-card);
-  transition: box-shadow var(--transition-base);
-}
-
-/* DS .card--static.card--hover-shadow: a container, not one click target, so shadow only */
-.xp-card:hover {
-  box-shadow: var(--shadow-card-hover);
 }
 
 .xp-card-head,
@@ -2466,45 +2034,12 @@ body.light-mode .modal-overlay {
 .in-page-search-input {
   flex: 1;
   min-width: 0;
-  height: 28px;
-  padding: 0 var(--space-sm);
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-card);
-  color: var(--color-text-primary);
-  font-size: var(--text-sm);
-  outline: none;
-}
-
-.in-page-search-input:focus {
-  border-color: var(--color-cyan);
-  box-shadow: var(--shadow-focus);
 }
 
 .in-page-search-count {
   min-width: 34px;
   font-size: var(--text-xs);
   text-align: right;
-}
-
-.in-page-search-btn {
-  width: 28px;
-  height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: var(--radius-base);
-  background: none;
-  color: var(--color-text-secondary);
-  cursor: pointer;
-}
-
-.in-page-search-btn:hover:not(:disabled) {
-  background: var(--color-cyan-10);
-}
-
-.in-page-search-btn:disabled {
-  opacity: 0.4;
-  cursor: default;
 }
 
 /* ::highlight(demo-search…) colours are in InPageSearch.tsx: Next's CSS parser rejects the pseudo-element. */
@@ -2605,27 +2140,10 @@ body.light-mode .modal-overlay {
 
 /* ── Captured event lists ──────────────────────────────────────────────── */
 /* Indented so a nested list reads as its section's child, not its sibling. */
-.preview-list,
-.indented-list {
+.nested-accordion {
   padding-left: var(--space-md);
   border-left: 1px solid var(--color-border-light);
   margin-left: var(--space-xs);
-}
-
-.preview-list + .preview-list,
-.indented-list + .indented-list {
-  margin-top: var(--space-md);
-}
-
-.subsection-actions {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--space-sm);
-  flex-shrink: 0;
-}
-
-.preview-list-header {
-  font-weight: var(--font-semibold);
 }
 
 .preview-older-toggle {
@@ -2797,8 +2315,3 @@ body:not(.light-mode) .xp-state-error { color: var(--color-error-light); }
   flex-wrap: wrap;
 }
 
-/* One height per row: a small button beside a field takes the field's 32px */
-.op-input-row > .btn,
-.op-input-row > .hint-block > .btn {
-  min-height: 32px;
-}

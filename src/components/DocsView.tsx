@@ -22,7 +22,7 @@ export function DocsView() {
     const onWheel = (e: WheelEvent) => {
       const frame = frameRef.current?.contentWindow;
       if (!frame || e.ctrlKey || e.deltaY === 0) return;
-      if (e.target instanceof Element && e.target.closest('.modal-overlay')) return;
+      if (e.target instanceof Element && e.target.closest('[data-modal-overlay]')) return;
       e.preventDefault();
       const deltaY = e.deltaMode === WheelEvent.DOM_DELTA_LINE ? e.deltaY * LINE_HEIGHT_PX : e.deltaY;
       frame.postMessage({ type: DOCS_SCROLL_MESSAGE, deltaY }, docsOrigin);

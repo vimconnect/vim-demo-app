@@ -14,7 +14,7 @@ import { Spinner } from './Spinner.js';
  * Trigger: 32px full pill (a dropdown, unlike a typed-into field), the field
  * fill and stroke (`--color-bg-field` / `--color-border-field`, the same as
  * `Input`, so a filter row reads as one set), 13px text, and the same cyan focus
- * ring as `Input` while focused or open. Panel: a floating surface (solid 92%
+ * ring as `Input` while focused or open. Panel: a floating surface (solid
  * `--color-bg-primary`, `--glass-border-raised`, `--radius-md`, raised shadow)
  * portalled to `<body>` and flipped above the trigger when there's no room below.
  * Rows: transparent at rest, `--color-cyan-05` on hover or keyboard focus;
@@ -68,8 +68,8 @@ const TRIGGER_RICH = 'h-auto min-h-[32px] py-[4px]';
 const PANEL = [
     'select-dropdown m-0 list-none p-[var(--space-xs)] min-w-[96px] overflow-y-auto',
     'rounded-[var(--radius-md)] border border-solid [border-color:var(--glass-border-raised)]',
-    '[background:color-mix(in_srgb,var(--color-bg-primary)_92%,transparent)]',
-    '[backdrop-filter:var(--glass-blur-md)] [box-shadow:var(--glass-shadow-raised)]',
+    '[background:var(--color-bg-primary)]',
+    '[box-shadow:var(--glass-shadow-raised)]',
     '[&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:[background:transparent]',
     '[&::-webkit-scrollbar-thumb]:[background:var(--glass-border-base)] [&::-webkit-scrollbar-thumb]:rounded-[var(--radius-full)]',
 ].join(' ');

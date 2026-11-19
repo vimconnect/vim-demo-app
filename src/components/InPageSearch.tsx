@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { findTextMatches } from '@/lib/text-search';
-import { SearchIcon } from '@/components/icons';
+import { ChevronDown, ChevronUp, X } from 'lucide-react';
+import { IconButton, SearchInput } from '@vim-connect/ui';
 
 const ALL = 'demo-search';
 const CURRENT = 'demo-search-current';
@@ -103,32 +104,28 @@ export function InPageSearch({ rootSelector, open, onOpenChange }: {
   return (
     <div className="in-page-search" role="search" data-search-ignore>
       <style>{HIGHLIGHT_STYLES}</style>
-      <SearchIcon />
-      <input
+      <SearchInput
         ref={inputRef}
         className="in-page-search-input"
-        type="search"
+        width="100%"
         value={query}
         placeholder="Find in app"
         aria-label="Find in app"
-        onChange={(e) => search(e.target.value)}
+        onChange={search}
         onKeyDown={(e) => {
           if (e.key === 'Enter') step(e.shiftKey ? -1 : 1);
-          if (e.key === 'Escape') onOpenChange(false);
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onOpenChange(false);
+          }
         }}
       />
       <span className="in-page-search-count" aria-live="polite">
         {query.trim() ? (matches.length ? `${current + 1}/${matches.length}` : '0/0') : ''}
       </span>
-      <button type="button" className="in-page-search-btn" aria-label="Previous match" onClick={() => step(-1)} disabled={!matches.length}>
-        ↑
-      </button>
-      <button type="button" className="in-page-search-btn" aria-label="Next match" onClick={() => step(1)} disabled={!matches.length}>
-        ↓
-      </button>
-      <button type="button" className="in-page-search-btn" aria-label="Close search" onClick={() => onOpenChange(false)}>
-        ✕
-      </button>
+      <IconButton size="sm" label="Previous match" icon={<ChevronUp />} onClick={() => step(-1)} disabled={!matches.length} />
+      <IconButton size="sm" label="Next match" icon={<ChevronDown />} onClick={() => step(1)} disabled={!matches.length} />
+      <IconButton size="sm" label="Close search" icon={<X />} onClick={() => onOpenChange(false)} />
     </div>
   );
 }

@@ -50,7 +50,7 @@ import {
   type AutoRunnerCommand,
   type AutoRunnerStatus,
 } from '@/lib/offscreen-auto-runner-protocol';
-import { Badge, Button, Input, Textarea } from '@vim-connect/ui';
+import { Badge, Button, Card, Input, Textarea } from '@vim-connect/ui';
 
 type OperationEntry = NonNullable<AppManifest['operations']>[number];
 
@@ -308,7 +308,7 @@ function AutoRunnerView({
         ) : (
           <div className="xp-grid">
             {contextEntries.map((entry) => (
-              <div key={entry.entityType} className="xp-card">
+              <Card key={entry.entityType} hover="shadow" className="xp-card">
                 <div className="xp-card-head">
                   <span className="xp-card-title">{entry.entityType}</span>
                   <span className="xp-mono xp-dim">{entry.id ?? 'no id'}</span>
@@ -323,7 +323,7 @@ function AutoRunnerView({
                 {/* The entity id lives at the top level of context data, not under
                     .fields — fold it in so an `id` field isn't reported missing. */}
                 <CompletenessBlock allFields={entityFields[entry.entityType] ?? []} value={{ id: entry.id, ...entry.data.fields }} />
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -337,7 +337,7 @@ function AutoRunnerView({
         ) : (
           <div className="xp-grid">
             {events.map((evt) => (
-              <div key={evt.id} className="xp-card">
+              <Card key={evt.id} hover="shadow" className="xp-card">
                 <div className="xp-card-head">
                   <span className="xp-card-title">{evt.type}</span>
                   <span className="xp-dim">{evt.at}</span>
@@ -347,7 +347,7 @@ function AutoRunnerView({
                   lines={annotatedLines(evt.event, workflowEventAnnotator(manifest, evt.type))}
                   label="event payload"
                 />
-              </div>
+              </Card>
             ))}
           </div>
         )}
@@ -366,7 +366,7 @@ function AutoRunnerView({
               const entityType = opEntryByKey.get(op.key)?.entityTypeId;
               const readEntity = asEntityObject(asEntityObject(result?.result)?.data);
               return (
-                <div key={op.key} className="xp-card">
+                <Card key={op.key} hover="shadow" className="xp-card">
                   <div className="xp-card-head">
                     <span className="xp-card-title xp-mono">
                       {op.key}
@@ -393,7 +393,7 @@ function AutoRunnerView({
                     }
                   />
                   {entityType && <CompletenessBlock allFields={entityFields[entityType] ?? []} value={readEntity} />}
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -413,7 +413,7 @@ function AutoRunnerView({
               const result = results.writes[op.key];
               const hint = writeFieldsHint(opEntryByKey.get(op.key));
               return (
-                <div key={op.key} className="xp-card">
+                <Card key={op.key} hover="shadow" className="xp-card">
                   <div className="xp-card-head">
                     <span className="xp-card-title xp-mono">
                       {op.key}
@@ -444,7 +444,7 @@ function AutoRunnerView({
                     </Button>
                   </div>
                   <ResultOutput result={result} />
-                </div>
+                </Card>
               );
             })}
           </div>
@@ -463,7 +463,7 @@ function AutoRunnerView({
               const result = results.writebacks[key];
               const boundEntity = !!contextStore[target.entity];
               return (
-                <div key={key} className="xp-card">
+                <Card key={key} hover="shadow" className="xp-card">
                   <div className="xp-card-head">
                     <span className="xp-card-title xp-mono">
                       {`${target.entity}.${target.field}`.split('.').map((part, i) => (
@@ -507,7 +507,7 @@ function AutoRunnerView({
                     </Button>
                   </div>
                   <ResultOutput result={result} />
-                </div>
+                </Card>
               );
             })}
           </div>

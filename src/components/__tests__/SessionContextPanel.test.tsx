@@ -69,7 +69,9 @@ describe('SessionContextPanel', () => {
     renderPanel(sessionContext());
     expect(screen.queryByTitle(/^Copy /)).not.toBeInTheDocument();
     expect(
-      screen.getAllByRole('button').filter((b) => !b.classList.contains('info-tip') && !b.classList.contains('section-header')),
+      screen
+        .getAllByRole('button')
+        .filter((b) => !b.classList.contains('info-tip') && !/^(Expand|Collapse) /.test(b.getAttribute('aria-label') ?? '')),
     ).toHaveLength(1);
   });
 

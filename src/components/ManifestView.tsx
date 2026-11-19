@@ -5,6 +5,7 @@ import type { AppManifest } from '@vimconnect/app-sdk';
 import { CodeBlock } from '@/components/CodeBlock';
 import { SectionHeader } from '@/components/SectionHeader';
 import { annotatedLines, manifestAnnotator } from '@/lib/annotated-json';
+import { Card } from '@vim-connect/ui';
 
 /** A count for array and object values, so a collapsed section still says how much it holds. */
 function sizeOf(value: unknown): string {
@@ -35,7 +36,7 @@ export function ManifestView({ manifest }: { manifest: AppManifest }) {
         const isOpen = open.has(key);
         const scalar = value === null || typeof value !== 'object';
         return (
-          <div className="section-collapsible" key={key}>
+          <Card as="section" key={key} className="section-collapsible">
             {scalar ? (
               <div className="manifest-scalar">
                 <span className="kv-label">{key}</span>
@@ -54,7 +55,7 @@ export function ManifestView({ manifest }: { manifest: AppManifest }) {
                 )}
               </>
             )}
-          </div>
+          </Card>
         );
       })}
     </div>

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { Button, Tooltip } from '@vim-connect/ui';
+import { Button, CodeBlock as SharedCodeBlock, Tooltip } from '@vim-connect/ui';
 import { copyText } from '@/lib/clipboard';
 import { CheckIcon, CopyIcon } from '@/components/icons';
 import type { JsonLine } from '@/lib/annotated-json';
@@ -46,10 +46,12 @@ export function JsonLines({ lines }: { lines: JsonLine[] }) {
         <span key={i}>
           {line.text}
           {line.note !== null && (
-            <span className="json-note" title={`Deprecated — ${line.note}`}>
-              {'  // deprecated — '}
-              {line.note}
-            </span>
+            <Tooltip label={`Deprecated — ${line.note}`} wrap>
+              <span className="json-note">
+                {'  // deprecated — '}
+                {line.note}
+              </span>
+            </Tooltip>
           )}
           {i < lines.length - 1 && '\n'}
         </span>
@@ -58,12 +60,11 @@ export function JsonLines({ lines }: { lines: JsonLine[] }) {
   );
 }
 
-/** A code payload with a Copy button pinned to its top-right corner. Copy takes `code`, never the notes. */
+/** Copy takes `code`, never the notes shown from `lines`. */
 export function CodeBlock({ code, lines, className = '' }: { code: string; lines?: JsonLine[]; className?: string }) {
   return (
-    <div className={`code-block ${className}`}>
-      <CopyButton text={code} iconOnly />
-      <pre className="code-block-pre">{lines ? <JsonLines lines={lines} /> : code}</pre>
-    </div>
+    <SharedCodeBlock code={code} copyLabel="payload" wrap maxHeight="480px" className={`code-block ${className}`}>
+      {lines ? <JsonLines lines={lines} /> : undefined}
+    </SharedCodeBlock>
   );
 }

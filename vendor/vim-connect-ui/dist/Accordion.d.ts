@@ -25,6 +25,12 @@ export interface AccordionItemProps {
     /** Beside the title and count (a badge, a status); wraps under the title when narrow. Not a button: the whole header toggles. */
     aside?: React.ReactNode;
     /**
+     * Controls of their own (a switch, a docs link, a "Clear" button), shown on the header row
+     * just before the chevron. They sit outside the header button, so clicking one doesn't toggle
+     * the item and each stays its own tab stop. Shown open or closed.
+     */
+    actions?: React.ReactNode;
+    /**
      * Controls this item from outside: it is open exactly when `open` is true, and the header
      * asks `onOpenChange` instead of toggling itself. Use it when something else opens the item
      * (a count that grows). `single` and `defaultOpen` only govern the items left uncontrolled.
@@ -36,4 +42,4 @@ export interface AccordionItemProps {
     className?: string;
     'data-testid'?: string;
 }
-export declare function AccordionItem({ id, title, count, hint, aside, open: openProp, onOpenChange, children, className, 'data-testid': testId, }: AccordionItemProps): import("react/jsx-runtime").JSX.Element;
+export declare function AccordionItem({ id, title, count, hint, aside, actions, open: openProp, onOpenChange, children, className, 'data-testid': testId, }: AccordionItemProps): import("react/jsx-runtime").JSX.Element;

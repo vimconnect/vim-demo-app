@@ -13,8 +13,8 @@ export const POPOVER = [
     'flex flex-col gap-[10px] p-[12px] outline-none',
     '[font-family:var(--font-sans)] [color:var(--color-text-primary)]',
     'rounded-[var(--radius-xl)] border border-solid [border-color:var(--glass-border-raised)]',
-    '[background:color-mix(in_srgb,var(--color-bg-primary)_92%,transparent)]',
-    '[backdrop-filter:var(--glass-blur-md)] [box-shadow:var(--glass-shadow-raised)]',
+    '[background:var(--color-bg-primary)]',
+    '[box-shadow:var(--glass-shadow-raised)]',
 ].join(' ');
 export const DIVIDED = 'border-0 border-t border-solid [border-color:var(--color-border-light)]';
 export const SELECTED = '[background:var(--color-cyan-15)] [color:var(--color-cyan-text)] [font-weight:var(--font-semibold)] hover:[background:var(--color-cyan-20)]';

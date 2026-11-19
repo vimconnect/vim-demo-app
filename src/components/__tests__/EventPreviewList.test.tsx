@@ -1,5 +1,6 @@
 import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import { Accordion } from "@vim-connect/ui";
 
 import { EventPreviewList, type PreviewEntry } from "../EventPreviewList";
 
@@ -11,7 +12,9 @@ const entry = (key: number, body: string | null = `payload ${key}`): PreviewEntr
 });
 
 const list = (entries: PreviewEntry[]) => (
-  <EventPreviewList label="Context changes" entries={entries} emptyText="" onClear={() => {}} />
+  <Accordion>
+    <EventPreviewList id="context" label="Context changes" entries={entries} emptyText="" onClear={() => {}} />
+  </Accordion>
 );
 
 describe("EventPreviewList", () => {

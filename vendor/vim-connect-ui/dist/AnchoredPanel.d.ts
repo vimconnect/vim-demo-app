@@ -11,7 +11,7 @@
  * (never on its own inner scroll). Wears the DS floating surface on tokens.
  */
 import React from 'react';
-/** The DS floating surface: glass float in light, a near-solid page colour in dark (one token mix). */
+/** The DS floating surface: the solid page colour in both themes, no blur. */
 export declare const FLOATING_SURFACE: string;
 type Placement = 'above' | 'below';
 /** Why the panel asked to close. */

@@ -15,10 +15,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import { createPortal } from 'react-dom';
 import { cn } from './cn.js';
 import { FloatingLayerContext, useFloatingLayer, zFloatingPanel } from './floatingLayers.js';
-/** The DS floating surface: glass float in light, a near-solid page colour in dark (one token mix). */
+/** The DS floating surface: the solid page colour in both themes, no blur. */
 export const FLOATING_SURFACE = [
     'overflow-hidden rounded-[var(--radius-xl)]',
-    '[background:color-mix(in_srgb,var(--color-bg-primary)_92%,transparent)] [backdrop-filter:var(--glass-blur-lg)]',
+    '[background:var(--color-bg-primary)]',
     // The Tooltip's border, so floating surfaces read as one family.
     'border border-solid [border-color:var(--color-border-medium)] [box-shadow:var(--glass-shadow-float)]',
     '[font-family:var(--font-sans)] [color:var(--color-text-primary)]',

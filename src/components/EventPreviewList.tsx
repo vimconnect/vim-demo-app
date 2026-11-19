@@ -2,7 +2,7 @@
 
 import { useState, type ReactNode } from 'react';
 import { RadioIcon } from '@/components/icons';
-import { Button } from '@vim-connect/ui';
+import { AccordionItem, Button } from '@vim-connect/ui';
 
 export type PreviewEntry = {
   key: string | number;
@@ -16,19 +16,22 @@ export type PreviewEntry = {
 const NEWEST_SHOWN = 5;
 
 /**
- * One list of captured events.
+ * One list of captured events, as an item of the caller's `Accordion`.
  *
  * Open entries are exclusive: an EHR action fires several of these at once
  * (`order_open:order` with `order_open:patient`), and opening each one in place
  * pushed the next section off the screen.
  */
 export function EventPreviewList({
+  id,
   label,
   entries,
   emptyText,
   onClear,
   startCollapsed = false,
 }: {
+  /** Stable id within the parent `Accordion`. */
+  id: string;
   label: string;
   entries: PreviewEntry[];
   emptyText: string;
@@ -75,23 +78,22 @@ export function EventPreviewList({
   };
 
   return (
-    <div className="preview-list">
-      <div className="subsection-row">
-        <button
-          type="button"
-          className="subsection-header preview-list-header"
-          aria-expanded={!collapsed}
-          onClick={() => setCollapsed(!collapsed)}
-        >
-          <span className={`disclosure-chevron${!collapsed ? ' open' : ''}`} aria-hidden="true" />
-          {label} ({entries.length})
-        </button>
-        {entries.length > 0 && !collapsed && (
+    // `preview-list` has no styles: e2e helpers find a list by it.
+    <AccordionItem
+      id={id}
+      className="preview-list"
+      title={`${label} (${entries.length})`}
+      open={!collapsed}
+      onOpenChange={(open) => setCollapsed(!open)}
+      actions={
+        entries.length > 0 &&
+        !collapsed && (
           <Button variant="secondary" size="sm" onClick={onClear}>
             Clear
           </Button>
-        )}
-      </div>
+        )
+      }
+    >
       {!collapsed && (
         <>
           {entries.length === 0 ? (
@@ -125,6 +127,6 @@ export function EventPreviewList({
           )}
         </>
       )}
-    </div>
+    </AccordionItem>
   );
 }

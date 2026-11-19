@@ -1,7 +1,12 @@
 import React from 'react';
 export interface CodeBlockProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'children' | 'onCopy'> {
-    /** The text shown, as is: a script, a payload, `JSON.stringify(value, null, 2)`. */
+    /** The text shown, as is: a script, a payload, `JSON.stringify(value, null, 2)`. Also what Copy copies. */
     code: string;
+    /**
+     * Shown in place of `code` when the text needs markup inside it (e.g. JSON lines with an inline
+     * note). Keep it the same text as `code`, which stays what Copy copies.
+     */
+    children?: React.ReactNode;
     /** A short name for what this is ("JSON", "PowerShell"), shown small and uppercase in a header row. */
     label?: string;
     /**

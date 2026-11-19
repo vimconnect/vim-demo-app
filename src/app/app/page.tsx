@@ -68,7 +68,7 @@ import {
   type AppThemeChoice,
   type ColorScheme,
 } from "@/lib/color-scheme";
-import { Badge, Button, buttonVariants, Input, StatusDot, Tooltip } from "@vim-connect/ui";
+import { Accordion, AccordionItem, Badge, Button, buttonVariants, Card, Input, Modal, SegmentedControl, StatusDot, Tooltip } from "@vim-connect/ui";
 
 type LogEntry = {
   timestamp: string;
@@ -1826,17 +1826,25 @@ function AppPageContent() {
         ? [{ key: `${opKey}.cursor`, placeholder: "cursor (optional)", title: "From a previous page's pagination.nextCursor" }]
         : []),
     ];
-    const input = ({ key, placeholder, title }: (typeof fields)[number]) => (
-      <Input
-        key={key}
-        type="text"
-        value={readOpInputs[key] ?? ""}
-        onChange={(e) => setReadOpInputs((prev) => ({ ...prev, [key]: e.target.value }))}
-        placeholder={placeholder}
-        title={title}
-        aria-label={placeholder}
-      />
-    );
+    const input = ({ key, placeholder, title }: (typeof fields)[number]) => {
+      const field = (
+        <Input
+          key={key}
+          type="text"
+          value={readOpInputs[key] ?? ""}
+          onChange={(e) => setReadOpInputs((prev) => ({ ...prev, [key]: e.target.value }))}
+          placeholder={placeholder}
+          aria-label={placeholder}
+        />
+      );
+      return title ? (
+        <Tooltip key={key} label={title} wrap>
+          {field}
+        </Tooltip>
+      ) : (
+        field
+      );
+    };
     const lastField = fields[fields.length - 1];
     // Collapsed by default, like the event cards: an entity with seven reads is a
     // seven-line list, not seven forms to scroll past.
@@ -1851,15 +1859,15 @@ function AppPageContent() {
           onClick={() => toggleCard(`__op:${opKey}`)}
         >
           <span className={`disclosure-chevron${open ? " open" : ""}`} aria-hidden="true" />
-          <span className="op-card-name" title={`ehr.api.${opKey}`}>
-            {op.sdkMethod}
-          </span>
+          <Tooltip label={`ehr.api.${opKey}`}>
+            <span className="op-card-name">{op.sdkMethod}</span>
+          </Tooltip>
           <DeprecatedTag note={noteOf(op.deprecationStatus)} />
           <span className="verb-badge verb-get">{op.operationType === "search" ? "search" : "get"}</span>
           {apiOpLabel(op) && (
-            <span className="op-status" title={opReason ?? undefined}>
-              {apiOpLabel(op)}
-            </span>
+            <Hint text={opReason}>
+              <span className="op-status">{apiOpLabel(op)}</span>
+            </Hint>
           )}
           {lastRun && !open && (
             // The dot's label is its accessible name; the Tooltip only shows it on hover (no aria-describedby).
@@ -1931,29 +1939,34 @@ function AppPageContent() {
     </div>
   );
 
-  /** One chevron row for a subsection: Subscriptions, Event preview, API reads and their children. */
-  const subHeader = (
+  /** One disclosure row inside a section: Subscriptions and its event lists. The body mounts only while open. */
+  const subItem = (
     title: string,
     cardKey: string,
-    docsHref?: string,
-    actions?: React.ReactNode,
-  ) => (
-    <div className="subsection-row">
-      <button
-        type="button"
-        className="subsection-header"
-        aria-expanded={expandedCards.has(cardKey)}
-        onClick={() => toggleCard(cardKey)}
+    docsHref: string | undefined,
+    actions: React.ReactNode,
+    body: React.ReactNode,
+  ) => {
+    const open = expandedCards.has(cardKey);
+    return (
+      <AccordionItem
+        id={cardKey}
+        title={title}
+        open={open}
+        onOpenChange={() => toggleCard(cardKey)}
+        actions={
+          (docsHref || actions) && (
+            <>
+              {docsHref && <DocsLink path={docsHref} />}
+              {actions}
+            </>
+          )
+        }
       >
-        <span className={`disclosure-chevron${expandedCards.has(cardKey) ? " open" : ""}`} aria-hidden="true" />
-        {title}
-      </button>
-      <div className="subsection-actions">
-        {docsHref && <DocsLink path={docsHref} />}
-        {actions}
-      </div>
-    </div>
-  );
+        {open && body}
+      </AccordionItem>
+    );
+  };
 
   const sectionHeader = (
     title: string,
@@ -2125,7 +2138,7 @@ function AppPageContent() {
           inContext={[...openEntityTypes].map((e) => entityLabel(manifest, e))}
         />
         {/* Read from EHR: subscriptions, what they delivered, and on-demand API reads */}
-        <div className="section-collapsible">
+        <Card as="section" hover="shadow" className="section-collapsible">
           {sectionHeader(
             `Read from EHR (${readAvailable}/${readTotal})`,
             readCollapsed,
@@ -2136,8 +2149,8 @@ function AppPageContent() {
           )}
           <div className={`section-content ${readCollapsed ? "collapsed" : ""}`}>
             <div className="section-inner">
-              <div className="subsection">
-                {subHeader(
+              <Accordion>
+                {subItem(
                   `Subscriptions (${subscriptionAvailable}/${subscriptionTotal})`,
                   "__subscriptions",
                   "/docs/app-sdk/ehr-connectivity/",
@@ -2150,179 +2163,162 @@ function AppPageContent() {
                       },
                       "subscriptions",
                     ),
+                  <Accordion className="nested-accordion">
+                    {subItem(
+                      `Workflow events (${availableEvents.length}/${supportedEvents.length})`,
+                      "__workflow",
+                      "/docs/app-sdk/ehr-connectivity/workflow-events/",
+                      supportedEvents.length > 0 && turnAllToggle(allWorkflowOn, setAllWorkflowEvents, "workflow events"),
+                      <div className="event-list">
+                        {supportedEvents.length === 0 ? (
+                          <div className="empty-state">No workflow events available</div>
+                        ) : (
+                          supportedEvents.map((evt) =>
+                            subscriptionRow(
+                              evt.id,
+                              evt.name || evt.id,
+                              evt.description,
+                              subscribedWorkflowEvents.has(evt.id),
+                              () => toggleWorkflowEvent(evt.id),
+                              noteOf(evt.deprecationStatus),
+                              !firesHere(evt),
+                            ),
+                          )
+                        )}
+                      </div>
+                    )}
+                    {subItem(
+                      `Context events (${availableContexts.length}/${supportedContexts.length})`,
+                      "__context",
+                      "/docs/app-sdk/ehr-connectivity/context/",
+                      supportedContexts.length > 0 && turnAllToggle(allContextsOn, setAllContextEvents, "context events"),
+                      <div className="event-list">
+                        {supportedContexts.length === 0 ? (
+                          <div className="empty-state">No context events available</div>
+                        ) : (
+                          supportedContexts.map((ctx) =>
+                            subscriptionRow(
+                              ctx.contextKey,
+                              ctx.contextKey,
+                              ctx.description,
+                              subscribedContexts.has(ctx.contextKey),
+                              () => toggleContextEvent(ctx.contextKey),
+                              noteOf(supportedEvents.find((e) => e.id === ctx.eventType)?.deprecationStatus) ??
+                                noteOf(manifest?.supportedEntities.find((e) => e.type === ctx.entityType)?.deprecationStatus),
+                              !firesHere(ctx),
+                            ),
+                          )
+                        )}
+                      </div>
+                    )}
+                  </Accordion>,
                 )}
-                {expandedCards.has("__subscriptions") && (
-                  <div className="subsection-body">
-                    <div className="indented-list">
-                      {subHeader(
-                        `Workflow events (${availableEvents.length}/${supportedEvents.length})`,
-                        "__workflow",
-                        "/docs/app-sdk/ehr-connectivity/workflow-events/",
-                        supportedEvents.length > 0 && turnAllToggle(allWorkflowOn, setAllWorkflowEvents, "workflow events"),
-                      )}
-                      {expandedCards.has("__workflow") && (
-                        <div className="event-list">
-                          {supportedEvents.length === 0 ? (
-                            <div className="empty-state">No workflow events available</div>
-                          ) : (
-                            supportedEvents.map((evt) =>
-                              subscriptionRow(
-                                evt.id,
-                                evt.name || evt.id,
-                                evt.description,
-                                subscribedWorkflowEvents.has(evt.id),
-                                () => toggleWorkflowEvent(evt.id),
-                                noteOf(evt.deprecationStatus),
-                                !firesHere(evt),
-                              ),
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
 
-                    <div className="indented-list">
-                      {subHeader(
-                        `Context events (${availableContexts.length}/${supportedContexts.length})`,
-                        "__context",
-                        "/docs/app-sdk/ehr-connectivity/context/",
-                        supportedContexts.length > 0 && turnAllToggle(allContextsOn, setAllContextEvents, "context events"),
-                      )}
-                      {expandedCards.has("__context") && (
-                        <div className="event-list">
-                          {supportedContexts.length === 0 ? (
-                            <div className="empty-state">No context events available</div>
-                          ) : (
-                            supportedContexts.map((ctx) =>
-                              subscriptionRow(
-                                ctx.contextKey,
-                                ctx.contextKey,
-                                ctx.description,
-                                subscribedContexts.has(ctx.contextKey),
-                                () => toggleContextEvent(ctx.contextKey),
-                                noteOf(supportedEvents.find((e) => e.id === ctx.eventType)?.deprecationStatus) ??
-                                  noteOf(manifest?.supportedEntities.find((e) => e.type === ctx.entityType)?.deprecationStatus),
-                                !firesHere(ctx),
-                              ),
-                            )
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <hr className="section-divider" />
-
-              <div className="subsection">
-                <button
-                  type="button"
-                  className="subsection-header"
-                  aria-expanded={!eventPreviewCollapsed}
-                  onClick={() => setEventPreviewCollapsed(!eventPreviewCollapsed)}
+                <AccordionItem
+                  id="__eventPreview"
+                  title="Event preview"
+                  aside={<CountBadge count={String(eventPreviews.length + contextChanges.length)} complete={false} />}
+                  open={!eventPreviewCollapsed}
+                  onOpenChange={(open) => setEventPreviewCollapsed(!open)}
                 >
-                  Event preview
-                  <CountBadge count={String(eventPreviews.length + contextChanges.length)} complete={false} />
-                  <span className={`subsection-chevron${eventPreviewCollapsed ? "" : " open"}`} aria-hidden="true" />
-                </button>
-                {!eventPreviewCollapsed && (
-                  <div className="subsection-body">
-                    <EventPreviewList
-                      label="Workflow events"
-                      entries={eventPreviews.map((event) => ({
-                        key: event.key,
-                        title: event.type,
-                        meta: `${new Date(event.timestamp).toLocaleTimeString()} • ${event.streamType}`,
-                        body: (
-                          <CodeBlock
-                            code={JSON.stringify(event.data, null, 2)}
-                            lines={annotatedLines(event.data, workflowEventAnnotator(manifest, event.id))}
-                            className="event-preview-body"
-                          />
-                        ),
-                      }))}
-                      emptyText="Open a patient, encounter, order or referral in the EHR."
-                      onClear={() => setEventPreviews([])}
-                      startCollapsed
-                    />
-                    <EventPreviewList
-                      label="Context changes"
-                      entries={contextChanges.map((change) => ({
-                        key: change.key,
-                        title: (
-                          <>
-                            {change.contextKey}{" "}
-                            <span className="event-preview-change">({change.changeType})</span>
-                          </>
-                        ),
-                        meta: new Date(change.timestamp).toLocaleTimeString(),
-                        body:
-                          change.changeType === "closed" ? null : (
+                  {!eventPreviewCollapsed && (
+                    <Accordion className="nested-accordion">
+                      <EventPreviewList
+                        id="__preview:workflow"
+                        label="Workflow events"
+                        entries={eventPreviews.map((event) => ({
+                          key: event.key,
+                          title: event.type,
+                          meta: `${new Date(event.timestamp).toLocaleTimeString()} • ${event.streamType}`,
+                          body: (
                             <CodeBlock
-                              code={JSON.stringify(change.currentData, null, 2)}
-                              lines={annotatedLines(
-                                change.currentData,
-                                contextAnnotator(manifest, change.contextKey.split(":").pop() ?? ""),
-                              )}
+                              code={JSON.stringify(event.data, null, 2)}
+                              lines={annotatedLines(event.data, workflowEventAnnotator(manifest, event.id))}
                               className="event-preview-body"
                             />
                           ),
-                      }))}
-                      emptyText="Open a patient, encounter, order or referral in the EHR."
-                      onClear={() => setContextChanges([])}
-                    />
-                  </div>
-                )}
-              </div>
-
-              <hr className="section-divider" />
-
-              <div className="subsection">
-                <div className="subsection-row">
-                  <button
-                    type="button"
-                    className="subsection-header"
-                    aria-expanded={!apiReadsCollapsed}
-                    onClick={() => setApiReadsCollapsed(!apiReadsCollapsed)}
-                  >
-                    <span className={`disclosure-chevron${!apiReadsCollapsed ? " open" : ""}`} aria-hidden="true" />
-                    API reads ({availableReadOps.length}/{readOps.length})
-                  </button>
-                  {readGroupsExpanded && !apiReadsCollapsed && (
-                    <Button variant="secondary" size="sm" onClick={collapseReadGroups}>
-                      Collapse all
-                    </Button>
+                        }))}
+                        emptyText="Open a patient, encounter, order or referral in the EHR."
+                        onClear={() => setEventPreviews([])}
+                        startCollapsed
+                      />
+                      <EventPreviewList
+                        id="__preview:context"
+                        label="Context changes"
+                        entries={contextChanges.map((change) => ({
+                          key: change.key,
+                          title: (
+                            <>
+                              {change.contextKey}{" "}
+                              <span className="event-preview-change">({change.changeType})</span>
+                            </>
+                          ),
+                          meta: new Date(change.timestamp).toLocaleTimeString(),
+                          body:
+                            change.changeType === "closed" ? null : (
+                              <CodeBlock
+                                code={JSON.stringify(change.currentData, null, 2)}
+                                lines={annotatedLines(
+                                  change.currentData,
+                                  contextAnnotator(manifest, change.contextKey.split(":").pop() ?? ""),
+                                )}
+                                className="event-preview-body"
+                              />
+                            ),
+                        }))}
+                        emptyText="Open a patient, encounter, order or referral in the EHR."
+                        onClear={() => setContextChanges([])}
+                      />
+                    </Accordion>
                   )}
-                </div>
-              {apiReadsCollapsed ? null : readOps.length === 0 ? (
-                <div className="empty-state">
-                  No read operations (getById / search) are available in this EHR&apos;s collection.
-                </div>
-              ) : (
-                orderedReadGroups.map(([entityType, ops]) => {
-                  const available = ops.filter((op) => apiOpReason(op) === null);
-                  return (
-                    <CollapsibleCard
-                      key={entityType}
-                      title={`${entityLabel(manifest, entityType)} (${available.length}/${ops.length})`}
-                      docsHref={readDocsHref(entityType)}
-                      badge={openEntityTypes.has(entityType) && <span className="entity-open-pill">Open in EHR</span>}
-                      expanded={expandedCards.has(`__read:${entityType}`)}
-                      onToggle={() => toggleCard(`__read:${entityType}`)}
-                    >
-                      <div className="entity-card-ops">{ops.map(renderReadOp)}</div>
-                    </CollapsibleCard>
-                  );
-                })
-              )}
-              </div>
+                </AccordionItem>
+
+                <AccordionItem
+                  id="__apiReads"
+                  title={`API reads (${availableReadOps.length}/${readOps.length})`}
+                  open={!apiReadsCollapsed}
+                  onOpenChange={(open) => setApiReadsCollapsed(!open)}
+                  actions={
+                    readGroupsExpanded &&
+                    !apiReadsCollapsed && (
+                      <Button variant="secondary" size="sm" onClick={collapseReadGroups}>
+                        Collapse all
+                      </Button>
+                    )
+                  }
+                >
+                  {apiReadsCollapsed ? null : readOps.length === 0 ? (
+                    <div className="empty-state">
+                      No read operations (getById / search) are available in this EHR&apos;s collection.
+                    </div>
+                  ) : (
+                    <Accordion className="nested-accordion">
+                      {orderedReadGroups.map(([entityType, ops]) => {
+                        const available = ops.filter((op) => apiOpReason(op) === null);
+                        return (
+                          <CollapsibleCard
+                            key={entityType}
+                            id={`__read:${entityType}`}
+                            title={`${entityLabel(manifest, entityType)} (${available.length}/${ops.length})`}
+                            docsHref={readDocsHref(entityType)}
+                            badge={openEntityTypes.has(entityType) && <span className="entity-open-pill">Open in EHR</span>}
+                            expanded={expandedCards.has(`__read:${entityType}`)}
+                            onToggle={() => toggleCard(`__read:${entityType}`)}
+                          >
+                            <div className="entity-card-ops">{ops.map(renderReadOp)}</div>
+                          </CollapsibleCard>
+                        );
+                      })}
+                    </Accordion>
+                  )}
+                </AccordionItem>
+              </Accordion>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Write to EHR */}
-        <div className="section-collapsible">
+        <Card as="section" hover="shadow" className="section-collapsible">
           {sectionHeader(
             `Write to EHR (${availableWritebackEntries.length}/${writebackEntries.length})`,
             activeUpdatersCollapsed,
@@ -2368,244 +2364,253 @@ function AppPageContent() {
                 </div>
               </div>
 
-              {writebackEntries.length === 0 ? (
-                <div className="empty-state">No updaters available</div>
-              ) : (
-                orderedEntityGroups.map(([entityType, entries]) => {
-                  const available = entries.filter(
-                    (e) => unavailableReasons.get(`${e.entityType}:${e.fieldPath}`) === null,
-                  );
-                  const entityWritable = writableUpdaters.filter((u) => u.entityType === entityType);
-                  const entityWithValue = writableWithValue.filter((u) => u.entityType === entityType);
-                  const entityUpdaters = entries
-                    .map((e) => activeUpdaters.get(entityType)?.get(`${e.entityType}:${e.fieldPath}`))
-                    .filter((u): u is UpdaterInfo => u !== undefined);
-                  return (
-                    <CollapsibleCard
-                      key={entityType}
-                      title={`${entityLabel(manifest, entityType)} (${available.length}/${entries.length})`}
-                      docsHref={writeDocsHref(entityType)}
-                      badge={isEntityOpen(entityType) && <span className="entity-open-pill">Open in EHR</span>}
-                      expanded={expandedCards.has(entityType)}
-                      onToggle={() => toggleCard(entityType)}
-                      actions={
-                        <>
-                          <Hint text={entityWritable.length === 0
-                                ? groupReason(entries, "sample")
-                                : `Fill the ${entityWritable.length} writable ${entityType} field(s) with sample values`}>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => sampleAllUpdaters(entityType)}
-                              disabled={entityWritable.length === 0}
-                            >
-                              Sample ({entityWritable.length})
-                            </Button>
-                          </Hint>
-                          <Hint text={entityWritable.length === 0
-                                ? groupReason(entries, "update")
-                                : entityWithValue.length === 0
-                                  ? "Sample or type a value first"
-                                  : `Write the ${entityWithValue.length} ${entityType} field(s) that have a value`}>
-                            <Button
-                              variant="secondary"
-                              size="sm"
-                              onClick={() => void updateAllUpdaters(entityType)}
-                              disabled={updatingAll || entityWithValue.length === 0}
-                            >
-                              Update ({entityWithValue.length})
-                            </Button>
-                          </Hint>
-                          {(available.length > 0 || entries.some(isUpdaterOn)) &&
-                            turnAllToggle(
-                              available.length > 0 && available.every(isUpdaterOn),
-                              (on) => setAllUpdaters(on && available.length > 0, entityType),
-                              entityType,
-                            )}
-                        </>
-                      }
-                    >
-                      <div className="nested-card nested-card-top">
-                        <CollapsibleCard
-                          title={`Fields (${available.length}/${entries.length})`}
-                          expanded={expandedCards.has(`__fields:${entityType}`)}
-                          onToggle={() => toggleCard(`__fields:${entityType}`)}
-                        >
-                          <div className="event-list">
-                            {entries.map((upd) => {
-                              const reason = unavailableReasons.get(`${upd.entityType}:${upd.fieldPath}`) ?? null;
-                              const isActive = isUpdaterOn(upd);
-                              return (
-                                <div
-                                  key={`${upd.entityType}-${upd.fieldPath}`}
-                                  className={`event-item ${reason ? "updater-unavailable" : ""}`}
-                                >
-                                  <div className="event-item-text">
-                                    <div className="event-name" title={upd.fieldPath}>
-                                      <span className="event-name-label">{upd.fieldPath}</span>
-                                      <DeprecatedTag note={fieldDeprecation(manifest, upd.entityType, upd.fieldPath)} />
-                                    </div>
-                                    <div className="updater-meta">
-                                      {reason
-                                        ? unavailableReasonText(reason, upd.entityType, "write")
-                                        : upd.disruptive
-                                          ? "Requires permission"
-                                          : "Writable now"}
-                                    </div>
-                                  </div>
-                                  <Toggle
-                                    on={isActive}
-                                    disabled={reason !== null && !isActive}
-                                    onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
-                                    label={`Write ${upd.fieldPath}`}
-                                  />
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </CollapsibleCard>
-                      </div>
-                      {entityUpdaters.length === 0 && (
-                        <p className="empty-state">No field is turned on. Open Fields above to turn some on.</p>
-                      )}
-                      {entityUpdaters.map((updater) => {
-                        const key = `${updater.entityType}:${updater.fieldPath}`;
-                        const cap = updaterCapability(updater);
-                        const detected = cap?.available ?? false;
-                        const { modes } = writeModesFor(
-                          manifest,
-                          updater.entityType,
-                          updater.fieldPath,
-                          declaredModesFor(updater.entityType),
-                        );
-                        const selectedMode = modeFor(updater);
-                        return (
-                          <div key={key} className={`updater-card ${!detected ? "disabled" : ""}`}>
-                            <div className="updater-card-header">
-                              {updater.fieldPath}
-                              <DeprecatedTag note={fieldDeprecation(manifest, updater.entityType, updater.fieldPath)} />
-                              {!detected && (
-                                <span className="updater-warning">
-                                  ({cap?.reason === "not_granted"
-                                    ? "not granted to this app"
-                                    : cap?.reason === "not_configured"
-                                      ? "not configured in this EHR"
-                                      : "not in context"})
-                                </span>
+              <Accordion>
+                {writebackEntries.length === 0 ? (
+                  <div className="empty-state">No updaters available</div>
+                ) : (
+                  orderedEntityGroups.map(([entityType, entries]) => {
+                    const available = entries.filter(
+                      (e) => unavailableReasons.get(`${e.entityType}:${e.fieldPath}`) === null,
+                    );
+                    const entityWritable = writableUpdaters.filter((u) => u.entityType === entityType);
+                    const entityWithValue = writableWithValue.filter((u) => u.entityType === entityType);
+                    const entityUpdaters = entries
+                      .map((e) => activeUpdaters.get(entityType)?.get(`${e.entityType}:${e.fieldPath}`))
+                      .filter((u): u is UpdaterInfo => u !== undefined);
+                    return (
+                      <CollapsibleCard
+                        key={entityType}
+                        id={entityType}
+                        title={`${entityLabel(manifest, entityType)} (${available.length}/${entries.length})`}
+                        docsHref={writeDocsHref(entityType)}
+                        badge={isEntityOpen(entityType) && <span className="entity-open-pill">Open in EHR</span>}
+                        expanded={expandedCards.has(entityType)}
+                        onToggle={() => toggleCard(entityType)}
+                        actions={
+                          <>
+                            <Hint text={entityWritable.length === 0
+                                  ? groupReason(entries, "sample")
+                                  : `Fill the ${entityWritable.length} writable ${entityType} field(s) with sample values`}>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => sampleAllUpdaters(entityType)}
+                                disabled={entityWritable.length === 0}
+                              >
+                                Sample ({entityWritable.length})
+                              </Button>
+                            </Hint>
+                            <Hint text={entityWritable.length === 0
+                                  ? groupReason(entries, "update")
+                                  : entityWithValue.length === 0
+                                    ? "Sample or type a value first"
+                                    : `Write the ${entityWithValue.length} ${entityType} field(s) that have a value`}>
+                              <Button
+                                variant="secondary"
+                                size="sm"
+                                onClick={() => void updateAllUpdaters(entityType)}
+                                disabled={updatingAll || entityWithValue.length === 0}
+                              >
+                                Update ({entityWithValue.length})
+                              </Button>
+                            </Hint>
+                            {(available.length > 0 || entries.some(isUpdaterOn)) &&
+                              turnAllToggle(
+                                available.length > 0 && available.every(isUpdaterOn),
+                                (on) => setAllUpdaters(on && available.length > 0, entityType),
+                                entityType,
                               )}
+                          </>
+                        }
+                      >
+                        <Accordion className="nested-accordion nested-card-top">
+                          <CollapsibleCard
+                            id={`__fields:${entityType}`}
+                            title={`Fields (${available.length}/${entries.length})`}
+                            expanded={expandedCards.has(`__fields:${entityType}`)}
+                            onToggle={() => toggleCard(`__fields:${entityType}`)}
+                          >
+                            <div className="event-list">
+                              {entries.map((upd) => {
+                                const reason = unavailableReasons.get(`${upd.entityType}:${upd.fieldPath}`) ?? null;
+                                const isActive = isUpdaterOn(upd);
+                                return (
+                                  <div
+                                    key={`${upd.entityType}-${upd.fieldPath}`}
+                                    className={`event-item ${reason ? "updater-unavailable" : ""}`}
+                                  >
+                                    <div className="event-item-text">
+                                      <Tooltip label={upd.fieldPath}>
+                                        <div className="event-name">
+                                          <span className="event-name-label">{upd.fieldPath}</span>
+                                          <DeprecatedTag note={fieldDeprecation(manifest, upd.entityType, upd.fieldPath)} />
+                                        </div>
+                                      </Tooltip>
+                                      <div className="updater-meta">
+                                        {reason
+                                          ? unavailableReasonText(reason, upd.entityType, "write")
+                                          : upd.disruptive
+                                            ? "Requires permission"
+                                            : "Writable now"}
+                                      </div>
+                                    </div>
+                                    <Toggle
+                                      on={isActive}
+                                      disabled={reason !== null && !isActive}
+                                      onChange={() => toggleUpdater(upd.entityType, upd.fieldPath, "")}
+                                      label={`Write ${upd.fieldPath}`}
+                                    />
+                                  </div>
+                                );
+                              })}
                             </div>
-                            <Input
-                              type="text"
-                              value={updater.value}
-                              onChange={(e) => updateUpdaterValue(entityType, key, e.target.value)}
-                              placeholder="Enter value..."
-                              disabled={!detected}
-                            />
-                            <div className="update-row">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                onClick={() =>
-                                  updateUpdaterValue(
-                                    entityType,
-                                    key,
-                                    sampleValueFor(manifest, updater.entityType, updater.fieldPath),
-                                  )
-                                }
-                                disabled={!detected}
-                                title="Fill a sample value in the format this field expects"
-                              >
-                                Sample
-                              </Button>
-                              <div className="mode-toggle" role="group" aria-label="Write mode">
-                                {(["override", "append"] as const).map((mode) => {
-                                  const offered = modes.includes(mode);
-                                  return (
-                                    <Hint
-                                      key={mode}
-                                      text={
-                                        !offered
-                                          ? mode === "override"
-                                            ? "Writes to this list add items; it has no replace mode"
-                                            : "No append mode is declared for this field, so a write replaces it"
-                                          : null
-                                      }
-                                    >
-                                      <button
-                                        type="button"
-                                        className={`mode-option ${mode === selectedMode ? "active" : ""}`}
-                                        aria-pressed={mode === selectedMode}
-                                        disabled={!offered || !detected}
-                                        onClick={() => setWriteModeChoice((prev) => ({ ...prev, [key]: mode }))}
-                                      >
-                                        {mode === "override" ? "Override" : "Append"}
-                                      </button>
-                                    </Hint>
-                                  );
-                                })}
+                          </CollapsibleCard>
+                        </Accordion>
+                        {entityUpdaters.length === 0 && (
+                          <p className="empty-state">No field is turned on. Open Fields above to turn some on.</p>
+                        )}
+                        {entityUpdaters.map((updater) => {
+                          const key = `${updater.entityType}:${updater.fieldPath}`;
+                          const cap = updaterCapability(updater);
+                          const detected = cap?.available ?? false;
+                          const { modes } = writeModesFor(
+                            manifest,
+                            updater.entityType,
+                            updater.fieldPath,
+                            declaredModesFor(updater.entityType),
+                          );
+                          const selectedMode = modeFor(updater);
+                          return (
+                            <div key={key} className={`updater-card ${!detected ? "disabled" : ""}`}>
+                              <div className="updater-card-header">
+                                {updater.fieldPath}
+                                <DeprecatedTag note={fieldDeprecation(manifest, updater.entityType, updater.fieldPath)} />
+                                {!detected && (
+                                  <span className="updater-warning">
+                                    ({cap?.reason === "not_granted"
+                                      ? "not granted to this app"
+                                      : cap?.reason === "not_configured"
+                                        ? "not configured in this EHR"
+                                        : "not in context"})
+                                  </span>
+                                )}
                               </div>
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="update-row-submit"
-                                onClick={() => executeUpdate(updater)}
+                              <Input
+                                type="text"
+                                value={updater.value}
+                                onChange={(e) => updateUpdaterValue(entityType, key, e.target.value)}
+                                placeholder="Enter value..."
                                 disabled={!detected}
-                              >
-                                Update
-                              </Button>
+                              />
+                              <div className="update-row">
+                                <Hint text="Fill a sample value in the format this field expects">
+                                  <Button
+                                    variant="secondary"
+                                    size="sm"
+                                    onClick={() =>
+                                      updateUpdaterValue(
+                                        entityType,
+                                        key,
+                                        sampleValueFor(manifest, updater.entityType, updater.fieldPath),
+                                      )
+                                    }
+                                    disabled={!detected}
+                                  >
+                                    Sample
+                                  </Button>
+                                </Hint>
+                                <div className="mode-toggle" role="group" aria-label="Write mode">
+                                  {(["override", "append"] as const).map((mode) => {
+                                    const offered = modes.includes(mode);
+                                    return (
+                                      <Hint
+                                        key={mode}
+                                        text={
+                                          !offered
+                                            ? mode === "override"
+                                              ? "Writes to this list add items; it has no replace mode"
+                                              : "No append mode is declared for this field, so a write replaces it"
+                                            : null
+                                        }
+                                      >
+                                        <button
+                                          type="button"
+                                          className={`mode-option ${mode === selectedMode ? "active" : ""}`}
+                                          aria-pressed={mode === selectedMode}
+                                          disabled={!offered || !detected}
+                                          onClick={() => setWriteModeChoice((prev) => ({ ...prev, [key]: mode }))}
+                                        >
+                                          {mode === "override" ? "Override" : "Append"}
+                                        </button>
+                                      </Hint>
+                                    );
+                                  })}
+                                </div>
+                                <Button
+                                  variant="secondary"
+                                  size="sm"
+                                  className="update-row-submit"
+                                  onClick={() => executeUpdate(updater)}
+                                  disabled={!detected}
+                                >
+                                  Update
+                                </Button>
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
-                      {entityType === "referral" && referralUpdateOp && (
-                        <>
-                          <div className="demo-card-label api-writes-label">API writes</div>
-                          {referralWritesCard}
-                        </>
-                      )}
-                      {entityType === apiWritesEntity && (
-                        <>
-                          <div className="demo-card-label api-writes-label">
-                            API writes ({availableEntityWriteOps.length}/{entityWriteOps.length})
-                            <InfoTip label="About API writes">
-                              <code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.
-                            </InfoTip>
-                          </div>
-                          {apiWritesCard}
-                        </>
-                      )}
-                    </CollapsibleCard>
-                  );
-                })
-              )}
+                          );
+                        })}
+                        {entityType === "referral" && referralUpdateOp && (
+                          <>
+                            <div className="demo-card-label api-writes-label">API writes</div>
+                            {referralWritesCard}
+                          </>
+                        )}
+                        {entityType === apiWritesEntity && (
+                          <>
+                            <div className="demo-card-label api-writes-label">
+                              API writes ({availableEntityWriteOps.length}/{entityWriteOps.length})
+                              <InfoTip label="About API writes">
+                                <code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.
+                              </InfoTip>
+                            </div>
+                            {apiWritesCard}
+                          </>
+                        )}
+                      </CollapsibleCard>
+                    );
+                  })
+                )}
 
-              {!orderedEntityGroups.some(([entityType]) => entityType === apiWritesEntity) && (
-                <CollapsibleCard
-                  title={`API writes (${availableEntityWriteOps.length}/${entityWriteOps.length})`}
-                  info={<><code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.</>}
-                  expanded={expandedCards.has("__api_writes")}
-                  onToggle={() => toggleCard("__api_writes")}
-                >
-                  {apiWritesCard}
-                </CollapsibleCard>
-              )}
+                {!orderedEntityGroups.some(([entityType]) => entityType === apiWritesEntity) && (
+                  <CollapsibleCard
+                    id="__api_writes"
+                    title={`API writes (${availableEntityWriteOps.length}/${entityWriteOps.length})`}
+                    info={<><code>sdk.ehr.api.&lt;entity&gt;.&lt;method&gt;()</code> writes by record ID, on EHRs that implement it.</>}
+                    expanded={expandedCards.has("__api_writes")}
+                    onToggle={() => toggleCard("__api_writes")}
+                  >
+                    {apiWritesCard}
+                  </CollapsibleCard>
+                )}
 
-              {referralUpdateOp && !orderedEntityGroups.some(([entityType]) => entityType === "referral") && (
-                <CollapsibleCard
-                  title="Referral API writes"
-                  info={<><code>sdk.ehr.api.referral.updateReferral()</code> writes by referral ID, on EHRs that implement it.</>}
-                  expanded={expandedCards.has("__referral_api_writes")}
-                  onToggle={() => toggleCard("__referral_api_writes")}
-                >
-                  {referralWritesCard}
-                </CollapsibleCard>
-              )}
+                {referralUpdateOp && !orderedEntityGroups.some(([entityType]) => entityType === "referral") && (
+                  <CollapsibleCard
+                    id="__referral_api_writes"
+                    title="Referral API writes"
+                    info={<><code>sdk.ehr.api.referral.updateReferral()</code> writes by referral ID, on EHRs that implement it.</>}
+                    expanded={expandedCards.has("__referral_api_writes")}
+                    onToggle={() => toggleCard("__referral_api_writes")}
+                  >
+                    {referralWritesCard}
+                  </CollapsibleCard>
+                )}
+              </Accordion>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Hub Controls */}
-        <div className="section-collapsible">
+        <Card as="section" hover="shadow" className="section-collapsible">
           {sectionHeader(
             "Hub Controls",
             hubControlsCollapsed,
@@ -2620,24 +2625,16 @@ function AppPageContent() {
             <div className="section-inner">
               <div className="demo-card-section">
                 <div className="demo-card-label">Activation Status</div>
-                <div className="activation-group" role="group" aria-label="Activation status">
-                  {([
-                    ["ENABLED", "●", "Enabled"],
-                    ["LOADING", "◐", "Loading"],
-                    ["DISABLED", "✕", "Disabled"],
-                  ] as const).map(([status, icon, label]) => (
-                    <button
-                      key={status}
-                      type="button"
-                      onClick={() => hubSetActivationStatus(status)}
-                      aria-pressed={hubActivationStatus === status}
-                      className={`btn-activation ${hubActivationStatus === status ? status.toLowerCase() : ""}`}
-                    >
-                      <span aria-hidden="true">{icon}</span>
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  ariaLabel="Activation status"
+                  value={hubActivationStatus}
+                  onChange={hubSetActivationStatus}
+                  options={[
+                    { value: "ENABLED", label: "Enabled" },
+                    { value: "LOADING", label: "Loading" },
+                    { value: "DISABLED", label: "Disabled" },
+                  ]}
+                />
               </div>
 
               <div className="demo-card-section">
@@ -2894,25 +2891,17 @@ function AppPageContent() {
                 <div className="section-hint" style={{ marginBottom: "var(--space-xs)" }}>
                   This app&apos;s theme
                 </div>
-                <div className="btn-group" style={{ marginBottom: "var(--space-sm)" }}>
-                  {(
-                    [
-                      ["hub", "Follow Hub"],
-                      ["light", "Light"],
-                      ["dark", "Dark"],
-                    ] as const
-                  ).map(([choice, label]) => (
-                    <button
-                      key={choice}
-                      type="button"
-                      className={`btn btn-toggle ${appTheme === choice ? "active" : ""}`}
-                      aria-pressed={appTheme === choice}
-                      onClick={() => chooseAppTheme(choice)}
-                    >
-                      {label}
-                    </button>
-                  ))}
-                </div>
+                <SegmentedControl
+                  className="theme-choice"
+                  ariaLabel="App theme"
+                  value={appTheme}
+                  onChange={chooseAppTheme}
+                  options={[
+                    { value: "hub", label: "Follow Hub" },
+                    { value: "light", label: "Light" },
+                    { value: "dark", label: "Dark" },
+                  ]}
+                />
                 {!vimSDK?.hub.colorScheme ? (
                   <div className="section-hint">
                     This extension doesn&apos;t report a color scheme: <code>hub.colorScheme</code> is undefined.
@@ -2960,14 +2949,14 @@ function AppPageContent() {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         <SessionContextPanel
           sessionContext={vimSDK?.sessionContext ?? null}
           addLog={addLog}
         />
 
-        <div className="section-collapsible">
+        <Card as="section" hover="shadow" className="section-collapsible">
           {sectionHeader(
             "Worker App",
             workerCollapsed,
@@ -3018,10 +3007,10 @@ function AppPageContent() {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
 
         {/* Activity Log */}
-        <div className="section-collapsible">
+        <Card as="section" hover="shadow" className="section-collapsible">
           {sectionHeader(
             `Activity Log (${logEntries.length})`,
             activityLogCollapsed,
@@ -3063,76 +3052,58 @@ function AppPageContent() {
               </div>
             </div>
           </div>
-        </div>
+        </Card>
       </div>
 
     </div>
       )}
 
       {redirectUrl && (
-        <div className="modal-overlay" onClick={() => setRedirectUrl(null)}>
-          <div
-            className="modal-content redirect-modal"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <button
-              className="modal-close redirect-close"
-              aria-label="Close"
-              onClick={() => setRedirectUrl(null)}
-            >
-              ✕
-            </button>
-            <div className="redirect-hero">
-              <GithubIcon className="redirect-github" />
-              <div>
-                <h2 className="modal-title">Fork this app</h2>
-                <p className="redirect-tagline">
-                  A working Vim app you can build on today.
-                </p>
-              </div>
-            </div>
-            <ul className="redirect-points">
-              <li>OAuth launch and token exchange, end to end</li>
-              <li>Live EHR context, reads and writes for your manifest</li>
-              <li>A Worker App that sends pushes like the one you clicked</li>
-            </ul>
-            <code className="redirect-url">
-              {DEMO_APP_FORK_COMMAND.split(" ").map((token, i) => (
-                <Fragment key={i}>
-                  {i > 0 ? " " : ""}
-                  <span className="redirect-token">{token}</span>
-                </Fragment>
-              ))}
-            </code>
-            <div className="redirect-actions">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => copyRedirect("command", DEMO_APP_FORK_COMMAND)}
-              >
-                {redirectCopy?.target === "command" && redirectCopy.ok
-                  ? "Copied ✓"
-                  : "Copy command"}
-              </Button>
+        <Modal
+          onClose={() => setRedirectUrl(null)}
+          title="Fork this app"
+          subtitle="A working Vim app you can build on today."
+          icon={<GithubIcon />}
+          maxWidth={360}
+          className="redirect-modal"
+          footer={
+            <>
               <a
                 href={redirectUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className={buttonVariants({ variant: "secondary", size: "sm" })}
+                className={buttonVariants({ variant: "secondary" })}
                 data-ui="button"
                 onClick={() => addLog("Link: opening the template repo (target=_blank)", "info")}
               >
                 Open ↗
               </a>
-            </div>
-            {redirectCopy && !redirectCopy.ok && (
-              <p className="redirect-hint">
-                Copy failed. Select it manually:{" "}
-                <code className="redirect-url">{DEMO_APP_FORK_COMMAND}</code>
-              </p>
-            )}
-          </div>
-        </div>
+              <Button variant="accent" onClick={() => copyRedirect("command", DEMO_APP_FORK_COMMAND)}>
+                {redirectCopy?.target === "command" && redirectCopy.ok ? "Copied ✓" : "Copy command"}
+              </Button>
+            </>
+          }
+        >
+          <ul className="redirect-points">
+            <li>OAuth launch and token exchange, end to end</li>
+            <li>Live EHR context, reads and writes for your manifest</li>
+            <li>A Worker App that sends pushes like the one you clicked</li>
+          </ul>
+          <code className="redirect-url">
+            {DEMO_APP_FORK_COMMAND.split(" ").map((token, i) => (
+              <Fragment key={i}>
+                {i > 0 ? " " : ""}
+                <span className="redirect-token">{token}</span>
+              </Fragment>
+            ))}
+          </code>
+          {redirectCopy && !redirectCopy.ok && (
+            <p className="redirect-hint">
+              Copy failed. Select it manually:{" "}
+              <code className="redirect-url">{DEMO_APP_FORK_COMMAND}</code>
+            </p>
+          )}
+        </Modal>
       )}
 
     </>
