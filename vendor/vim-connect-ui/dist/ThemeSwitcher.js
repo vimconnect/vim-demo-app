@@ -1,15 +1,29 @@
+'use client';
 import { jsx as _jsx } from "react/jsx-runtime";
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
 import { SegmentedControl } from './SegmentedControl.js';
+import { THEME_SYSTEM_FALLBACK, applyBodyLightMode, getSystemTheme, systemMedia, } from './themeShared.js';
 /**
- * The OS query System follows (it matches → light), and the theme when it can't
- * be asked (no `matchMedia`, or it throws): dark. A browser with no preference
- * reads as dark too. A product's pre-paint script runs before any bundle, so it
- * inlines these as literals: test it against these exports so it can't drift.
+ * Theme switcher — vim-ai `Design System.html` → Segmented Control → "Theme
+ * switcher" (plugin 1.0.19): the one control for choosing a theme in every
+ * product. The icon variant of `SegmentedControl`, three options in this order:
+ * System (monitor, the default), Light (sun), Dark (moon). System follows the
+ * OS, live; its tooltip and screen-reader name say what it's following
+ * ("System (dark)", "Follow system theme, currently dark"). The glyph of the
+ * option just picked animates once (pop / spin / swing), never under reduced
+ * motion.
+ *
+ * `useThemePreference` is the state behind it: the stored choice, the OS
+ * theme followed live, and the theme applied to the page. It replaces each
+ * product's own copy of that logic. The storage key and how a theme is applied
+ * are the product's: by default it toggles `light-mode` on `<body>`, the DS
+ * convention.
+ *
+ * It is safe to server-render (Next.js): the first render never touches
+ * `localStorage` or `matchMedia`, so the server and the client's first render
+ * agree. Both are read right after mount, before paint.
  */
-export const THEME_SYSTEM_LIGHT_QUERY = '(prefers-color-scheme: light)';
-export const THEME_SYSTEM_FALLBACK = 'dark';
 /** A layout effect in the browser (runs before paint), a no-op effect on the server. */
 const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
 export function ThemeSwitcher({ value, onChange, systemTheme, ariaLabel = 'Theme', className }) {
@@ -24,30 +38,6 @@ export function ThemeSwitcher({ value, onChange, systemTheme, ariaLabel = 'Theme
             { value: 'light', label: 'Light', ariaLabel: 'Light mode', icon: Sun, iconMotion: 'spin' },
             { value: 'dark', label: 'Dark', ariaLabel: 'Dark mode', icon: Moon, iconMotion: 'swing' },
         ] }));
-}
-/** The DS convention: light is `<body class="light-mode">`, dark is its absence. */
-export function applyBodyLightMode(theme) {
-    document.body.classList.toggle('light-mode', theme === 'light');
-}
-function systemMedia() {
-    try {
-        return typeof window.matchMedia === 'function' ? window.matchMedia(THEME_SYSTEM_LIGHT_QUERY) : null;
-    }
-    catch {
-        return null;
-    }
-}
-/**
- * What the OS is set to now, asked the way `useThemePreference` asks it. For code
- * outside React that needs the System theme (a sign-in redirect, say).
- */
-export function getSystemTheme() {
-    if (typeof window === 'undefined')
-        return THEME_SYSTEM_FALLBACK;
-    const media = systemMedia();
-    if (!media)
-        return THEME_SYSTEM_FALLBACK;
-    return media.matches ? 'light' : 'dark';
 }
 function readStored(key) {
     try {

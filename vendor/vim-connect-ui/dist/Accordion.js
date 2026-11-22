@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { createContext, useCallback, useContext, useId, useMemo, useState } from 'react';
 import { ChevronDown } from 'lucide-react';

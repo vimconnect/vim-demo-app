@@ -1,3 +1,4 @@
+'use client';
 /**
  * Row windowing for a table whose row count is set by its data, not by a page
  * size — built for the client-logs bundle viewer, and not specific to it.

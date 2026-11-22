@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { createContext, useContext, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';

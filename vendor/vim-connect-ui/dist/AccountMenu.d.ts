@@ -1,5 +1,5 @@
 import React from 'react';
-import { type Theme, type ThemePreference } from './ThemeSwitcher.js';
+import type { Theme, ThemePreference } from './themeShared.js';
 export interface AccountMenuProps {
     /** The person's display name: the chip's text, the panel header and the avatar's initials. */
     name: string;

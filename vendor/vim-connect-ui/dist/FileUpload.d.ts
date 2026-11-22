@@ -28,10 +28,6 @@ export interface FileRejection {
     file: File;
     reason: FileRejectReason;
 }
-/** Does `file` match an `accept` string (".pdf,image/*,application/json")? */
-export declare function fileMatchesAccept(file: File, accept: string | undefined): boolean;
-/** 1.2 MB, 340 KB, 12 B — what `FileItem` shows by default. */
-export declare function formatFileSize(bytes: number): string;
 export interface FileUploadProps {
     /** Files that passed `accept`, `maxSize` and `maxFiles`. Never called with an empty list. */
     onFiles: (files: File[]) => void;

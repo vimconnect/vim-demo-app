@@ -1,12 +1,15 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import { createContext, useCallback, useContext, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { ArrowUpRight, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from './cn.js';
 import { Tooltip } from './Tooltip.js';
-import { FloatingLayerContext, useFloatingLayer, zFloatingPanel } from './floatingLayers.js';
+import { FloatingLayerContext, useFloatingLayer } from './floatingLayers.js';
+import { zFloatingPanel } from './floatingLayersShared.js';
 import { FLOATING_SURFACE } from './AnchoredPanel.js';
-import { AppShellNavContext, NAV_MOTION, SIDE_NAV_COLLAPSED_WIDTH, SIDE_NAV_WIDTH, TOP_BAR_HEIGHT } from './AppShell.js';
+import { AppShellNavContext } from './AppShell.js';
+import { NAV_MOTION, SIDE_NAV_COLLAPSED_WIDTH, SIDE_NAV_WIDTH, TOP_BAR_HEIGHT } from './appShellShared.js';
 const SideNavContext = createContext({ collapsed: false, Link: 'a', variant: 'rail' });
 /** Whether the nav is on its icon rail, for content a product puts in it. */
 export function useSideNavCollapsed() {

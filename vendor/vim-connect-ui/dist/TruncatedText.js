@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx } from "react/jsx-runtime";
 import { useCallback, useRef, useState } from 'react';
 import { Tooltip } from './Tooltip.js';

@@ -1,10 +1,12 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useRef, useEffect, useLayoutEffect, useId, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from './cn.js';
 import { markLabellable } from './labellable.js';
 import { computeDropdownRect } from './dropdownRect.js';
-import { useFloatingLayer, zFloatingPanel } from './floatingLayers.js';
+import { useFloatingLayer } from './floatingLayers.js';
+import { zFloatingPanel } from './floatingLayersShared.js';
 import { Tooltip } from './Tooltip.js';
 import { Spinner } from './Spinner.js';
 /**

@@ -1,11 +1,11 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useRef, useState } from 'react';
 import { Check, Copy } from 'lucide-react';
 import { Button } from './Button.js';
 import { Tooltip } from './Tooltip.js';
 import { copyText } from './copyText.js';
-/** How long the button shows the check and "Copied" after a copy lands. */
-export const COPIED_MS = 1500;
+import { COPIED_MS } from './copyButtonShared.js';
 /**
  * Copy Button (DS → Copy Button): copies `value`, then shows a check and
  * "Copied" for a moment. Icon-only ghost by default, always with a tooltip and

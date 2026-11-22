@@ -1,21 +1,3 @@
-/**
- * Open/close state for a panel that opens on hover.
- *
- * Three surfaces render one of these — the per-app-icon hover card, the users
- * table's "+N" app list, the dashboard's Applications card — and two of them sit
- * in the same strip of badges, so they have to feel like one control: the same
- * grace period crossing the gap into the panel, the same immediate close on a
- * click, the same timer cleared on unmount. Sharing only the grace constant left
- * that gesture hand-copied at each call site, and the copies had already drifted
- * in their cleanup.
- *
- * Timer state only — the hook owns whether ITS panel is open, and nothing else.
- * A surface with a second, click-opened panel beside this one (see UserAppsCell)
- * keeps that one in its own state and closes it explicitly, so a hover can never
- * reach in and shut a panel someone deliberately clicked open.
- */
-/** Long enough to cross the gap from a trigger to its panel without it vanishing. */
-export declare const HOVER_CLOSE_GRACE_MS = 140;
 export interface HoverPanelState {
     open: boolean;
     /** `onMouseEnter` on the trigger AND on the panel — the panel's copy is what

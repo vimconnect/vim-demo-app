@@ -1,3 +1,4 @@
+'use client';
 /**
  * Open/close state for a panel that opens on hover.
  *
@@ -15,8 +16,7 @@
  * reach in and shut a panel someone deliberately clicked open.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-/** Long enough to cross the gap from a trigger to its panel without it vanishing. */
-export const HOVER_CLOSE_GRACE_MS = 140;
+import { HOVER_CLOSE_GRACE_MS } from './hoverPanelShared.js';
 /**
  * One trigger, one panel — implemented over {@link useKeyedHoverPanel} with a
  * fixed key, so the timer, the grace period and the unmount cleanup exist in

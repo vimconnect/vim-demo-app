@@ -1,5 +1,6 @@
 import React from 'react';
 import { type LucideIcon } from 'lucide-react';
+import { ACTION_MENU_DIVIDER } from './actionMenuShared.js';
 export interface ActionMenuItem {
     label: string;
     onSelect: () => void;
@@ -14,8 +15,6 @@ export interface ActionMenuItem {
     external?: boolean;
     testId?: string;
 }
-/** A line between groups of items. */
-export declare const ACTION_MENU_DIVIDER: "divider";
 export type ActionMenuEntry = ActionMenuItem | typeof ACTION_MENU_DIVIDER;
 export interface ActionMenuProps {
     items: ActionMenuEntry[];

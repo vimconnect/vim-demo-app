@@ -13,8 +13,6 @@ export interface CopyButtonProps {
     className?: string;
     'data-testid'?: string;
 }
-/** How long the button shows the check and "Copied" after a copy lands. */
-export declare const COPIED_MS = 1500;
 /**
  * Copy Button (DS → Copy Button): copies `value`, then shows a check and
  * "Copied" for a moment. Icon-only ghost by default, always with a tooltip and

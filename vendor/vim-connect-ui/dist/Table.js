@@ -1,10 +1,11 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
 import React, { useId, useMemo } from 'react';
 import { Card } from './Card.js';
 import { Select } from './Select.js';
 import { cn } from './cn.js';
 import { assignRef } from './assignRef.js';
-import { PAGE_SIZE_OPTIONS } from './usePagination.js';
+import { PAGE_SIZE_OPTIONS } from './paginationShared.js';
 import { useVirtualRows } from './useVirtualRows.js';
 /** Elements that handle their own click, so a click on one never also opens its row. */
 const INTERACTIVE = 'a[href], button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="tab"], [contenteditable="true"]';

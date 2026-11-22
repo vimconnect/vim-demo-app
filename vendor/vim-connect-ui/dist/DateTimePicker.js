@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
@@ -6,7 +7,8 @@ import { TextLink } from './TextLink.js';
 import { Tooltip } from './Tooltip.js';
 import { cn } from './cn.js';
 import { fieldVariants } from './Input.js';
-import { useFloatingLayer, zFloatingPanel } from './floatingLayers.js';
+import { useFloatingLayer } from './floatingLayers.js';
+import { zFloatingPanel } from './floatingLayersShared.js';
 import { markLabellable } from './labellable.js';
 import { CELL_BASE, DEFAULT_HOUR, DIVIDED, POPOVER, SELECTED, TIME_OPTION_HEIGHT, TRIGGER_OPEN, TimeColumns, pad2, } from './timePickerShared.js';
 /**

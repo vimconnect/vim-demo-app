@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useRef, useState } from 'react';
 import { cva } from 'class-variance-authority';
@@ -9,6 +10,7 @@ import { Button } from './Button.js';
 import { DisabledTooltip } from './DisabledTooltip.js';
 import { PaperclipIcon } from './icons/PaperclipIcon.js';
 import { TrashIcon } from './icons/TrashIcon.js';
+import { fileMatchesAccept, formatFileSize } from './fileUploadShared.js';
 /**
  * File upload — a dashed drop zone that takes files by click, keyboard or drag,
  * and `FileItem`, the row for a file that's been picked or uploaded.
@@ -52,35 +54,6 @@ const zoneVariants = cva([
     },
     defaultVariants: { size: 'default', state: 'idle', invalid: false },
 });
-/** Does `file` match an `accept` string (".pdf,image/*,application/json")? */
-export function fileMatchesAccept(file, accept) {
-    if (!accept)
-        return true;
-    const name = file.name.toLowerCase();
-    const type = (file.type || '').toLowerCase();
-    return accept
-        .split(',')
-        .map((s) => s.trim().toLowerCase())
-        .filter(Boolean)
-        .some((rule) => {
-        if (rule.startsWith('.'))
-            return name.endsWith(rule);
-        if (rule.endsWith('/*'))
-            return type.startsWith(rule.slice(0, -1));
-        return type === rule;
-    });
-}
-/** 1.2 MB, 340 KB, 12 B — what `FileItem` shows by default. */
-export function formatFileSize(bytes) {
-    if (!Number.isFinite(bytes) || bytes < 0)
-        return '';
-    if (bytes < 1024)
-        return `${bytes} B`;
-    if (bytes < 1024 * 1024)
-        return `${Math.max(1, Math.round(bytes / 1024))} KB`;
-    const mb = bytes / (1024 * 1024);
-    return `${mb < 10 ? mb.toFixed(1) : Math.round(mb)} MB`;
-}
 export const FileUpload = React.forwardRef(function FileUpload({ onFiles, onReject, accept, multiple = false, maxFiles, maxSize, label, hint, size = 'default', uploading = false, uploadingLabel = 'Uploading…', disabled = false, invalid = false, id, name, className, 'aria-describedby': describedBy, 'aria-invalid': ariaInvalid, 'aria-label': ariaLabel, }, ref) {
     const [dragging, setDragging] = useState(false);
     // dragenter/leave fire for every child the pointer crosses; count them.

@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useRef } from 'react';
 import { ExternalLink, MoreVertical } from 'lucide-react';
@@ -7,8 +8,7 @@ import { Popover } from './Popover.js';
 import { Tooltip } from './Tooltip.js';
 import { cn } from './cn.js';
 import { assignRef } from './assignRef.js';
-/** A line between groups of items. */
-export const ACTION_MENU_DIVIDER = 'divider';
+import { ACTION_MENU_DIVIDER } from './actionMenuShared.js';
 const ITEM = [
     'flex w-full items-center gap-[var(--space-sm)] h-[36px] px-[var(--space-md)] rounded-[var(--radius-md)]',
     'border-0 bg-transparent text-left cursor-pointer [font-family:var(--font-sans)]',

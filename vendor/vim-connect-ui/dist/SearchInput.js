@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useRef } from 'react';
 import { Search, X } from 'lucide-react';

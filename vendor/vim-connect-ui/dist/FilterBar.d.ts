@@ -1,9 +1,6 @@
 import React from 'react';
 import { type VariantProps } from 'class-variance-authority';
-declare const filterBarVariants: (props?: ({
-    flushTop?: boolean | null | undefined;
-    stackedBelowTabs?: boolean | null | undefined;
-} & import("class-variance-authority/types").ClassProp) | undefined) => string;
+import { filterBarVariants } from './filterBarShared.js';
 export type FilterBarFlushTop = NonNullable<VariantProps<typeof filterBarVariants>['flushTop']>;
 export type FilterBarStackedBelowTabs = NonNullable<VariantProps<typeof filterBarVariants>['stackedBelowTabs']>;
 export interface FilterBarOption<T extends string = string> {
@@ -50,4 +47,3 @@ export interface FilterBarProps<T extends string = string> {
  * Owns layout, stuck state, scroller, and optional trailing slot.
  */
 export declare function FilterBar<T extends string>({ options, totalCount, allLabel, selectedValue, onSelect, ariaLabel, trailing, stackedBelowTabs, className, }: FilterBarProps<T>): import("react/jsx-runtime").JSX.Element | null;
-export { filterBarVariants };

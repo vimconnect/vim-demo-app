@@ -1,4 +1,6 @@
+'use client';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { DEFAULT_PAGE_SIZE, PAGE_SIZE_OPTIONS } from './paginationShared.js';
 /**
  * Client-side pagination for any table — page state, a per-table page-size
  * preference (localStorage, keyed by table id), and the slice to render.
@@ -10,14 +12,6 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
  * see at once" had three different answers on one page
  * (bookmd/vim-connect#3738).
  */
-export const PAGE_SIZE_OPTIONS = [8, 15, 25, 50, 100];
-/**
- * 8, not the old 5: enough that a normal team fits on one page, while the
- * first page plus the filter row above it still fits a laptop viewport — which
- * is what keeps the filters reachable without pinning them. Anyone who wants
- * more takes it from the rows picker.
- */
-export const DEFAULT_PAGE_SIZE = 8;
 // v2: the default moved from 10 to 8, and a stored 10 from before that change
 // is indistinguishable from a deliberate choice. Bumping the key retires those
 // silently rather than leaving the old default stuck for anyone who had

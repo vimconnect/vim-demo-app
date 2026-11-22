@@ -1,3 +1,4 @@
+'use client';
 import { jsx as _jsx } from "react/jsx-runtime";
 /**
  * Fixed-position panel anchored to a trigger element — moved from the Console
@@ -14,7 +15,8 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from './cn.js';
-import { FloatingLayerContext, useFloatingLayer, zFloatingPanel } from './floatingLayers.js';
+import { FloatingLayerContext, useFloatingLayer } from './floatingLayers.js';
+import { zFloatingPanel } from './floatingLayersShared.js';
 /** The DS floating surface: the solid page colour in both themes, no blur. */
 export const FLOATING_SURFACE = [
     'overflow-hidden rounded-[var(--radius-xl)]',
