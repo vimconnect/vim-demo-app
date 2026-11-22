@@ -1,5 +1,5 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { Button } from './Button.js';
 import { TextLink } from './TextLink.js';
@@ -20,6 +20,7 @@ import { CELL_BASE, DEFAULT_HOUR, DIVIDED, POPOVER, SELECTED, TIME_OPTION_HEIGHT
  * recipe Select's dropdown uses, portaled to `document.body`, flipping above
  * the trigger when there is more room there. Selected = tinted cyan fill +
  * `--color-cyan-text`; today (when not selected) = a thin inset ring only.
+ * Month and year in the header are dropdowns.
  *
  * Classes mean the same in Tailwind v3 and v4: arbitrary values on DS tokens
  * only and no `!` important marker. No date library: the few helpers below
@@ -33,6 +34,8 @@ const POPOVER_HEIGHT_WITH_TIME = 460;
 const POPOVER_HEIGHT_DATE_ONLY = 340;
 const GAP = 4;
 const VIEWPORT_MARGIN = 8;
+const YEAR_RANGE_PAST = 100;
+const YEAR_RANGE_FUTURE = 50;
 // ── Date helpers ─────────────────────────────────────────────────────────────
 function toValue(d, showTime) {
     const date = `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}`;
@@ -63,6 +66,16 @@ function monthGrid(view) {
     const count = first.getDay() + last.getDate() + (6 - last.getDay());
     return Array.from({ length: count }, (_, i) => new Date(start.getFullYear(), start.getMonth(), start.getDate() + i));
 }
+/** Newest-first year list for the header dropdown; capped by `max` when set, always includes `viewYear`. */
+function yearOptions(max, nowYear, viewYear) {
+    const parsedMax = max ? Number(max.slice(0, 4)) : NaN;
+    let end = Number.isFinite(parsedMax) ? parsedMax : nowYear + YEAR_RANGE_FUTURE;
+    let start = Math.min(nowYear, end) - YEAR_RANGE_PAST;
+    // Keep the year the grid is showing pickable after arrowing past `max`.
+    end = Math.max(end, viewYear);
+    start = Math.min(start, viewYear);
+    return Array.from({ length: Math.max(0, end - start + 1) }, (_, i) => end - i);
+}
 // ── Classes ──────────────────────────────────────────────────────────────────
 const TRIGGER = [
     'flex items-center justify-between gap-[var(--space-sm)] text-left cursor-pointer',
@@ -78,17 +91,55 @@ const svgProps = { width: 16, height: 16, viewBox: '0 0 24 24', fill: 'none', st
 const CalendarGlyph = ({ className }) => (_jsxs("svg", { ...svgProps, className: className, children: [_jsx("rect", { x: "3", y: "4", width: "18", height: "18", rx: "2" }), _jsx("path", { d: "M8 2v4M16 2v4M3 10h18" })] }));
 const ChevronLeftGlyph = () => (_jsx("svg", { ...svgProps, children: _jsx("path", { d: "M15 18l-6-6 6-6" }) }));
 const ChevronRightGlyph = () => (_jsx("svg", { ...svgProps, children: _jsx("path", { d: "M9 18l6-6-6-6" }) }));
+const ChevronDownGlyph = ({ open }) => (_jsx("svg", { width: 10, height: 10, viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: 2.2, strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": true, className: cn('[transition:transform_var(--transition-fast)]', open && 'rotate-180'), children: _jsx("path", { d: "M6 9l6 6 6-6" }) }));
+/** Caption chip — matches header type; open state mirrors Select's trigger. */
+const CAPTION_CHIP = [
+    'inline-flex items-center gap-[4px] h-[26px] cursor-pointer',
+    'rounded-[var(--radius-sm)] border border-solid [border-color:transparent]',
+    'px-[6px] [background:transparent]',
+    'text-[length:var(--text-base)] [font-weight:var(--font-semibold)] [color:var(--color-text-primary)]',
+    '[font-family:inherit] [transition:background_var(--transition-fast),border-color_var(--transition-fast)]',
+    'hover:[background:var(--color-cyan-05)]',
+    'focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-focus)]',
+].join(' ');
+const CAPTION_CHIP_OPEN = '[border-color:var(--color-cyan-40)] [background:var(--color-cyan-05)]';
+/** Same floating-panel recipe Select's dropdown uses. */
+const CAPTION_MENU = [
+    'absolute top-[calc(100%+4px)] left-0 z-[2]',
+    'max-h-[196px] overflow-y-auto p-[var(--space-xs)]',
+    'rounded-[var(--radius-md)] border border-solid [border-color:var(--glass-border-raised)]',
+    '[background:color-mix(in_srgb,var(--color-bg-primary)_92%,transparent)]',
+    '[backdrop-filter:var(--glass-blur-md)] [box-shadow:var(--glass-shadow-raised)]',
+    '[&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:[background:transparent]',
+    '[&::-webkit-scrollbar-thumb]:[background:var(--glass-border-base)] [&::-webkit-scrollbar-thumb]:rounded-[var(--radius-full)]',
+].join(' ');
+const CAPTION_OPTION = [
+    'flex w-full items-center justify-center cursor-pointer select-none',
+    'rounded-[var(--radius-base)] border-0 px-[var(--space-md)] py-[var(--space-sm)]',
+    'text-[length:var(--text-sm)] [font-family:inherit] [color:var(--color-text-primary)] [background:transparent]',
+    '[transition:background_var(--transition-fast),color_var(--transition-fast)]',
+    'hover:[background:var(--color-cyan-05)]',
+    'focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-focus)]',
+].join(' ');
+const CAPTION_OPTION_SELECTED = '[background:var(--color-cyan-08)] [color:var(--color-cyan-text)] [font-weight:var(--font-medium)] hover:[background:var(--color-cyan-10)]';
 export function DateTimePicker({ value, onChange, placeholder, id, className, 'aria-label': ariaLabel, 'aria-describedby': ariaDescribedBy, showTime = true, max, }) {
     const resolvedPlaceholder = placeholder ?? (showTime ? 'Select date & time' : 'Select date');
     const selected = parseValue(value, showTime);
     const [open, setOpen] = useState(false);
     // The month the grid shows — independent of `selected` so paging works with nothing picked.
     const [viewMonth, setViewMonth] = useState(selected ?? new Date());
+    const [captionMenu, setCaptionMenu] = useState(null);
     const [rect, setRect] = useState(null);
     const triggerRef = useRef(null);
     const popoverRef = useRef(null);
     const hourListRef = useRef(null);
     const minuteListRef = useRef(null);
+    const captionMenuRef = useRef(null);
+    const currentCaptionOptionRef = useRef(null);
+    const today = new Date();
+    const nowYear = today.getFullYear();
+    const viewYear = viewMonth.getFullYear();
+    const years = useMemo(() => yearOptions(max, nowYear, viewYear), [max, nowYear, viewYear]);
     // Follow an externally changed value (a page's own Clear, a restored filter).
     useEffect(() => {
         const parsed = parseValue(value, showTime);
@@ -112,12 +163,35 @@ export function DateTimePicker({ value, onChange, placeholder, id, className, 'a
     }, [showTime]);
     function openPopover() {
         setRect(computeRect());
+        setCaptionMenu(null);
         setOpen(true);
     }
     function closePopover() {
+        setCaptionMenu(null);
         setOpen(false);
         requestAnimationFrame(() => triggerRef.current?.focus());
     }
+    function pickMonth(month) {
+        setViewMonth((m) => new Date(m.getFullYear(), month, 1));
+        setCaptionMenu(null);
+    }
+    function pickYear(year) {
+        setViewMonth((m) => new Date(year, m.getMonth(), 1));
+        setCaptionMenu(null);
+    }
+    function toggleCaptionMenu(kind) {
+        setCaptionMenu((current) => (current === kind ? null : kind));
+    }
+    // Centre the open caption list on the current value without scrolling ancestors.
+    useLayoutEffect(() => {
+        if (!captionMenu)
+            return;
+        const list = captionMenuRef.current;
+        const option = currentCaptionOptionRef.current;
+        if (!list || !option)
+            return;
+        list.scrollTop = option.offsetTop - list.clientHeight / 2 + option.clientHeight / 2;
+    }, [captionMenu]);
     // Joins the floating-layer stack while open, so a Popover around it closes only the picker.
     const layer = useFloatingLayer(open, (node) => !!popoverRef.current?.contains(node));
     // Close on outside click, Escape, or a page scroll (not one inside the popover).
@@ -134,6 +208,10 @@ export function DateTimePicker({ value, onChange, placeholder, id, className, 'a
             // Handled here, so a modal around the picker closes only the popover.
             if (e.key === 'Escape' && layer.isTop()) {
                 e.preventDefault();
+                if (captionMenu) {
+                    setCaptionMenu(null);
+                    return;
+                }
                 closePopover();
             }
         }
@@ -151,7 +229,7 @@ export function DateTimePicker({ value, onChange, placeholder, id, className, 'a
             document.removeEventListener('keydown', handleKeyDown, true);
             window.removeEventListener('scroll', handleScroll, true);
         };
-    }, [open, layer]);
+    }, [open, layer, captionMenu]);
     useEffect(() => {
         if (!open || !showTime)
             return;
@@ -174,6 +252,7 @@ export function DateTimePicker({ value, onChange, placeholder, id, className, 'a
         if (max && dayIso(day) > max)
             return;
         const next = new Date(day.getFullYear(), day.getMonth(), day.getDate(), showTime ? (selected?.getHours() ?? DEFAULT_HOUR) : 0, showTime ? (selected?.getMinutes() ?? 0) : 0);
+        setCaptionMenu(null);
         setViewMonth(day);
         commit(next);
     }
@@ -196,7 +275,6 @@ export function DateTimePicker({ value, onChange, placeholder, id, className, 'a
         setViewMonth(now);
         commit(now);
     }
-    const today = new Date();
     const todayBlocked = !!(max && dayIso(today) > max);
     const days = monthGrid(viewMonth);
     const formattedValue = selected ? formatDisplay(selected, showTime) : null;
@@ -210,7 +288,19 @@ export function DateTimePicker({ value, onChange, placeholder, id, className, 'a
                 left: rect.left,
                 width: POPOVER_WIDTH,
                 zIndex: zFloatingPanel(),
-            }, children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx(Tooltip, { label: "Previous month", children: _jsx(Button, { variant: "ghost", iconOnly: true, size: "sm", "aria-label": "Previous month", onClick: () => setViewMonth((m) => addMonths(m, -1)), children: _jsx(ChevronLeftGlyph, {}) }) }), _jsxs("span", { className: "text-[length:var(--text-base)] [font-weight:var(--font-semibold)]", children: [MONTHS[viewMonth.getMonth()], " ", viewMonth.getFullYear()] }), _jsx(Tooltip, { label: "Next month", children: _jsx(Button, { variant: "ghost", iconOnly: true, size: "sm", "aria-label": "Next month", onClick: () => setViewMonth((m) => addMonths(m, 1)), children: _jsx(ChevronRightGlyph, {}) }) })] }), _jsx("div", { className: "grid grid-cols-7 text-center text-[length:var(--text-xs)] [font-weight:var(--font-medium)] [color:var(--color-text-muted)]", "aria-hidden": "true", children: WEEKDAY_LABELS.map((label, i) => (_jsx("span", { children: label }, i))) }), _jsx("div", { className: "grid grid-cols-7 gap-[2px]", "aria-label": "Day", children: days.map((day) => {
+            }, children: [_jsxs("div", { className: "flex items-center justify-between gap-[var(--space-xs)]", children: [_jsxs("div", { className: "flex min-w-0 items-center gap-[2px]", children: [_jsxs("span", { className: "relative", children: [_jsxs("button", { type: "button", "data-ui": "date-time-picker-button", className: cn(CAPTION_CHIP, captionMenu === 'month' && CAPTION_CHIP_OPEN), "aria-label": "Month", "aria-haspopup": "listbox", "aria-expanded": captionMenu === 'month', onClick: () => toggleCaptionMenu('month'), children: [_jsx("span", { className: "truncate", children: MONTHS[viewMonth.getMonth()] }), _jsx("span", { className: "[color:var(--color-text-muted)]", children: _jsx(ChevronDownGlyph, { open: captionMenu === 'month' }) })] }), captionMenu === 'month' && (_jsx("div", { ref: captionMenuRef, role: "listbox", "aria-label": "Month", className: cn(CAPTION_MENU, 'min-w-[132px]'), children: MONTHS.map((label, month) => {
+                                                const isCurrent = month === viewMonth.getMonth();
+                                                return (_jsx("button", { type: "button", "data-ui": "date-time-picker-button", role: "option", "aria-selected": isCurrent, ref: isCurrent ? currentCaptionOptionRef : undefined, className: cn(CAPTION_OPTION, 'justify-start', isCurrent && CAPTION_OPTION_SELECTED), onClick: () => pickMonth(month), children: label }, label));
+                                            }) }))] }), _jsxs("span", { className: "relative", children: [_jsxs("button", { type: "button", "data-ui": "date-time-picker-button", className: cn(CAPTION_CHIP, captionMenu === 'year' && CAPTION_CHIP_OPEN), "aria-label": "Year", "aria-haspopup": "listbox", "aria-expanded": captionMenu === 'year', onClick: () => toggleCaptionMenu('year'), children: [viewYear, _jsx("span", { className: "[color:var(--color-text-muted)]", children: _jsx(ChevronDownGlyph, { open: captionMenu === 'year' }) })] }), captionMenu === 'year' && (_jsx("div", { ref: captionMenuRef, role: "listbox", "aria-label": "Year", className: cn(CAPTION_MENU, 'min-w-[84px]'), children: years.map((year) => {
+                                                const isCurrent = year === viewYear;
+                                                return (_jsx("button", { type: "button", "data-ui": "date-time-picker-button", role: "option", "aria-selected": isCurrent, ref: isCurrent ? currentCaptionOptionRef : undefined, className: cn(CAPTION_OPTION, 'tabular-nums', isCurrent && CAPTION_OPTION_SELECTED), onClick: () => pickYear(year), children: year }, year));
+                                            }) }))] })] }), _jsxs("div", { className: "flex shrink-0 items-center", children: [_jsx(Tooltip, { label: "Previous month", children: _jsx(Button, { variant: "ghost", iconOnly: true, size: "sm", "aria-label": "Previous month", onClick: () => {
+                                            setCaptionMenu(null);
+                                            setViewMonth((m) => addMonths(m, -1));
+                                        }, children: _jsx(ChevronLeftGlyph, {}) }) }), _jsx(Tooltip, { label: "Next month", children: _jsx(Button, { variant: "ghost", iconOnly: true, size: "sm", "aria-label": "Next month", onClick: () => {
+                                            setCaptionMenu(null);
+                                            setViewMonth((m) => addMonths(m, 1));
+                                        }, children: _jsx(ChevronRightGlyph, {}) }) })] })] }), _jsx("div", { className: "grid grid-cols-7 text-center text-[length:var(--text-xs)] [font-weight:var(--font-medium)] [color:var(--color-text-muted)]", "aria-hidden": "true", children: WEEKDAY_LABELS.map((label, i) => (_jsx("span", { children: label }, i))) }), _jsx("div", { className: "grid grid-cols-7 gap-[2px]", "aria-label": "Day", children: days.map((day) => {
                         const isSelected = !!selected && sameDay(day, selected);
                         const isToday = sameDay(day, today);
                         const disabled = !!(max && dayIso(day) > max);
