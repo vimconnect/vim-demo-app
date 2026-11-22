@@ -6,5 +6,6 @@ The look of every screen here comes from the Vim Design System: the `vim-design-
 
 - **Tokens:** `src/app/globals.css` styles the app on DS tokens only: `shared/styles/design-tokens.css`, plus a short block of DS-only tokens at the top of `globals.css`. Use a token, never a literal colour, size, radius or shadow. Where the shared file and the DS disagree, the DS value wins.
 - **Themes:** dark is `:root`, light is `body.light-mode` (set in `src/app/layout.tsx`). Check every change in both.
+- **Component map:** `.claude/skills/ui-design-system/references/demo-app-component-library.md` lists the shared components this app uses, what is still hand-built and what stays product-only. Read it before writing UI here.
 - **Components and classes:** `.claude/skills/ui-design-system/` maps the DS to this repo's components; the Console and side-panel maps there show the recipes to reuse.
 - **A look the DS doesn't have yet** lands in `vim-ai` first. See "UI and the Vim Design System" in the root `CLAUDE.md`.
