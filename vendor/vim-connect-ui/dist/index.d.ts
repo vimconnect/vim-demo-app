@@ -73,7 +73,7 @@ export type { DisabledTooltipProps } from './DisabledTooltip.js';
 export { Breadcrumbs } from './Breadcrumbs.js';
 export type { BreadcrumbItem, BreadcrumbLinkRenderProps, BreadcrumbsProps } from './Breadcrumbs.js';
 export { StatCard } from './StatCard.js';
-export type { StatCardProps } from './StatCard.js';
+export type { StatCardProps, StatCardTone } from './StatCard.js';
 export { DateTimePicker } from './DateTimePicker.js';
 export type { DateTimePickerProps } from './DateTimePicker.js';
 export { TimeField } from './TimeField.js';
