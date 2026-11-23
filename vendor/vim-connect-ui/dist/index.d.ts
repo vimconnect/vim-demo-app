@@ -153,7 +153,7 @@ export type { SectionIconBadgeProps } from './SectionIconBadge.js';
 export { Spinner, LoadingSpinner } from './Spinner.js';
 export type { SpinnerProps, SpinnerSize, LoadingSpinnerProps } from './Spinner.js';
 export { IconTile } from './IconTile.js';
-export type { IconTileProps } from './IconTile.js';
+export type { IconTileProps, IconTileStatus } from './IconTile.js';
 export { Divider } from './Divider.js';
 export type { DividerProps } from './Divider.js';
 export { SaveStatusIndicator } from './SaveStatusIndicator.js';
