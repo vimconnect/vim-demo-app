@@ -14,7 +14,7 @@ export interface AccordionProps {
  * controlled from outside (see `AccordionItemProps.open`).
  */
 export declare function Accordion({ children, single, defaultOpen, className }: AccordionProps): import("react/jsx-runtime").JSX.Element;
-export interface AccordionItemProps {
+interface AccordionItemBaseProps {
     /** Stable id within the accordion (also used by `defaultOpen`). */
     id: string;
     title: React.ReactNode;
@@ -38,8 +38,19 @@ export interface AccordionItemProps {
     open?: boolean;
     /** Called with the state the header asks for, controlled or not. */
     onOpenChange?: (open: boolean) => void;
-    children: React.ReactNode;
     className?: string;
     'data-testid'?: string;
 }
-export declare function AccordionItem({ id, title, count, hint, aside, actions, open: openProp, onOpenChange, children, className, 'data-testid': testId, }: AccordionItemProps): import("react/jsx-runtime").JSX.Element;
+export type AccordionItemProps = AccordionItemBaseProps & ({
+    expandable?: true;
+    children: React.ReactNode;
+} | {
+    /**
+     * The same title row as a plain heading, with no button, chevron or body, for a section
+     * with nothing to open yet (an empty history).
+     */
+    expandable: false;
+    children?: React.ReactNode;
+});
+export declare function AccordionItem({ id, title, count, hint, aside, actions, open: openProp, onOpenChange, expandable, children, className, 'data-testid': testId, }: AccordionItemProps): import("react/jsx-runtime").JSX.Element;
+export {};
