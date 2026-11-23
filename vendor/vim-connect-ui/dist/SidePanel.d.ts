@@ -1,7 +1,10 @@
 import React from 'react';
+/** What closed the panel: Escape, a click on the backdrop, or the header's close button. */
+export type SidePanelCloseReason = 'escape' | 'backdrop' | 'close-button';
 export interface SidePanelProps {
     isOpen: boolean;
-    onClose: () => void;
+    /** Called with what closed it; callers that do not care can ignore the argument. */
+    onClose: (reason: SidePanelCloseReason) => void;
     children: React.ReactNode;
     /** CSS width value. Default `min(460px, 100vw)`. */
     width?: string;
@@ -18,6 +21,12 @@ export interface SidePanelProps {
     /** Adjusts the panel surface (the DS card ground and left border by default). */
     panelClassName?: string;
     panelStyle?: React.CSSProperties;
+    /**
+     * Renders in place inside the nearest positioned ancestor instead of portalling to the
+     * viewport: for a panel that lives inside another surface (an app panel in an iframe or a
+     * resizable frame). The backdrop covers that ancestor only.
+     */
+    contained?: boolean;
 }
 /**
  * Side Panel (DS → Side Panel): a right-edge slide-in drawer on the DS card surface.
@@ -25,14 +34,15 @@ export interface SidePanelProps {
  * header, body and footer are the caller's `children`, normally `SidePanelHeader`,
  * `SidePanelBody` and `SidePanelFooter`.
  *
- * Portals to `document.body` so a page's stacking context can't trap it. It joins
+ * Portals to `document.body` so a page's stacking context can't trap it; `contained`
+ * renders it in place instead, inside the nearest positioned ancestor. It joins
  * the floating-layer stack, so Escape closes the top-most surface first (a Select
  * open inside the panel closes before the panel does).
  *
  * The exit slide only runs while the caller keeps rendering `<SidePanel isOpen={false} />`;
  * mounting it only while open still slides in.
  */
-export declare function SidePanel({ isOpen, onClose, children, width, showBackdrop, closeOnEscape, topOffset, role, ariaLabel, panelClassName, panelStyle, }: SidePanelProps): React.ReactPortal;
+export declare function SidePanel({ isOpen, onClose, children, width, showBackdrop, closeOnEscape, topOffset, role, ariaLabel, panelClassName, panelStyle, contained, }: SidePanelProps): import("react/jsx-runtime").JSX.Element;
 export interface SidePanelHeaderProps {
     title: React.ReactNode;
     /** One line under the title. */

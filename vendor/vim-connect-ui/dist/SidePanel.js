@@ -16,7 +16,7 @@ const Z_PANEL = 'z-[calc(var(--z-modal)-1)]';
 // The DS Side Panel surface: card ground and a left hairline, in both themes. No shadow: the
 // card glow spread above the panel's top edge, over the top bar.
 const PANEL = [
-    `fixed right-0 ${Z_PANEL} flex flex-col transition-transform duration-200 motion-reduce:transition-none`,
+    `right-0 ${Z_PANEL} flex flex-col transition-transform duration-200 motion-reduce:transition-none`,
     '[background:var(--color-bg-card)] border-0 border-l border-solid [border-color:var(--color-border-medium)]',
 ].join(' ');
 /**
@@ -25,14 +25,15 @@ const PANEL = [
  * header, body and footer are the caller's `children`, normally `SidePanelHeader`,
  * `SidePanelBody` and `SidePanelFooter`.
  *
- * Portals to `document.body` so a page's stacking context can't trap it. It joins
+ * Portals to `document.body` so a page's stacking context can't trap it; `contained`
+ * renders it in place instead, inside the nearest positioned ancestor. It joins
  * the floating-layer stack, so Escape closes the top-most surface first (a Select
  * open inside the panel closes before the panel does).
  *
  * The exit slide only runs while the caller keeps rendering `<SidePanel isOpen={false} />`;
  * mounting it only while open still slides in.
  */
-export function SidePanel({ isOpen, onClose, children, width = DEFAULT_WIDTH, showBackdrop = true, closeOnEscape = true, topOffset = 0, role = 'dialog', ariaLabel, panelClassName, panelStyle, }) {
+export function SidePanel({ isOpen, onClose, children, width = DEFAULT_WIDTH, showBackdrop = true, closeOnEscape = true, topOffset = 0, role = 'dialog', ariaLabel, panelClassName, panelStyle, contained = false, }) {
     // First paint must be closed so an already-open mount still slides in.
     const [visible, setVisible] = useState(false);
     useEffect(() => {
@@ -55,7 +56,7 @@ export function SidePanel({ isOpen, onClose, children, width = DEFAULT_WIDTH, sh
             setTitleCount((n) => n + 1);
             return () => setTitleCount((n) => n - 1);
         },
-        onClose: () => onCloseRef.current(),
+        onClose: () => onCloseRef.current('close-button'),
     }), [titleId]);
     useEffect(() => {
         if (!isOpen || !closeOnEscape)
@@ -63,12 +64,16 @@ export function SidePanel({ isOpen, onClose, children, width = DEFAULT_WIDTH, sh
         const onKeyDown = (e) => {
             // An Escape a layer above already handled (defaultPrevented) is not this panel's.
             if (e.key === 'Escape' && !e.defaultPrevented && layer.isTop())
-                onCloseRef.current();
+                onCloseRef.current('escape');
         };
         window.addEventListener('keydown', onKeyDown);
         return () => window.removeEventListener('keydown', onKeyDown);
     }, [isOpen, closeOnEscape, layer]);
-    return createPortal(_jsxs(FloatingLayerContext.Provider, { value: layer.layer, children: [showBackdrop && isOpen && (_jsx(Scrim, { "data-ui": "side-panel-backdrop", className: Z_BACKDROP, style: { top: topOffset }, onDismiss: onClose })), _jsx("div", { ref: panelRef, "data-ui": "side-panel", "data-state": isOpen ? 'open' : 'closed', role: role, "aria-modal": showBackdrop || undefined, "aria-label": ariaLabel, "aria-labelledby": ariaLabel || titleCount === 0 ? undefined : titleId, className: cn(PANEL, visible ? 'translate-x-0' : 'translate-x-full', panelClassName), style: { width, top: topOffset, height: `calc(100% - ${topOffset}px)`, ...panelStyle }, children: _jsx(SidePanelContext.Provider, { value: context, children: children }) })] }), document.body);
+    const surface = (_jsxs(FloatingLayerContext.Provider, { value: layer.layer, children: [showBackdrop && isOpen && (_jsx(Scrim, { "data-ui": "side-panel-backdrop", position: contained ? 'absolute' : 'fixed', className: Z_BACKDROP, style: { top: topOffset }, onDismiss: () => onClose('backdrop') })), _jsx("div", { ref: panelRef, "data-ui": "side-panel", "data-state": isOpen ? 'open' : 'closed', role: role, "aria-modal": showBackdrop || undefined, "aria-label": ariaLabel, "aria-labelledby": ariaLabel || titleCount === 0 ? undefined : titleId, "data-contained": contained ? '' : undefined, className: cn(PANEL, contained ? 'absolute' : 'fixed', visible ? 'translate-x-0' : 'translate-x-full', 
+                // Off its parent's edge, a closed contained panel would still show. Visibility transitions with
+                // the slide, so it hides when the slide ends and shows as soon as it opens.
+                contained && 'transition-[transform,visibility]', contained && !visible && 'invisible', panelClassName), style: { width, top: topOffset, height: `calc(100% - ${topOffset}px)`, ...panelStyle }, children: _jsx(SidePanelContext.Provider, { value: context, children: children }) })] }));
+    return contained ? surface : createPortal(surface, document.body);
 }
 // Same divider as the Modal header and footer: halfway between the light and medium borders.
 const DIVIDER = '[border-color:color-mix(in_srgb,var(--color-border-light)_50%,var(--color-border-medium))]';

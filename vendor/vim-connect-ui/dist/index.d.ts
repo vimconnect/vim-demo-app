@@ -132,7 +132,7 @@ export type { TimelineProps, TimelineItem, TimelineTone } from './Timeline.js';
 export { KeyValueList, KeyValue } from './KeyValue.js';
 export type { KeyValueListProps, KeyValueProps } from './KeyValue.js';
 export { SidePanel, SidePanelHeader, SidePanelBody, SidePanelFooter } from './SidePanel.js';
-export type { SidePanelProps, SidePanelHeaderProps } from './SidePanel.js';
+export type { SidePanelCloseReason, SidePanelProps, SidePanelHeaderProps } from './SidePanel.js';
 export { ClampedText } from './ClampedText.js';
 export type { ClampedTextProps } from './ClampedText.js';
 export { TruncatedText } from './TruncatedText.js';
