@@ -122,6 +122,12 @@ export function Select({ options, value, onChange, placeholder, required, disabl
     const typeaheadRef = useRef({ char: '', timer: null });
     // Joins the floating-layer stack while open, so a Popover around it closes only the list.
     useFloatingLayer(open, (node) => !!panelRef.current?.contains(node));
+    const searchInputRef = useRef(null);
+    // Must run after useFloatingLayer above: focusing before the layer joins the stack closes a parent Popover.
+    useEffect(() => {
+        if (open)
+            searchInputRef.current?.focus();
+    }, [open]);
     const term = searchable ? query.trim().toLowerCase() : '';
     // A server-side search has already narrowed `options` to the text, by fields the panel may not
     // see (an account's owner), so the panel lists them as they come.
@@ -348,7 +354,7 @@ export function Select({ options, value, onChange, placeholder, required, disabl
     const dropdown = open && dropdownRect
         ? createPortal(searchable ? (_jsxs("div", { ref: (node) => {
                 panelRef.current = node;
-            }, "data-ui": "select-panel", className: cn(PANEL, 'flex flex-col overflow-hidden'), style: position, children: [_jsxs("div", { className: SEARCH_FIELD, children: [_jsxs("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", "aria-hidden": true, className: "shrink-0 [color:var(--color-text-muted)]", children: [_jsx("circle", { cx: "11", cy: "11", r: "7", stroke: "currentColor", strokeWidth: "2" }), _jsx("path", { d: "M21 21l-4-4", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" })] }), _jsx("input", { "data-ui": "select-input", type: "text", autoFocus: true, value: query, onChange: (e) => {
+            }, "data-ui": "select-panel", className: cn(PANEL, 'flex flex-col overflow-hidden'), style: position, children: [_jsxs("div", { className: SEARCH_FIELD, children: [_jsxs("svg", { width: "13", height: "13", viewBox: "0 0 24 24", fill: "none", "aria-hidden": true, className: "shrink-0 [color:var(--color-text-muted)]", children: [_jsx("circle", { cx: "11", cy: "11", r: "7", stroke: "currentColor", strokeWidth: "2" }), _jsx("path", { d: "M21 21l-4-4", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round" })] }), _jsx("input", { ref: searchInputRef, "data-ui": "select-input", type: "text", value: query, onChange: (e) => {
                                 typeQuery(e.target.value);
                                 // Typing points Enter at the first match.
                                 setFocusedIdx(0);
