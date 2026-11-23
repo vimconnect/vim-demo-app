@@ -91,7 +91,7 @@ export { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from './paginationShared.js';
 export type { UsePaginationResult } from './usePagination.js';
 export { useVirtualRows } from './useVirtualRows.js';
 export type { VirtualRows, VirtualRowWindow } from './useVirtualRows.js';
-export { toastOptions, toastStyle, ToastIcon } from './toast.js';
+export { toastClassName, toastOptions, toastStyle, ToastIcon } from './toast.js';
 export type { ToastAccent, ToastIconProps, ToastThemeOptions } from './toast.js';
 export { ErrorPage } from './ErrorPage.js';
 export type { ErrorPageProps, ErrorPageKind } from './ErrorPage.js';

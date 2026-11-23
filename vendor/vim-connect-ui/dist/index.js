@@ -53,7 +53,7 @@ export { Table, TablePagination } from './Table.js';
 export { usePagination, usePageSizePreference } from './usePagination.js';
 export { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from './paginationShared.js';
 export { useVirtualRows } from './useVirtualRows.js';
-export { toastOptions, toastStyle, ToastIcon } from './toast.js';
+export { toastClassName, toastOptions, toastStyle, ToastIcon } from './toast.js';
 export { ErrorPage } from './ErrorPage.js';
 export { EmptyState, EmptyStateAccent, EmptyStateBlueprint, EMPTY_STATE_BLUEPRINTS } from './EmptyState.js';
 export { EmptyTab } from './EmptyTab.js';
