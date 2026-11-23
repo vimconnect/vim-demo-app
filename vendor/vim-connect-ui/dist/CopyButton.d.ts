@@ -7,6 +7,14 @@ export interface CopyButtonProps {
     onCopy?: (copied: boolean) => void;
     /** Show the word "Copy" beside the icon (a secondary button) instead of the icon-only ghost button. */
     showLabel?: boolean;
+    /** With `showLabel`: the visible text in place of "Copy" ("Copy prompt"); "Copied" still replaces it after a copy. */
+    text?: string;
+    /** With `showLabel`: `secondary` (default), or `primary` when the copy is the surface's main action. */
+    variant?: 'secondary' | 'primary';
+    /** With `showLabel`: a keyboard shortcut drawn as a `Kbd` after the text. */
+    shortcut?: string;
+    /** Show the "Copied" state while true, for a copy made elsewhere (a shortcut); the button's own copies still show it. */
+    copied?: boolean;
     /** `sm` (default) for a value inline in text or a table; `default` beside a field. */
     size?: 'sm' | 'default';
     disabled?: boolean;
@@ -16,9 +24,11 @@ export interface CopyButtonProps {
 /**
  * Copy Button (DS → Copy Button): copies `value`, then shows a check and
  * "Copied" for a moment. Icon-only ghost by default, always with a tooltip and
- * an accessible name; `showLabel` for the text button. When `navigator.clipboard`
+ * an accessible name; `showLabel` for the text button (its `text`, `variant` and
+ * `shortcut` set the words, emphasis and key hint; `copied` shows "Copied" for a
+ * copy a shortcut made). When `navigator.clipboard`
  * is refused it falls back to `execCommand('copy')`. It never throws: when both
  * fail it reports `false` to `onCopy`, where a product can tell the user (the
  * Console toasts).
  */
-export declare function CopyButton({ value, label, onCopy, showLabel, size, disabled, className, 'data-testid': testId, }: CopyButtonProps): import("react/jsx-runtime").JSX.Element;
+export declare function CopyButton({ value, label, onCopy, showLabel, text, variant, shortcut, copied: copiedElsewhere, size, disabled, className, 'data-testid': testId, }: CopyButtonProps): import("react/jsx-runtime").JSX.Element;

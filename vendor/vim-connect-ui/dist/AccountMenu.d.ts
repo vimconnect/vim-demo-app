@@ -5,6 +5,8 @@ export interface AccountMenuProps {
     name: string;
     /** Shown in full in the panel header, and used for the initials when there's no name. */
     email?: string | null;
+    /** A photo URL for the chip's and the panel's avatars (http(s) or `data:image/`); the initials show until it loads, and if it fails. */
+    avatarSrc?: string | null;
     /** The chip's text when it differs from `name` (e.g. a shortened label). Default `name`. */
     chipName?: string;
     /** A second, muted line on the chip after a hairline (the account, a shortened address). */
@@ -33,7 +35,7 @@ export interface AccountMenuProps {
  * Hooks: `data-ui="account-menu"` on the chip, `account-menu-info` on its text and
  * `account-menu-detail` on the hairline + detail, so a product can drop them at narrow widths.
  */
-export declare function AccountMenu({ name, email, chipName, chipDetail, tooltip, label, side, align, width, children, className, }: AccountMenuProps): import("react/jsx-runtime").JSX.Element;
+export declare function AccountMenu({ name, email, avatarSrc, chipName, chipDetail, tooltip, label, side, align, width, children, className, }: AccountMenuProps): import("react/jsx-runtime").JSX.Element;
 /** One group of rows in the Account Menu panel; a hairline separates it from the one before. */
 export declare function AccountMenuSection({ className, ...rest }: React.HTMLAttributes<HTMLDivElement>): import("react/jsx-runtime").JSX.Element;
 type ItemBase = {

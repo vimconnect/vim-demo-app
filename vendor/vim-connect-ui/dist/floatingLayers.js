@@ -12,23 +12,36 @@ const isInside = (layer, ancestor) => {
 };
 /**
  * Registers a floating surface while `open`, so nested ones (a Select's list in a
- * Popover, a Modal opened from one) own their own dismissal: only the top layer
- * answers Escape, and a click inside a layer above counts as inside for the ones below.
+ * Popover, a Modal opened from one) own their own dismissal: only the top layer that
+ * answers Escape gets it, and a click inside a layer above counts as inside for the
+ * ones below. A layer registered with `escape: false` is skipped for Escape; one with
+ * `outsideClick: false` counts as inside only for the layers it was opened from.
  */
-export function useFloatingLayer(open, contains) {
+export function useFloatingLayer(open, contains, { escape = true, outsideClick = true } = {}) {
     const parent = useContext(FloatingLayerContext);
     const containsRef = useRef(contains);
     containsRef.current = contains;
-    const layer = useRef({ contains: (node) => containsRef.current(node), parent }).current;
+    const layer = useRef({
+        contains: (node) => containsRef.current(node),
+        parent,
+        escape,
+        outsideClick,
+    }).current;
     layer.parent = parent;
+    layer.escape = escape;
+    layer.outsideClick = outsideClick;
     const api = useRef({
         layer,
-        /** True while no layer above this one is open. */
-        isTop: () => stack[stack.length - 1] === layer,
+        /** True while open and no layer above this one answers Escape. */
+        isTop: () => {
+            const i = stack.indexOf(layer);
+            return i >= 0 && stack.slice(i + 1).every((l) => !l.escape);
+        },
         /** True when `node` is inside a layer above this one. */
         insideLayerAbove: (node) => {
             const i = stack.indexOf(layer);
-            return i >= 0 && stack.slice(i + 1).some((l) => l.contains(node));
+            return (i >= 0 &&
+                stack.slice(i + 1).some((l) => (l.outsideClick || isInside(l, layer)) && l.contains(node)));
         },
     });
     useEffect(() => {

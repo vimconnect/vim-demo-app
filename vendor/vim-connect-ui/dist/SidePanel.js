@@ -46,7 +46,7 @@ export function SidePanel({ isOpen, onClose, children, width = DEFAULT_WIDTH, sh
     const titleId = useId();
     const [titleCount, setTitleCount] = useState(0);
     const panelRef = useRef(null);
-    const layer = useFloatingLayer(isOpen, (node) => !!panelRef.current?.contains(node));
+    const layer = useFloatingLayer(isOpen, (node) => !!panelRef.current?.contains(node), { escape: closeOnEscape });
     const onCloseRef = useRef(onClose);
     onCloseRef.current = onClose;
     const context = useMemo(() => ({
@@ -61,7 +61,8 @@ export function SidePanel({ isOpen, onClose, children, width = DEFAULT_WIDTH, sh
         if (!isOpen || !closeOnEscape)
             return undefined;
         const onKeyDown = (e) => {
-            if (e.key === 'Escape' && layer.isTop())
+            // An Escape a layer above already handled (defaultPrevented) is not this panel's.
+            if (e.key === 'Escape' && !e.defaultPrevented && layer.isTop())
                 onCloseRef.current();
         };
         window.addEventListener('keydown', onKeyDown);

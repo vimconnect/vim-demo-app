@@ -1,7 +1,8 @@
 'use client';
 import { jsx as _jsx } from "react/jsx-runtime";
 /**
- * Fixed-position panel anchored to a trigger element — moved from the Console
+ * Fixed-position panel anchored to a trigger element, or to a point, rect or
+ * virtual element (`anchor`) — moved from the Console
  * (`components/ui/AnchoredPanel.tsx`, now a re-export) so every product's hover
  * cards and popovers position the same way.
  *
@@ -56,17 +57,41 @@ const VIEWPORT_MARGIN = 8;
 /** Floor for the available-space cap: below this the panel is useless anyway,
  *  so let it overhang rather than collapse to a sliver on a tiny viewport. */
 const MIN_PANEL_HEIGHT = 160;
-export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel, onMouseEnter, onMouseLeave, opaque, className, align = 'center', prefer = 'below', flush, id, tabIndex, onBlur, onKeyDown, role = 'dialog', }) => {
+function rectOf(anchor) {
+    const r = 'getBoundingClientRect' in anchor ? anchor.getBoundingClientRect() : anchor;
+    const width = r.width ?? 0;
+    const height = r.height ?? 0;
+    return { top: r.top, left: r.left, width, height, right: r.left + width, bottom: r.top + height };
+}
+function rectVisible(r) {
+    return r.bottom >= 0 && r.top <= window.innerHeight && r.right >= 0 && r.left <= window.innerWidth;
+}
+export const AnchoredPanel = ({ anchorRef, anchor: virtualAnchor, onDismiss, width, children, ariaLabel, onMouseEnter, onMouseLeave, opaque, className, align = 'center', prefer = 'below', flush, id, tabIndex, onBlur, onKeyDown, role = 'dialog', closeOnEscape = true, closeOnOutsideClick = true, onMouseDown, }) => {
     const panelRef = useRef(null);
-    const layer = useFloatingLayer(true, (node) => !!panelRef.current?.contains(node));
+    const layer = useFloatingLayer(true, (node) => !!panelRef.current?.contains(node), {
+        escape: closeOnEscape,
+        outsideClick: closeOnOutsideClick,
+    });
     const [pos, setPos] = useState(null);
+    // A fresh `anchor` object each render must not re-subscribe the listeners below.
+    const virtualRef = useRef(virtualAnchor);
+    virtualRef.current = virtualAnchor;
+    const anchorRectOf = useCallback(() => {
+        const el = anchorRef?.current;
+        if (el)
+            return el.getBoundingClientRect();
+        return virtualRef.current ? rectOf(virtualRef.current) : null;
+    }, [anchorRef]);
+    const dismissRef = useRef(onDismiss);
+    dismissRef.current = onDismiss;
+    const dismiss = useCallback((reason) => dismissRef.current?.(reason), []);
     const place = useCallback(() => {
-        const anchor = anchorRef.current;
+        const anchorRect = anchorRectOf();
         const panel = panelRef.current;
-        if (!anchor || !panel)
+        if (!anchorRect || !panel)
             return;
-        const anchorRect = anchor.getBoundingClientRect();
         const panelRect = panel.getBoundingClientRect();
+        const panelWidth = width ?? panelRect.width;
         // Keep the preferred side unless the panel overflows it and the other side has more room.
         const spaceBelow = window.innerHeight - anchorRect.bottom - PANEL_GAP - VIEWPORT_MARGIN;
         const spaceAbove = anchorRect.top - PANEL_GAP - VIEWPORT_MARGIN;
@@ -84,9 +109,9 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
         const wanted = align === 'start'
             ? anchorRect.left
             : align === 'end'
-                ? anchorRect.right - width
-                : anchorRect.left + anchorRect.width / 2 - width / 2;
-        const left = Math.min(Math.max(wanted, VIEWPORT_MARGIN), Math.max(VIEWPORT_MARGIN, window.innerWidth - VIEWPORT_MARGIN - width));
+                ? anchorRect.right - panelWidth
+                : anchorRect.left + anchorRect.width / 2 - panelWidth / 2;
+        const left = Math.min(Math.max(wanted, VIEWPORT_MARGIN), Math.max(VIEWPORT_MARGIN, window.innerWidth - VIEWPORT_MARGIN - panelWidth));
         setPos((prev) => prev &&
             prev.top === top &&
             prev.bottom === bottom &&
@@ -95,8 +120,8 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
             prev.maxHeight === maxHeight
             ? prev
             : { top, bottom, left, placement, maxHeight });
-    }, [anchorRef, width, align, prefer]);
-    useLayoutEffect(place, [place]);
+    }, [anchorRectOf, width, align, prefer]);
+    useLayoutEffect(place, [place, virtualAnchor]);
     // Content that arrives after open (a fetch that fills the panel) changes the
     // measured height; without a re-place, an `above` panel keeps the short-open
     // top and grows down through the anchor and off the viewport.
@@ -112,11 +137,11 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
         // Capture phase: runs before a nested list (a Select in this panel) closes and leaves the layer stack.
         const onPointerDown = (event) => {
             const target = event.target;
-            if (panelRef.current?.contains(target) || anchorRef.current?.contains(target))
+            if (panelRef.current?.contains(target) || anchorRef?.current?.contains(target))
                 return;
             if (layer.insideLayerAbove(target))
                 return;
-            onDismiss('outside');
+            dismiss('outside');
         };
         // Capture phase + preventDefault: closes only this panel, not a surrounding Modal.
         // Only the top layer answers, so an open Select inside closes just its list.
@@ -124,13 +149,18 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
             if (event.key !== 'Escape' || !layer.isTop())
                 return;
             event.preventDefault();
-            onDismiss('escape');
+            dismiss('escape');
         };
         // Capture phase also sees inner scrolls; ignore those from the panel and its nested lists.
         const follow = (reason) => {
-            const anchor = anchorRef.current;
-            if (!anchor || !anchor.isConnected || !anchorVisible(anchor)) {
-                onDismiss(reason);
+            const anchor = anchorRef?.current;
+            const visible = anchor
+                ? anchor.isConnected && anchorVisible(anchor)
+                : virtualRef.current
+                    ? rectVisible(rectOf(virtualRef.current))
+                    : false;
+            if (!visible) {
+                dismiss(reason);
                 return;
             }
             place();
@@ -144,8 +174,10 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
             follow('scroll');
         };
         const onResize = () => follow('resize');
-        document.addEventListener('mousedown', onPointerDown, true);
-        document.addEventListener('keydown', onKeyDown, true);
+        if (closeOnOutsideClick)
+            document.addEventListener('mousedown', onPointerDown, true);
+        if (closeOnEscape)
+            document.addEventListener('keydown', onKeyDown, true);
         window.addEventListener('scroll', onScroll, true);
         window.addEventListener('resize', onResize);
         return () => {
@@ -154,7 +186,7 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
             window.removeEventListener('scroll', onScroll, true);
             window.removeEventListener('resize', onResize);
         };
-    }, [anchorRef, onDismiss, layer, place]);
+    }, [anchorRef, dismiss, layer, place, closeOnEscape, closeOnOutsideClick]);
     return createPortal(_jsx("div", { ref: panelRef, id: id, tabIndex: tabIndex, 
         // Focus moving into a layer above (a Modal opened from this panel) isn't leaving it.
         onBlur: (e) => {
@@ -162,7 +194,7 @@ export const AnchoredPanel = ({ anchorRef, onDismiss, width, children, ariaLabel
             if (next instanceof Node && layer.insideLayerAbove(next))
                 return;
             onBlur?.(e);
-        }, onKeyDown: onKeyDown, role: role, "aria-label": ariaLabel, className: cn(SURFACE, opaque && OPAQUE, className), onMouseEnter: onMouseEnter, onMouseLeave: onMouseLeave, style: {
+        }, onKeyDown: onKeyDown, role: role, "aria-label": ariaLabel, className: cn(SURFACE, opaque && OPAQUE, className), onMouseEnter: onMouseEnter, onMouseLeave: onMouseLeave, onMouseDown: onMouseDown, style: {
             position: 'fixed',
             // Rendered off-screen for the first measuring pass so it never flashes
             // at the wrong spot.

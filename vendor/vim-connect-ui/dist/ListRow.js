@@ -13,7 +13,9 @@ import { cn } from './cn.js';
  *
  * Row grid: 40px icon column · body · actions. Icon tile 36px / 10px radius
  * in a cyan, purple or amber tint. Body: name (base, medium) + an inline
- * badge, then one muted metadata line that truncates.
+ * badge, then one muted metadata line that truncates. `iconColumn={false}`
+ * drops the icon column; `selected` keeps the hover tint on (a listbox's
+ * active option); `accent` draws a leading bar in a caller colour.
  *
  * Classes mean the same in Tailwind v3 and v4: arbitrary values on DS tokens
  * only and no `!` important marker.
@@ -41,16 +43,24 @@ const CLICKABLE = [
     'focus-visible:[background:var(--color-cyan-15)] focus-visible:[box-shadow:inset_var(--shadow-focus)]',
 ].join(' ');
 const ROW = [
-    'grid grid-cols-[40px_1fr_auto] items-center gap-[var(--space-md)]',
+    'grid items-center gap-[var(--space-md)]',
     'px-[var(--space-lg)] py-[var(--space-md)] m-0 list-none',
     'border-0 border-b border-solid [border-color:var(--color-border-light)] last:border-b-0',
     '[font-family:var(--font-sans)] [transition:background_120ms] hover:[background:var(--color-cyan-15)]',
 ].join(' ');
+/** A `button` row: no native button chrome, the row's own type and alignment. */
+const BUTTON = 'w-full text-left [font-size:inherit] [color:inherit] [background:none] appearance-none';
+const SELECTED = '[background:var(--color-cyan-15)]';
+const ACCENT = '[box-shadow:inset_3px_0_0_var(--list-row-accent)]';
 const ROW1 = 'flex min-w-0 items-center gap-[8px] text-[length:var(--text-base)] [font-weight:var(--font-medium)] [color:var(--color-text-primary)]';
-const ROW2 = 'mt-[2px] overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--text-xs)] [color:var(--color-text-muted)]';
-export const ListRow = React.forwardRef(function ListRow({ icon, tone, avatar, title, badge, meta, actions, body, as: Tag = 'div', className, onClick, onKeyDown, tabIndex, ...rest }, ref) {
+const ROW2 = 'block mt-[2px] overflow-hidden text-ellipsis whitespace-nowrap text-[length:var(--text-xs)] [color:var(--color-text-muted)]';
+export const ListRow = React.forwardRef(function ListRow({ icon, tone, avatar, title, badge, meta, actions, body, as: Tag = 'div', selected, iconColumn = true, accent, className, style, onClick, onKeyDown, tabIndex, ...rest }, ref) {
+    const isButton = Tag === 'button';
+    // A button holds phrasing content only.
+    const Box = isButton ? 'span' : 'div';
     // The body can hold its own controls (an expanded sub-list), so a click inside it isn't a click on the row.
-    const handleClick = onClick
+    // A button row holds no controls, so the whole of it is the action.
+    const handleClick = onClick && !isButton
         ? (e) => {
             const target = e.target;
             const body = target?.closest?.('[data-list-row-body]');
@@ -58,8 +68,8 @@ export const ListRow = React.forwardRef(function ListRow({ icon, tone, avatar, t
                 return;
             onClick(e);
         }
-        : undefined;
-    const handleKeyDown = onClick
+        : onClick;
+    const handleKeyDown = onClick && !isButton
         ? (e) => {
             onKeyDown?.(e);
             if (e.defaultPrevented || e.currentTarget !== e.target)
@@ -72,12 +82,16 @@ export const ListRow = React.forwardRef(function ListRow({ icon, tone, avatar, t
         : onKeyDown;
     return React.createElement(Tag, {
         ref,
-        className: cn(ROW, onClick && CLICKABLE, className),
+        className: cn(ROW, iconColumn ? 'grid-cols-[40px_1fr_auto]' : 'grid-cols-[1fr_auto]', (onClick || isButton) && CLICKABLE, isButton && BUTTON, selected && SELECTED, accent && ACCENT, className),
+        style: accent ? { ['--list-row-accent']: accent, ...style } : style,
         onClick: handleClick,
         onKeyDown: handleKeyDown,
-        tabIndex: tabIndex ?? (onClick ? 0 : undefined),
+        tabIndex: tabIndex ?? (onClick && !isButton ? 0 : undefined),
+        ...(isButton && { type: 'button' }),
+        ...(selected !== undefined && { 'aria-selected': selected }),
+        ...(selected && { 'data-selected': '' }),
         ...rest,
-    }, _jsxs(_Fragment, { children: [_jsx("div", { className: "flex items-center", children: avatar ?? (icon ? _jsx("span", { className: iconVariants({ tone }), "aria-hidden": "true", children: icon }) : null) }), _jsxs("div", { className: "min-w-0", children: [_jsxs("div", { className: ROW1, children: [_jsx("span", { className: "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap", children: title }), badge] }), meta && _jsx("div", { className: ROW2, children: meta })] }), _jsx("div", { className: "flex shrink-0 items-center gap-[8px]", children: actions }), body != null && body !== false && _jsx("div", { "data-list-row-body": "", className: "col-start-2 col-end-4 min-w-0", children: body })] }));
+    }, _jsxs(_Fragment, { children: [iconColumn && (_jsx(Box, { className: "flex items-center", children: avatar ?? (icon ? _jsx("span", { className: iconVariants({ tone }), "aria-hidden": "true", children: icon }) : null) })), _jsxs(Box, { className: "block min-w-0", children: [_jsxs(Box, { className: ROW1, children: [_jsx("span", { className: "min-w-0 overflow-hidden text-ellipsis whitespace-nowrap", children: title }), badge] }), meta && _jsx(Box, { className: ROW2, children: meta })] }), _jsx(Box, { className: "flex shrink-0 items-center gap-[8px]", children: actions }), body != null && body !== false && _jsx(Box, { "data-list-row-body": "", className: cn('min-w-0', iconColumn ? 'col-start-2 col-end-4' : 'col-start-1 col-end-3'), children: body })] }));
 });
 /**
  * The card that holds list rows: static, shadow-only hover (not one clickable

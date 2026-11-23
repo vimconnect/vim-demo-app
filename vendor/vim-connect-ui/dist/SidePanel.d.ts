@@ -7,7 +7,7 @@ export interface SidePanelProps {
     width?: string;
     /** Dimmed click-to-close backdrop. Default true. */
     showBackdrop?: boolean;
-    /** Close on Escape. Default true. */
+    /** Close on Escape. Default true; `false` also passes Escape to a layer below (a Modal). */
     closeOnEscape?: boolean;
     /** Pixels to clear at the viewport top (e.g. below a top bar). Default 0. */
     topOffset?: number;
