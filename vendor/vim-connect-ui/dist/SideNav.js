@@ -37,7 +37,8 @@ export function SideNav({ brand, collapsed: collapsedProp, onCollapsedChange, li
     return (_jsx(SideNavContext.Provider, { value: { collapsed, Link: linkComponent ?? 'a', variant: 'rail' }, children: _jsxs("div", { "data-ui": "side-nav", "data-collapsed": collapsed || undefined, style: { width: collapsed ? SIDE_NAV_COLLAPSED_WIDTH : SIDE_NAV_WIDTH }, className: cn('group/sidenav relative flex h-full flex-col overflow-visible [transition-property:width]', '[background:var(--color-bg-primary)] border-0 border-r border-solid [border-color:var(--color-border-light)]', '[font-family:var(--font-sans)]', DURATION, className), children: [_jsxs("div", { style: { height: TOP_BAR_HEIGHT }, className: cn('relative flex shrink-0 items-center gap-[var(--space-sm)]', 'border-0 border-b border-solid [border-color:var(--color-border-light)]', "before:pointer-events-none before:absolute before:inset-0 before:content-['']", 'before:[background:radial-gradient(70%_90%_at_26%_50%,color-mix(in_srgb,var(--color-cyan)_20%,transparent),transparent_72%)]', collapsed ? 'justify-center px-[var(--space-md)]' : 'px-[var(--space-lg)]'), children: [_jsx("div", { className: cn('relative z-[1] flex items-center overflow-hidden [transition-property:width]', DURATION, collapsed && 'w-10'), children: brand }), onCollapsedChange && (_jsx(Tooltip, { label: toggleLabel, children: _jsx("button", { type: "button", "data-ui": "side-nav-toggle", "aria-label": toggleLabel, onClick: () => onCollapsedChange(!collapsed), className: cn('absolute right-[-11px] top-1/2 z-10 grid size-[22px] -translate-y-1/2 cursor-pointer place-items-center rounded-full p-0', 'border border-solid [border-color:var(--color-border-medium)] [background:var(--color-bg-card)]', '[color:var(--color-text-muted)] [box-shadow:var(--shadow-md)] opacity-0', 'transition-[opacity,color,border-color,box-shadow] [transition-duration:120ms]', 'group-hover/sidenav:opacity-100 focus-visible:opacity-100 focus-visible:outline-none', 'hover:[color:var(--color-blue)] hover:[border-color:var(--color-cyan)]', 'hover:[box-shadow:0_0_0_3px_var(--color-cyan-15),var(--shadow-md)] focus-visible:[box-shadow:var(--shadow-focus)]'), children: _jsx(Toggle, { "aria-hidden": "true", className: "size-[13px]" }) }) }))] }), _jsx("nav", { "aria-label": ariaLabel, "data-ui": "side-nav-scroll", style: { paddingTop: NAV_PAD_TOP }, className: cn('relative flex-1 overflow-y-auto px-[var(--space-md)] pb-[var(--space-md)]', collapsed ? 'overflow-x-visible' : 'overflow-x-clip', '[&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded [&::-webkit-scrollbar-thumb]:[background:var(--color-border-medium)]'), children: children }), accessory && _jsx("div", { className: "shrink-0", children: accessory }), footer && (_jsx("div", { "data-ui": "side-nav-footer", className: cn('relative shrink-0 border-0 border-t border-solid [border-color:var(--color-border-light)]', 'px-[var(--space-md)] pb-[var(--space-md)] pt-[var(--space-sm)]'), children: _jsx("div", { className: cn('flex items-stretch', collapsed ? 'flex-col gap-[2px]' : 'gap-[var(--space-xs)]'), children: footer }) }))] }) }));
 }
 /** One destination in a `SideNav`: icon, label, the active state. On the rail, the icon with a tooltip. */
-export function SideNavItem({ icon: Icon, label, href, external, active = false, onClick, action, 'data-testid': testId }) {
+export function SideNavItem({ icon: Icon, label, href, external, active: activeProp = false, onClick, action, badge, disabled = false, 'data-testid': testId, }) {
+    const active = activeProp && !disabled;
     const { collapsed, Link, variant, onNavigate } = useContext(SideNavContext);
     const flyout = variant === 'flyout';
     const rail = collapsed && !flyout;
@@ -45,8 +46,12 @@ export function SideNavItem({ icon: Icon, label, href, external, active = false,
         onClick?.();
         onNavigate?.();
     };
-    const inner = cn('flex min-w-0 flex-1 items-center self-stretch bg-transparent border-0 p-0 text-left [color:inherit] no-underline cursor-pointer', '[font:inherit] focus-visible:outline-none', rail ? 'justify-center' : 'gap-[var(--space-md)] px-[10px]', !rail && !flyout && action ? 'pr-[var(--space-xs)]' : undefined);
-    const content = (_jsxs(_Fragment, { children: [_jsx(Icon, { "aria-hidden": "true", className: cn('size-[18px] shrink-0 transition-colors [transition-duration:120ms]', active ? '[color:var(--color-cyan-text)]' : '[color:var(--color-text-muted)] group-hover/item:[color:var(--color-cyan-text)]') }), !rail && _jsx("span", { className: "min-w-0 flex-1 overflow-hidden text-ellipsis", children: label }), !rail && external && _jsx(ArrowUpRight, { "aria-hidden": "true", className: cn('ml-auto shrink-0 opacity-65', flyout ? 'size-3' : 'size-3.5') })] }));
+    const inner = cn('flex min-w-0 flex-1 items-center self-stretch bg-transparent border-0 p-0 text-left [color:inherit] no-underline', disabled ? 'cursor-not-allowed' : 'cursor-pointer', '[font:inherit] focus-visible:outline-none', rail ? 'justify-center' : 'gap-[var(--space-md)] px-[10px]', !rail && !flyout && action ? 'pr-[var(--space-xs)]' : undefined);
+    const content = (_jsxs(_Fragment, { children: [_jsx(Icon, { "aria-hidden": "true", className: cn('size-[18px] shrink-0 transition-colors [transition-duration:120ms]', active
+                    ? '[color:var(--color-cyan-text)]'
+                    : disabled
+                        ? '[color:var(--color-text-muted)]'
+                        : '[color:var(--color-text-muted)] group-hover/item:[color:var(--color-cyan-text)]') }), !rail && _jsx("span", { className: "min-w-0 flex-1 overflow-hidden text-ellipsis", children: label }), !rail && badge && _jsx("span", { className: "ml-auto inline-flex shrink-0 items-center", children: badge }), !rail && external && _jsx(ArrowUpRight, { "aria-hidden": "true", className: cn('ml-auto shrink-0 opacity-65', flyout ? 'size-3' : 'size-3.5') })] }));
     const shared = {
         className: inner,
         'aria-current': active ? 'page' : undefined,
@@ -54,7 +59,10 @@ export function SideNavItem({ icon: Icon, label, href, external, active = false,
         onClick: activate,
     };
     let target;
-    if (href && external) {
+    if (disabled) {
+        target = (_jsx("span", { className: inner, "aria-disabled": "true", "aria-label": rail ? label : undefined, "data-ui": "side-nav-item-disabled", children: content }));
+    }
+    else if (href && external) {
         target = (_jsx("a", { ...shared, href: href, target: "_blank", rel: "noopener noreferrer", children: content }));
     }
     else if (href) {
@@ -63,10 +71,12 @@ export function SideNavItem({ icon: Icon, label, href, external, active = false,
     else {
         target = (_jsx("button", { ...shared, type: "button", "data-ui": "side-nav-item-button", children: content }));
     }
-    return (_jsxs("div", { "data-ui": "side-nav-item", "data-active": active || undefined, "data-testid": testId, className: cn('group/item relative flex h-9 items-center whitespace-nowrap transition-colors [transition-duration:120ms]', 'focus-within:[box-shadow:var(--shadow-focus)]', flyout ? 'rounded-none text-[length:var(--text-base)]' : 'rounded-[var(--radius-md)] text-[length:var(--text-lg)]', active
+    return (_jsxs("div", { "data-ui": "side-nav-item", "data-active": active || undefined, "data-disabled": disabled || undefined, "data-testid": testId, className: cn('group/item relative flex h-9 items-center whitespace-nowrap transition-colors [transition-duration:120ms]', 'focus-within:[box-shadow:var(--shadow-focus)]', flyout ? 'rounded-none text-[length:var(--text-base)]' : 'rounded-[var(--radius-md)] text-[length:var(--text-lg)]', active
             ? '[background:var(--color-cyan-08)] [color:var(--color-cyan-text)] [font-weight:var(--font-semibold)] hover:[background:var(--color-cyan-15)]'
-            : '[color:var(--color-text-secondary)] [font-weight:var(--font-medium)] hover:[background:var(--color-cyan-08)] hover:[color:var(--color-text-primary)]', active && !rail && !flyout &&
-            "before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:rounded-[1px] before:[background:var(--color-cyan)] before:content-['']"), children: [rail ? _jsx(Tooltip, { label: label, children: target }) : target, !rail && !flyout && action && (_jsx("span", { className: "mr-[6px] hidden shrink-0 items-center group-hover/item:inline-flex group-focus-within/item:inline-flex", children: action }))] }));
+            : disabled
+                ? 'select-none opacity-40 [color:var(--color-text-secondary)] [font-weight:var(--font-medium)]'
+                : '[color:var(--color-text-secondary)] [font-weight:var(--font-medium)] hover:[background:var(--color-cyan-08)] hover:[color:var(--color-text-primary)]', active && !rail && !flyout &&
+            "before:absolute before:inset-y-0 before:left-0 before:w-[2px] before:rounded-[1px] before:[background:var(--color-cyan)] before:content-['']"), children: [rail ? _jsx(Tooltip, { label: label, children: target }) : target, !rail && !flyout && action && !disabled && (_jsx("span", { className: "mr-[6px] hidden shrink-0 items-center group-hover/item:inline-flex group-focus-within/item:inline-flex", children: action }))] }));
 }
 /**
  * A labelled, collapsible group of `SideNavItem`s: `--text-2xs` semibold uppercase label with 0.12em

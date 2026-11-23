@@ -110,8 +110,8 @@ const CAPTION_MENU = [
     'absolute top-[calc(100%+4px)] left-0 z-[2]',
     'max-h-[196px] overflow-y-auto p-[var(--space-xs)]',
     'rounded-[var(--radius-md)] border border-solid [border-color:var(--glass-border-raised)]',
-    '[background:color-mix(in_srgb,var(--color-bg-primary)_92%,transparent)]',
-    '[backdrop-filter:var(--glass-blur-md)] [box-shadow:var(--glass-shadow-raised)]',
+    '[background:var(--color-bg-primary)]',
+    '[box-shadow:var(--glass-shadow-raised)]',
     '[&::-webkit-scrollbar]:w-[4px] [&::-webkit-scrollbar-track]:[background:transparent]',
     '[&::-webkit-scrollbar-thumb]:[background:var(--glass-border-base)] [&::-webkit-scrollbar-thumb]:rounded-[var(--radius-full)]',
 ].join(' ');

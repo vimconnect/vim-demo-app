@@ -1,6 +1,6 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import React, { useRef } from 'react';
+import React, { useCallback, useRef } from 'react';
 import { Search, X } from 'lucide-react';
 import { cn } from './cn.js';
 import { Kbd } from './Kbd.js';
@@ -8,13 +8,14 @@ import { Tooltip } from './Tooltip.js';
 import { markLabellable } from './labellable.js';
 export const SearchInput = React.forwardRef(function SearchInput({ value, onChange, shortcut, keyshortcuts, width = 210, onClear, clearLabel = 'Clear search', className, placeholder, disabled, onKeyDown, invalid = false, 'aria-invalid': ariaInvalid, 'aria-label': ariaLabel, ...rest }, forwardedRef) {
     const innerRef = useRef(null);
-    const setRef = (el) => {
+    // Stable across renders, so a caller's callback ref runs on mount and unmount only.
+    const setRef = useCallback((el) => {
         innerRef.current = el;
         if (typeof forwardedRef === 'function')
             forwardedRef(el);
         else if (forwardedRef)
             forwardedRef.current = el;
-    };
+    }, [forwardedRef]);
     const isInvalid = invalid || ariaInvalid === true || ariaInvalid === 'true';
     const clear = () => {
         onChange('');

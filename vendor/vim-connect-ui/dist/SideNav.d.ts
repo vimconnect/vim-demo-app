@@ -52,10 +52,18 @@ export interface SideNavItemProps {
     onClick?: () => void;
     /** A control at the row's end, shown on hover or keyboard focus (a pin toggle). Not on the rail or in its flyout. */
     action?: React.ReactNode;
+    /** A small always-visible tag after the label (a `Badge`, e.g. "soon"). Not on the rail. */
+    badge?: React.ReactNode;
+    /**
+     * A destination that isn't available yet: the DS disabled treatment (40% opacity, not-allowed
+     * cursor, no hover) on a row that is neither a link nor a button and takes no focus
+     * (`aria-disabled="true"`). Pair it with a `badge` that says why ("soon").
+     */
+    disabled?: boolean;
     'data-testid'?: string;
 }
 /** One destination in a `SideNav`: icon, label, the active state. On the rail, the icon with a tooltip. */
-export declare function SideNavItem({ icon: Icon, label, href, external, active, onClick, action, 'data-testid': testId }: SideNavItemProps): import("react/jsx-runtime").JSX.Element;
+export declare function SideNavItem({ icon: Icon, label, href, external, active: activeProp, onClick, action, badge, disabled, 'data-testid': testId, }: SideNavItemProps): import("react/jsx-runtime").JSX.Element;
 export interface SideNavGroupProps {
     label: string;
     /** Stands for the group on the rail, where its items open in a flyout. */
