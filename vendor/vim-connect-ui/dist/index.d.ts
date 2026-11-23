@@ -96,7 +96,7 @@ export type { ToastAccent, ToastIconProps, ToastThemeOptions } from './toast.js'
 export { ErrorPage } from './ErrorPage.js';
 export type { ErrorPageProps, ErrorPageKind } from './ErrorPage.js';
 export { EmptyState, EmptyStateAccent, EmptyStateBlueprint, EMPTY_STATE_BLUEPRINTS } from './EmptyState.js';
-export type { EmptyStateProps, EmptyStateBlueprintProps, EmptyStateBlueprintName } from './EmptyState.js';
+export type { EmptyStateProps, EmptyStateBlueprintProps, EmptyStateBlueprintName, EmptyStateBlueprintSize, } from './EmptyState.js';
 export { EmptyTab } from './EmptyTab.js';
 export type { EmptyTabProps } from './EmptyTab.js';
 export { Toggle } from './Toggle.js';
