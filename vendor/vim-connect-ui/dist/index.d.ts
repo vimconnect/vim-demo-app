@@ -81,7 +81,7 @@ export type { TimeFieldProps } from './TimeField.js';
 export { Modal } from './Modal.js';
 export type { ModalProps, ModalIconTone } from './Modal.js';
 export { Card, CardHeader, cardProps, cardVariants, CARD_TITLE_CLASSES } from './Card.js';
-export type { CardProps, CardHeaderProps, CardVariant, CardHover } from './Card.js';
+export type { CardProps, CardHeaderProps, CardVariant, CardHover, CardSize } from './Card.js';
 export { List, ListRow, listRowIconVariants } from './ListRow.js';
 export type { ListProps, ListRowButtonProps, ListRowContainerProps, ListRowProps, ListRowTone } from './ListRow.js';
 export { Table, TablePagination } from './Table.js';

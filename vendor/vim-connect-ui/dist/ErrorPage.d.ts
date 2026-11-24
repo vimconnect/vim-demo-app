@@ -17,6 +17,8 @@ export interface ErrorPageProps extends Omit<React.HTMLAttributes<HTMLElement>, 
     details?: string;
     /** Fill the viewport as the page's <main> (a route or an app-level crash; default), or sit in the space it's given as a <section> inside the layout's <main>. */
     fullScreen?: boolean;
+    /** The illustration without its ground fill and frame border, for a surface with its own background (as `EmptyState`'s `blueprintTransparent`). */
+    blueprintTransparent?: boolean;
     className?: string;
 }
 /**
@@ -24,4 +26,4 @@ export interface ErrorPageProps extends Omit<React.HTMLAttributes<HTMLElement>, 
  * no connection. The Empty State look with the page's own heading, a plain
  * sentence on what to do, and the action that gets the user out.
  */
-export declare function ErrorPage({ kind, title, description, actions, details, fullScreen, className, ...rest }: ErrorPageProps): import("react/jsx-runtime").JSX.Element;
+export declare function ErrorPage({ kind, title, description, actions, details, fullScreen, blueprintTransparent, className, ...rest }: ErrorPageProps): import("react/jsx-runtime").JSX.Element;

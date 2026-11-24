@@ -20,13 +20,17 @@ import { type VariantProps } from 'class-variance-authority';
 declare const cardVariants: (props?: ({
     variant?: "default" | "gradient" | "extractor" | null | undefined;
     hover?: "none" | "lift" | "shadow" | null | undefined;
+    size?: "default" | "compact" | null | undefined;
 } & import("class-variance-authority/types").ClassProp) | undefined) => string;
 export type CardVariant = NonNullable<VariantProps<typeof cardVariants>['variant']>;
 export type CardHover = NonNullable<VariantProps<typeof cardVariants>['hover']>;
+export type CardSize = NonNullable<VariantProps<typeof cardVariants>['size']>;
 export interface CardProps extends React.HTMLAttributes<HTMLElement> {
     variant?: CardVariant;
     /** Default `none`; use `lift` only when the whole card is one click target. */
     hover?: CardHover;
+    /** `compact` (`--space-md` padding, `--radius-lg`) for small tiles; default is the full card. */
+    size?: CardSize;
     /** Element to render. Default `div`. */
     as?: 'div' | 'section' | 'article' | 'li' | 'ul';
 }
@@ -35,12 +39,14 @@ export interface CardProps extends React.HTMLAttributes<HTMLElement> {
  * menu): spread it on that element. `data-card` is what tests and page CSS select a card by,
  * so never write the attribute or `cardVariants()` by hand.
  */
-export declare function cardProps({ variant, hover, className }?: {
+export declare function cardProps({ variant, hover, size, className, }?: {
     variant?: CardVariant;
     hover?: CardHover;
+    size?: CardSize;
     className?: string;
 }): {
     'data-variant': CardVariant;
+    'data-size': CardSize;
     'data-card': string;
     className: string;
 };

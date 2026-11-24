@@ -39,23 +39,29 @@ const cardVariants = cva([
             shadow: 'hover:[box-shadow:var(--shadow-card-hover)]',
             none: '',
         },
+        /** `compact`: small tiles (a choice card in a narrow panel). Last, so its padding and radius win. */
+        size: {
+            default: '',
+            compact: 'p-[var(--space-md)] rounded-[var(--radius-lg)]',
+        },
     },
-    defaultVariants: { variant: 'default', hover: 'none' },
+    defaultVariants: { variant: 'default', hover: 'none', size: 'default' },
 });
 /**
  * The card's look and hooks for an element `Card` can't render (a link, a form, a `pre`, a
  * menu): spread it on that element. `data-card` is what tests and page CSS select a card by,
  * so never write the attribute or `cardVariants()` by hand.
  */
-export function cardProps({ variant, hover, className } = {}) {
+export function cardProps({ variant, hover, size, className, } = {}) {
     return {
         'data-variant': variant ?? 'default',
+        'data-size': size ?? 'default',
         'data-card': '',
-        className: cn(cardVariants({ variant, hover }), className),
+        className: cn(cardVariants({ variant, hover, size }), className),
     };
 }
-export const Card = React.forwardRef(function Card({ variant, hover, as: Tag = 'div', className, ...rest }, ref) {
-    return React.createElement(Tag, { ref, ...cardProps({ variant, hover, className }), ...rest });
+export const Card = React.forwardRef(function Card({ variant, hover, size, as: Tag = 'div', className, ...rest }, ref) {
+    return React.createElement(Tag, { ref, ...cardProps({ variant, hover, size, className }), ...rest });
 });
 export const CARD_TITLE_CLASSES = 'm-0 [font-family:var(--font-sans)] text-[length:var(--text-xl)] [font-weight:var(--font-semibold)] leading-[1.3] [color:var(--color-text-primary)]';
 export function CardHeader({ title, icon, hint, actions, className, ...rest }) {
