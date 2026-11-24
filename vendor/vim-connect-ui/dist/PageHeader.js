@@ -28,5 +28,5 @@ export const PageHeader = React.forwardRef(function PageHeader({ title, subtitle
     return (_jsxs("header", { ref: ref, "data-ui": "page-header", "data-size": size, className: cn(s.root, 'min-w-0', className), ...rest, children: [breadcrumbs && _jsx("div", { className: "mb-[var(--space-lg)] [&>*]:mb-0", children: breadcrumbs }), _jsxs("div", { className: cn('flex flex-wrap items-start justify-between gap-y-[var(--space-md)]', s.row), children: [_jsxs("div", { className: cn('min-w-0', s.titleCol), children: [_jsxs("div", { className: "flex flex-wrap items-center gap-x-[var(--space-md)] gap-y-[var(--space-sm)]", children: [renderTitle ? renderTitle(heading) : heading, titleAddon] }), subtitle && (_jsx("p", { ...subtitleProps, className: cn(PAGE_SUBTITLE_CLASSES, s.subtitle), children: subtitle }))] }), actions && (
                     // As tall as one title line, so the buttons sit centred on the title,
                     // not on the title + subtitle block.
-                    _jsx("div", { className: cn('flex shrink-0 flex-wrap items-center gap-[var(--space-sm)]', s.actions), children: actions }))] })] }));
+                    _jsx("div", { "data-ui": "page-header-actions", className: cn('flex shrink-0 flex-wrap items-center gap-[var(--space-sm)]', s.actions), children: actions }))] })] }));
 });

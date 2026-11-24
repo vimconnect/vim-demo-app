@@ -52,7 +52,7 @@ import { Toggle } from "@/components/Toggle";
 import { CountBadge } from "@/components/CountBadge";
 import { SectionHeader } from "@/components/SectionHeader";
 import { OverviewCard } from "@/components/OverviewCard";
-import { Activity, ArrowDownToLine, ArrowUpFromLine, Bell, Cpu, PenLine, Radio } from "lucide-react";
+import { Activity, ArrowDownToLine, ArrowUpFromLine, Bell, Cpu, PenLine, Radio, Send } from "lucide-react";
 import { formatManifestVersion } from "@/lib/manifest-version-label";
 import { DeviceAccessControls } from "@/components/DeviceAccessControls";
 import { InPageSearch } from "@/components/InPageSearch";
@@ -68,7 +68,7 @@ import {
   type AppThemeChoice,
   type ColorScheme,
 } from "@/lib/color-scheme";
-import { Accordion, AccordionItem, Badge, Button, Card, CopyButton, Input, KeyValue, KeyValueList, List, ListRow, Modal, SegmentedControl, StatusDot, TabPanel, Tooltip, buttonVariants } from "@vim-connect/ui";
+import { Accordion, AccordionItem, Badge, Button, Card, CopyButton, IconButton, Input, KeyValue, KeyValueList, List, ListRow, Modal, SegmentedControl, StatusDot, TabPanel, Tooltip, buttonVariants } from "@vim-connect/ui";
 
 type LogEntry = {
   timestamp: string;
@@ -2110,7 +2110,7 @@ function AppPageContent() {
       {vimSDK && manifest && (
         <>
           <div className="app-topbar" ref={topbarRef}>
-            <NavTabs view={view} onGetCode={() => setRedirectUrl(DEMO_APP_REPO_URL)} onNavigate={setView} />
+            <NavTabs view={view} onNavigate={setView} />
             <InPageSearch rootSelector="#demo-search-root" open={searchOpen} onOpenChange={setSearchOpen} />
           </div>
           {view !== "main" && <StatusBanner text={statusLine} />}
@@ -2551,6 +2551,15 @@ function AppPageContent() {
                                   >
                                     Update
                                   </Button>
+                                  <IconButton
+                                    variant="secondary"
+                                    size="sm"
+                                    className="update-row-icon-submit"
+                                    label="Update"
+                                    icon={<Send />}
+                                    onClick={() => executeUpdate(updater)}
+                                    disabled={!detected}
+                                  />
                                 </div>
                               </div>
                             );
@@ -2664,7 +2673,7 @@ function AppPageContent() {
                     )}
                     {tooltipText !== appliedTooltipText &&
                       tooltipText.trim() &&
-                      " · press Enter or Set to apply"}
+                      " · Enter to apply"}
                   </p>
                 </div>
 
@@ -3039,6 +3048,19 @@ function AppPageContent() {
                 </div>
               </div>
             </div>
+          </Card>
+
+          <Card as="section" hover="shadow" className="fork-card">
+            <ListRow
+              icon={<GithubIcon />}
+              title="Start from this app"
+              meta="Fork the source and make it yours."
+              actions={
+                <Button variant="secondary" size="sm" onClick={() => setRedirectUrl(DEMO_APP_REPO_URL)}>
+                  Get code
+                </Button>
+              }
+            />
           </Card>
         </div>
 

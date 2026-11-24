@@ -1,6 +1,6 @@
 'use client';
 
-import { IconButton, TabBar } from '@vim-connect/ui';
+import { TabBar } from '@vim-connect/ui';
 
 export type DemoView = 'main' | 'explorer' | 'docs' | 'manifest';
 
@@ -17,7 +17,6 @@ export function GithubIcon({ className = 'nav-icon' }: { className?: string }) {
 
 type NavTabsProps = {
   view: DemoView;
-  onGetCode: () => void;
   onNavigate: (view: DemoView) => void;
 };
 
@@ -25,20 +24,19 @@ type NavTabsProps = {
 export const VIEW_TABS_ID = 'demo-view';
 
 const VIEW_TABS = [
-  { id: 'main', label: 'Overview' },
+  { id: 'main', label: 'Home' },
   { id: 'docs', label: 'Docs' },
   { id: 'manifest', label: 'Manifest' },
-  { id: 'explorer', label: 'Auto runner' },
+  { id: 'explorer', label: 'Auto' },
 ] as const satisfies readonly { id: DemoView; label: string }[];
 
-/** The app's top bar: the view tabs (Overview is the home view) and the GitHub icon button that opens the fork dialog. */
-export function NavTabs({ view, onGetCode, onNavigate }: NavTabsProps) {
+/** The app's top bar: the view tabs (Home is the main view). */
+export function NavTabs({ view, onNavigate }: NavTabsProps) {
   return (
     <div className="nav-bar">
       <div className="nav-bar-tabs">
         <TabBar tabs={VIEW_TABS} activeTab={view} onSelect={onNavigate} ariaLabel="Demo app" idPrefix={VIEW_TABS_ID} compact flush noGap />
       </div>
-      <IconButton size="sm" label="This app's source on GitHub" icon={<GithubIcon />} onClick={onGetCode} />
     </div>
   );
 }

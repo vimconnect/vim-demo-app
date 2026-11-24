@@ -133,13 +133,10 @@ body {
   }
 }
 
-/* Tabs on the left, the GitHub icon button on the right; the TabBar keeps its own underline. */
 .nav-bar {
   display: flex;
   align-items: center;
-  gap: var(--space-xs);
   min-height: var(--nav-tabs-height);
-  padding-right: var(--space-sm);
 }
 
 .nav-bar-tabs {
@@ -163,6 +160,10 @@ body {
   width: 14px;
   height: 14px;
   flex-shrink: 0;
+}
+
+.fork-card {
+  padding: 0;
 }
 
 .status-banner {
@@ -451,6 +452,7 @@ summary:hover .disclosure-chevron {
 
 .docs-link {
   flex-shrink: 0;
+  align-self: center;
   margin-left: auto;
   white-space: nowrap;
 }
@@ -488,6 +490,7 @@ summary:hover .disclosure-chevron {
 
 .verb-badge {
   margin-left: var(--space-xs);
+  padding-bottom: 1px;
 }
 
 /* ── Inputs: DS recipe ─────────────────────────────────────────── */
@@ -526,6 +529,7 @@ summary:hover .disclosure-chevron {
 
 /* ── Operation / updater cards (DS well) ───────────────────────── */
 .updater-card {
+  container-type: inline-size;
   margin-bottom: var(--space-sm);
   padding: var(--space-md);
   border: 1px solid var(--color-border-light);
@@ -600,6 +604,26 @@ summary:hover .disclosure-chevron {
   flex: 1;
 }
 
+.update-row-icon-submit {
+  display: none;
+}
+
+/* Under 340px the row shows the icon button instead of the word. */
+@container (max-width: 340px) {
+  .update-row {
+    flex-wrap: nowrap;
+  }
+
+  .update-row-submit {
+    display: none;
+  }
+
+  .update-row-icon-submit {
+    display: inline-flex;
+    margin-left: auto;
+  }
+}
+
 /* API read cards: the last input shares its row with Run */
 .op-input-row {
   display: flex;
@@ -668,6 +692,22 @@ summary:hover .disclosure-chevron {
 /* ── Code payloads: the shared DS CodeBlock; placement only here ── */
 .code-block {
   margin-top: var(--space-sm);
+}
+
+/* The outer div scrolls; the copy cell is sticky inside it. */
+.code-block > div:has(> pre) {
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+.code-block pre {
+  overflow: visible;
+}
+
+.code-block pre ~ div {
+  position: sticky;
+  top: 0;
+  align-self: flex-start;
 }
 
 .raw-output-code {
@@ -1013,6 +1053,7 @@ body:not(.light-mode) .log-entry.error {
 /* ── Hub controls ──────────────────────────────────────────────── */
 .tooltip-applied {
   margin: var(--space-xs) 0 0;
+  overflow-wrap: anywhere;
   font-size: var(--text-xs);
   color: var(--color-text-muted);
 }
@@ -1508,6 +1549,11 @@ body.light-mode .video-preview {
   min-height: 56px;
   font-size: var(--text-xs);
   resize: vertical;
+}
+
+.xp-container [data-ui="page-header-actions"] {
+  flex-shrink: 1;
+  min-width: 0;
 }
 
 .xp-mode {

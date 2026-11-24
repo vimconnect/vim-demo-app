@@ -28,7 +28,7 @@ export function JsonLines({ lines }: { lines: JsonLine[] }) {
 /** Copy takes `code`, never the notes shown from `lines`. */
 export function CodeBlock({ code, lines, className = '' }: { code: string; lines?: JsonLine[]; className?: string }) {
   return (
-    <SharedCodeBlock code={code} copyLabel="payload" wrap maxHeight="480px" className={`code-block ${className}`}>
+    <SharedCodeBlock code={code} copyLabel="payload" wrap className={`code-block ${className}`}>
       {lines ? <JsonLines lines={lines} /> : undefined}
     </SharedCodeBlock>
   );
