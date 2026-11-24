@@ -24,6 +24,14 @@ export declare const Input: React.ForwardRefExoticComponent<InputProps & React.R
 export interface TextareaProps extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
     /** Error state: red border and ring. Also sets `aria-invalid` (which on its own turns it red too). */
     invalid?: boolean;
+    /**
+     * No field chrome (fill, border, radius, padding, focus ring, minimum height, resize handle): the
+     * text area sits inside a larger field that draws them, such as a chat composer whose pill holds
+     * the text and a send button. The text takes the surrounding font size and colour; the
+     * surrounding field shows focus (`:focus-within`). It draws no invalid state either: with `invalid`,
+     * the surrounding field has to show the error.
+     */
+    bare?: boolean;
 }
 /** Multi-line text field: the same fill, border and focus as `Input`, with its own height. */
 export declare const Textarea: React.ForwardRefExoticComponent<TextareaProps & React.RefAttributes<HTMLTextAreaElement>>;

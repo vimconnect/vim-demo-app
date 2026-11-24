@@ -13,7 +13,7 @@ import { type VariantProps } from 'class-variance-authority';
  * showing the hover pill. Keyboard focus draws the focus ring.
  */
 declare const textLinkVariants: (props?: ({
-    variant?: "default" | "danger" | null | undefined;
+    variant?: "danger" | "default" | null | undefined;
     prose?: boolean | null | undefined;
 } & import("class-variance-authority/types").ClassProp) | undefined) => string;
 export type TextLinkVariant = NonNullable<VariantProps<typeof textLinkVariants>['variant']>;

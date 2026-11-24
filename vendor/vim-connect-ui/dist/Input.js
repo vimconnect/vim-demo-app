@@ -52,8 +52,14 @@ export const Input = React.forwardRef(({ invalid = false, className, type = 'tex
 Input.displayName = 'Input';
 // Keep: lets Field / FormRow tie their label to this control (it forwards id and aria-describedby).
 markLabellable(Input);
+const bareTextarea = [
+    'block w-full m-0 p-0 [box-sizing:border-box] border-0 outline-none shadow-none resize-none',
+    '[background:transparent] [color:inherit] [font-family:var(--font-sans)] [font-size:inherit] [line-height:inherit]',
+    'placeholder:[color:var(--color-text-muted)] placeholder:opacity-100',
+    'disabled:opacity-[0.55] disabled:cursor-not-allowed',
+].join(' ');
 /** Multi-line text field: the same fill, border and focus as `Input`, with its own height. */
-export const Textarea = React.forwardRef(({ invalid = false, className, rows = 3, 'aria-invalid': ariaInvalid, ...props }, ref) => (_jsx("textarea", { ref: ref, rows: rows, "aria-invalid": invalid || ariaInvalid || undefined, className: cn(fieldVariants({ kind: 'textarea', invalid: isInvalid(invalid, ariaInvalid) }), className), "data-ui": "textarea", ...props })));
+export const Textarea = React.forwardRef(({ invalid = false, bare = false, className, rows = 3, 'aria-invalid': ariaInvalid, ...props }, ref) => (_jsx("textarea", { ref: ref, rows: rows, "aria-invalid": invalid || ariaInvalid || undefined, className: cn(bare ? bareTextarea : fieldVariants({ kind: 'textarea', invalid: isInvalid(invalid, ariaInvalid) }), className), "data-ui": "textarea", "data-bare": bare || undefined, ...props })));
 Textarea.displayName = 'Textarea';
 // Keep: lets Field / FormRow tie their label to this control (it forwards id and aria-describedby).
 markLabellable(Textarea);

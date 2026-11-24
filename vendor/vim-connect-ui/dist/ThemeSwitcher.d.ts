@@ -1,14 +1,24 @@
+import { type IconButtonProps } from './IconButton.js';
 import { type Theme, type ThemePreference } from './themeShared.js';
 export interface ThemeSwitcherProps {
     value: ThemePreference;
     onChange: (preference: ThemePreference) => void;
     /** What the OS is set to, so System can say what it's following. */
     systemTheme: Theme;
-    /** The group's accessible name. Default "Theme". */
+    /** The group's accessible name, and the menu trigger's tooltip. Default "Theme". */
     ariaLabel?: string;
+    /**
+     * `segmented` (default): the three icon options side by side, for a menu or settings row.
+     * `menu`: one icon button showing the current choice, opening System / Light / Dark with the
+     * current one checked, for a header of round icon buttons.
+     */
+    variant?: 'segmented' | 'menu';
+    /** The `menu` trigger's size and variant, to match the icon buttons beside it. */
+    size?: IconButtonProps['size'];
+    triggerVariant?: IconButtonProps['variant'];
     className?: string;
 }
-export declare function ThemeSwitcher({ value, onChange, systemTheme, ariaLabel, className }: ThemeSwitcherProps): import("react/jsx-runtime").JSX.Element;
+export declare function ThemeSwitcher({ value, onChange, systemTheme, ariaLabel, variant, size, triggerVariant, className, }: ThemeSwitcherProps): import("react/jsx-runtime").JSX.Element;
 export interface UseThemePreferenceOptions {
     /** localStorage key for the choice. Written only when the user picks. */
     storageKey: string;

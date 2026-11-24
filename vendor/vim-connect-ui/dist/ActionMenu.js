@@ -1,7 +1,7 @@
 'use client';
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React, { useRef } from 'react';
-import { ExternalLink, MoreVertical } from 'lucide-react';
+import { Check, ExternalLink, MoreVertical } from 'lucide-react';
 import { Button } from './Button.js';
 import { Divider } from './Divider.js';
 import { Popover } from './Popover.js';
@@ -17,6 +17,8 @@ const ITEM = [
     'outline-none',
     '[&_svg]:size-[16px] [&_svg]:shrink-0',
 ].join(' ');
+// The check outranks the item's muted icon colour.
+const CHECK = '[&_[data-ui=action-menu-check]]:[color:var(--color-cyan-text)]';
 const ITEM_TONE = {
     normal: '[color:var(--color-text-primary)] [&_svg]:[color:var(--color-text-muted)] hover:[background:var(--color-cyan-10)] focus:[background:var(--color-cyan-10)] [&:hover_svg]:[color:var(--color-cyan-text)] [&:focus_svg]:[color:var(--color-cyan-text)]',
     danger: '[color:var(--color-error-text)] [&_svg]:[color:var(--color-error-text)] hover:[background:color-mix(in_srgb,var(--color-error)_10%,transparent)] focus:[background:color-mix(in_srgb,var(--color-error)_10%,transparent)]',
@@ -33,15 +35,15 @@ export function ActionMenu({ items, label, trigger, size = 'default', align = 'e
             if (entry === ACTION_MENU_DIVIDER) {
                 return (_jsx(Divider, { decorative: false, className: "my-[var(--space-xs)] mx-[var(--space-sm)]" }, `divider-${i}`));
             }
-            const { label: itemLabel, onSelect, icon: Icon, danger, disabled: itemDisabled, disabledReason, external, testId } = entry;
-            const button = (_jsxs("button", { "data-ui": "action-menu-button", type: "button", role: "menuitem", tabIndex: -1, "aria-disabled": itemDisabled || undefined, "data-tone": itemDisabled ? 'disabled' : danger ? 'danger' : 'default', "data-testid": testId, className: cn(ITEM, itemDisabled ? ITEM_TONE.disabled : danger ? ITEM_TONE.danger : ITEM_TONE.normal), onClick: (e) => {
+            const { label: itemLabel, onSelect, icon: Icon, danger, disabled: itemDisabled, disabledReason, external, checked, testId } = entry;
+            const button = (_jsxs("button", { "data-ui": "action-menu-button", type: "button", role: checked === undefined ? 'menuitem' : 'menuitemradio', "aria-checked": checked, tabIndex: -1, "aria-disabled": itemDisabled || undefined, "data-tone": itemDisabled ? 'disabled' : danger ? 'danger' : 'default', "data-testid": testId, className: cn(ITEM, itemDisabled ? ITEM_TONE.disabled : danger ? ITEM_TONE.danger : ITEM_TONE.normal, CHECK), onClick: (e) => {
                     e.stopPropagation();
                     if (itemDisabled)
                         return;
                     close();
                     triggerRef.current?.focus();
                     onSelect();
-                }, children: [Icon && _jsx(Icon, { "aria-hidden": "true" }), _jsx("span", { className: "min-w-0 flex-1 truncate", children: itemLabel }), external && _jsx(ExternalLink, { "aria-hidden": "true", className: "ml-auto" })] }));
+                }, children: [Icon && _jsx(Icon, { "aria-hidden": "true" }), _jsx("span", { className: "min-w-0 flex-1 truncate", children: itemLabel }), external && _jsx(ExternalLink, { "aria-hidden": "true", className: "ml-auto" }), checked && _jsx(Check, { "aria-hidden": "true", "data-ui": "action-menu-check", className: "ml-auto" })] }));
             return (_jsx(React.Fragment, { children: itemDisabled && disabledReason ? _jsx(Tooltip, { label: disabledReason, children: button }) : button }, `${i}-${itemLabel}`));
         }) }));
     const setTrigger = (el) => {

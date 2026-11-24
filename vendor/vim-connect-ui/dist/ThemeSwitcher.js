@@ -2,12 +2,16 @@
 import { jsx as _jsx } from "react/jsx-runtime";
 import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import { Monitor, Moon, Sun } from 'lucide-react';
+import { ActionMenu } from './ActionMenu.js';
+import { IconButton } from './IconButton.js';
 import { SegmentedControl } from './SegmentedControl.js';
 import { THEME_SYSTEM_FALLBACK, applyBodyLightMode, getSystemTheme, systemMedia, } from './themeShared.js';
 /**
  * Theme switcher — vim-ai `Design System.html` → Segmented Control → "Theme
  * switcher" (plugin 1.0.19): the one control for choosing a theme in every
- * product. The icon variant of `SegmentedControl`, three options in this order:
+ * product. `variant="menu"` (plugin 1.0.130) is the compact form for a header of round icon
+ * buttons: one button showing the current choice, opening the same three as a checked menu.
+ * The default is the icon variant of `SegmentedControl`, three options in this order:
  * System (monitor, the default), Light (sun), Dark (moon). System follows the
  * OS, live; its tooltip and screen-reader name say what it's following
  * ("System (dark)", "Follow system theme, currently dark"). The glyph of the
@@ -26,7 +30,17 @@ import { THEME_SYSTEM_FALLBACK, applyBodyLightMode, getSystemTheme, systemMedia,
  */
 /** A layout effect in the browser (runs before paint), a no-op effect on the server. */
 const useClientLayoutEffect = typeof window === 'undefined' ? useEffect : useLayoutEffect;
-export function ThemeSwitcher({ value, onChange, systemTheme, ariaLabel = 'Theme', className }) {
+const PREFERENCE_ICON = { system: Monitor, light: Sun, dark: Moon };
+export function ThemeSwitcher({ value, onChange, systemTheme, ariaLabel = 'Theme', variant = 'segmented', size, triggerVariant, className, }) {
+    if (variant === 'menu') {
+        const Current = PREFERENCE_ICON[value];
+        const current = value === 'system' ? `System (${systemTheme})` : value === 'light' ? 'Light' : 'Dark';
+        return (_jsx(ActionMenu, { label: ariaLabel, width: 180, trigger: _jsx(IconButton, { className: className, size: size, variant: triggerVariant, label: `${ariaLabel}: ${current}`, icon: _jsx(Current, {}), "data-theme-switcher": "menu" }), items: [
+                { label: `System (${systemTheme})`, icon: Monitor, checked: value === 'system', onSelect: () => onChange('system') },
+                { label: 'Light', icon: Sun, checked: value === 'light', onSelect: () => onChange('light') },
+                { label: 'Dark', icon: Moon, checked: value === 'dark', onSelect: () => onChange('dark') },
+            ] }));
+    }
     return (_jsx(SegmentedControl, { variant: "icon", ariaLabel: ariaLabel, value: value, onChange: onChange, className: className, options: [
             {
                 value: 'system',

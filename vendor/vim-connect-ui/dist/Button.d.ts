@@ -10,7 +10,7 @@ import { type VariantProps } from 'class-variance-authority';
  * only (no theme names such as `font-sans`) and no `!` important marker.
  */
 declare const buttonVariants: (props?: ({
-    variant?: "accent" | "dashed" | "danger" | "primary" | "secondary" | "ghost" | "ghost-danger" | null | undefined;
+    variant?: "accent" | "primary" | "secondary" | "dashed" | "danger" | "ghost" | "ghost-danger" | null | undefined;
     size?: "sm" | "lg" | "default" | null | undefined;
     iconOnly?: boolean | null | undefined;
 } & import("class-variance-authority/types").ClassProp) | undefined) => string;

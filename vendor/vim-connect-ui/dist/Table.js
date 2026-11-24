@@ -8,7 +8,7 @@ import { assignRef } from './assignRef.js';
 import { PAGE_SIZE_OPTIONS } from './paginationShared.js';
 import { useVirtualRows } from './useVirtualRows.js';
 /** Elements that handle their own click, so a click on one never also opens its row. */
-const INTERACTIVE = 'a[href], button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="tab"], [contenteditable="true"]';
+const INTERACTIVE = 'a[href], button, input, select, textarea, label, summary, [role="button"], [role="link"], [role="checkbox"], [role="switch"], [role="menuitem"], [role="menuitemradio"], [role="tab"], [contenteditable="true"]';
 const ROW_BASE = 'flex items-center gap-[16px] px-[20px]'; // keep in step with GAP / PAD_X
 const HEADER_ROW = `${ROW_BASE} py-[10px]`;
 const BODY_ROW = [

@@ -21,7 +21,8 @@ export interface PopoverProps extends Omit<React.HTMLAttributes<HTMLElement>, 'c
     /** Classes on the panel. */
     panelClassName?: string;
     /** `menu`: a list of actions (`ActionMenu`) — the menu keyboard model too: ↑ ↓ (wrapping), Home, End
-     *  move between `[role="menuitem"]` elements, and Tab closes and continues from the trigger. Default `dialog`. */
+     *  move between `[role="menuitem"]` and `[role="menuitemradio"]` elements, and Tab closes and continues from
+     *  the trigger. Default `dialog`. */
     panelRole?: 'dialog' | 'menu';
     /** A wrapper's ref (e.g. `Tooltip`'s): passed to the trigger, as are its other props. Handlers chain,
      *  `className` and `aria-describedby` join; for any other prop both set, the trigger's wins. */

@@ -78,7 +78,7 @@ export function Popover({ children, content, label, width = 280, align = 'start'
                     if (e.defaultPrevented)
                         return;
                     if (panelRole === 'menu') {
-                        const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"]'));
+                        const items = Array.from(e.currentTarget.querySelectorAll('[role="menuitem"], [role="menuitemradio"]'));
                         const i = items.indexOf(document.activeElement);
                         const go = (n) => {
                             e.preventDefault();

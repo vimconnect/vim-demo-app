@@ -13,6 +13,12 @@ export interface ActionMenuItem {
     disabledReason?: string;
     /** Opens a new tab: a trailing external-link icon. */
     external?: boolean;
+    /**
+     * One of a set of choices (a theme, a sort order): set on every item of the set, true on the
+     * one in effect. The item becomes a `menuitemradio` with `aria-checked`, and the checked one
+     * shows a trailing check.
+     */
+    checked?: boolean;
     testId?: string;
 }
 export type ActionMenuEntry = ActionMenuItem | typeof ACTION_MENU_DIVIDER;
