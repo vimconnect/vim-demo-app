@@ -117,8 +117,8 @@ describe('Dockerfile', () => {
   });
 
   it('ends on a production alias so an untargeted build yields the production image', () => {
-    const froms = [...dockerfile().matchAll(/^FROM\s+(\S+)\s+AS\s+(\S+)\s*$/gm)];
-    expect(froms[froms.length - 1]![1]).toBe('runner');
+    const froms = [...dockerfile().matchAll(/^FROM\s+(\S+)(?:\s+AS\s+(\S+))?\s*$/gm)];
+    expect(froms[froms.length - 1]!.slice(1, 3)).toEqual(['runner', 'default-production-image']);
   });
 
   it('derives runner-preview from runner and runs the agent as the non-root user', () => {

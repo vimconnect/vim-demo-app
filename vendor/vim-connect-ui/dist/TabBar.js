@@ -22,8 +22,9 @@ export const tabPanelId = (idPrefix, tabId) => `${idPrefix}-panel-${tabId}`;
 const tabBarVariants = cva([
     'tab-nav group/tabbar flex',
     // overflow-x alone computes overflow-y to auto; the tab's 2px underline
-    // plus mb-[-1px] then leaves a 1px vertical scroll gutter.
-    'sticky top-0 z-[20] overflow-x-auto overflow-y-hidden',
+    // plus mb-[-1px] then leaves a 1px vertical scroll gutter. pb-px keeps the
+    // underline inside the clip box.
+    'sticky top-0 z-[20] overflow-x-auto overflow-y-hidden pb-px',
     // border-0 first: without Tailwind's preflight (the extension side panel) the other sides default to a 3px currentColor border.
     'border-0 border-b border-solid [border-bottom-color:var(--color-border-light)]',
     'rounded-[var(--radius-md)_var(--radius-md)_0_0]',

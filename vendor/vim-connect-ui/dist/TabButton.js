@@ -30,12 +30,11 @@ const tabButtonVariants = cva([
     // Compact strip (parent `data-compact` / `.tab-nav--compact`): tighter padding, semibold secondary.
     'group-data-[compact]/tabbar:px-[12px] group-data-[compact]/tabbar:py-[9px]',
     'group-data-[compact]/tabbar:[font-weight:var(--font-semibold)]',
-    'group-data-[compact]/tabbar:[--tab-fg:var(--color-text-secondary)]',
 ].join(' '), {
     variants: {
         active: {
             false: [
-                '[--tab-fg:var(--color-text-muted)]',
+                '[--tab-fg:var(--color-text-muted)] group-data-[compact]/tabbar:[--tab-fg:var(--color-text-secondary)]',
                 '[--tab-fg-hover:var(--color-text-primary)]',
                 '[--tab-underline-hover:var(--color-cyan-30)]',
             ].join(' '),

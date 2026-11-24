@@ -23,7 +23,8 @@ const APP_ICON_PALETTE = [
 /**
  * The flat fill for each gradient above, same index and so the same hue per app:
  * the gradient's end stop. The shared `AppIcon` (`@vim-connect/ui`) draws flat;
- * the gradients stay for the surfaces not yet moved onto it (the Hub included).
+ * the gradients stay for surfaces not yet moved onto it. Hub overlay tiles do not
+ * use this palette — they recolour a silhouette / initials from tile status CSS.
  */
 const APP_ICON_SOLID = ['#5390D9', '#8B5CF6', '#10b981', '#f59e0b', '#ef4444', '#3b82f6'];
 export const paletteFor = (id) => APP_ICON_PALETTE[hashString(id) % APP_ICON_PALETTE.length];
