@@ -81,6 +81,8 @@ export { CopyButton } from './CopyButton.js';
 export { COPIED_MS } from './copyButtonShared.js';
 export { copyText } from './copyText.js';
 export { CodeBlock } from './CodeBlock.js';
+export { AssistantOrb } from './AssistantOrb.js';
+export { ASSISTANT_ORB_MORPH_MS } from './assistantOrbShared.js';
 export { Skeleton, SkeletonListPage, SkeletonGridPage, SkeletonDetailPage, SkeletonTablePage } from './Skeleton.js';
 export { ProgressBar } from './ProgressBar.js';
 export { SectionIconBadge } from './SectionIconBadge.js';
