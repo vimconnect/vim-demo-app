@@ -1,6 +1,7 @@
 'use client';
 
-import { TabBar } from '@vim-connect/ui';
+import { TabBar, type TabBarItem } from '@vim-connect/ui';
+import { BoltIcon, BookmarkIcon, HomeIcon, ViewCodeIcon } from '@vim-connect/ui/icons';
 
 export type DemoView = 'main' | 'explorer' | 'docs' | 'manifest';
 
@@ -24,11 +25,11 @@ type NavTabsProps = {
 export const VIEW_TABS_ID = 'demo-view';
 
 const VIEW_TABS = [
-  { id: 'main', label: 'Home' },
-  { id: 'docs', label: 'Docs' },
-  { id: 'manifest', label: 'Manifest' },
-  { id: 'explorer', label: 'Auto' },
-] as const satisfies readonly { id: DemoView; label: string }[];
+  { id: 'main', label: 'Home', icon: HomeIcon },
+  { id: 'docs', label: 'Docs', icon: BookmarkIcon },
+  { id: 'manifest', label: 'Manifest', icon: ViewCodeIcon },
+  { id: 'explorer', label: 'Auto', icon: BoltIcon },
+] as const satisfies readonly TabBarItem<DemoView>[];
 
 /** The app's top bar: the view tabs (Home is the main view). */
 export function NavTabs({ view, onNavigate }: NavTabsProps) {

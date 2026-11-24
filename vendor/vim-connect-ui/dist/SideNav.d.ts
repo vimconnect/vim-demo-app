@@ -7,6 +7,20 @@ export type SideNavLinkProps = React.AnchorHTMLAttributes<HTMLAnchorElement> & {
 export type SideNavLinkComponent = React.ComponentType<SideNavLinkProps>;
 /** Whether the nav is on its icon rail, for content a product puts in it. */
 export declare function useSideNavCollapsed(): boolean;
+export interface SideNavScopeProps {
+    /** On its icon rail. Default false. */
+    collapsed?: boolean;
+    /** The product's router link. Default: a plain `<a>`. */
+    linkComponent?: SideNavLinkComponent;
+    children: React.ReactNode;
+}
+/**
+ * Hosts `SideNavItem` / `SideNavGroup` outside a full `SideNav` chrome — a themed
+ * shell that still needs shared group collapse and rail flyout behaviour.
+ * Sticky groups are not supported here: their stuck observer needs
+ * `data-ui="side-nav-scroll"` from `SideNav`.
+ */
+export declare function SideNavScope({ collapsed, linkComponent, children }: SideNavScopeProps): import("react/jsx-runtime").JSX.Element;
 export interface SideNavProps {
     /** The product lockup. On the rail it is clipped to its first 40px, so the icon comes first. */
     brand: React.ReactNode;

@@ -156,6 +156,17 @@ body {
   display: none;
 }
 
+/* The tabs share the whole bar, each growing with its label; a panel too narrow for them still scrolls. */
+.nav-bar-tabs [data-ui="tab-bar"] {
+  flex: 1;
+  min-width: 0;
+}
+
+.nav-bar-tabs [data-ui="tab-bar"] .tab-item {
+  flex: 1 1 auto;
+  justify-content: center;
+}
+
 .nav-icon {
   width: 14px;
   height: 14px;

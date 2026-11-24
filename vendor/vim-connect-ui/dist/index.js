@@ -106,7 +106,7 @@ export { VIM_HEART_PATH } from './vimHeart.js';
 export { VimLogo } from './VimLogo.js';
 export { AppShell } from './AppShell.js';
 export { SIDE_NAV_WIDTH, SIDE_NAV_COLLAPSED_WIDTH, TOP_BAR_HEIGHT } from './appShellShared.js';
-export { SideNav, SideNavItem, SideNavGroup, SideNavFooterItem, useSideNavCollapsed } from './SideNav.js';
+export { SideNav, SideNavScope, SideNavItem, SideNavGroup, SideNavFooterItem, useSideNavCollapsed } from './SideNav.js';
 export { TopBar } from './TopBar.js';
 export { Banner } from './Banner.js';
 export { CountryFlag, useCountryFlagResolver } from './CountryFlag.js';

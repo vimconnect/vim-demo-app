@@ -15,6 +15,15 @@ const SideNavContext = createContext({ collapsed: false, Link: 'a', variant: 'ra
 export function useSideNavCollapsed() {
     return useContext(SideNavContext).collapsed;
 }
+/**
+ * Hosts `SideNavItem` / `SideNavGroup` outside a full `SideNav` chrome — a themed
+ * shell that still needs shared group collapse and rail flyout behaviour.
+ * Sticky groups are not supported here: their stuck observer needs
+ * `data-ui="side-nav-scroll"` from `SideNav`.
+ */
+export function SideNavScope({ collapsed = false, linkComponent, children }) {
+    return (_jsx(SideNavContext.Provider, { value: { collapsed, Link: linkComponent ?? 'a', variant: 'rail' }, children: children }));
+}
 /** The nav's top padding, and how far a stuck group tucks its label's top padding under the rail's edge. */
 const NAV_PAD_TOP = 6;
 const STICKY_TUCK = 7;
@@ -204,7 +213,7 @@ export function SideNavGroup({ label, icon: Icon, active = false, open: openProp
                                     zIndex: zFloatingPanel(),
                                 }, className: cn(FLOATING_SURFACE, 'fixed min-w-[200px] overflow-y-auto py-[var(--space-sm)]'), children: [_jsx("div", { className: cn('mb-[var(--space-xs)] px-[var(--space-md)] pb-[var(--space-sm)] pt-[var(--space-xs)]', 'text-[length:var(--text-xs)] [font-weight:var(--font-semibold)] uppercase tracking-[0.05em] [color:var(--color-text-muted)]', 'border-0 border-b border-solid [border-color:var(--color-border-light)]'), children: label }), _jsx(FloatingLayerContext.Provider, { value: flyoutLayer.layer, children: _jsx(SideNavContext.Provider, { value: { ...ctx, collapsed: false, variant: 'flyout', onNavigate: () => setFlyoutOpen(false) }, children: children }) })] }), document.body)] })] }));
     }
-    return (_jsxs(_Fragment, { children: [sentinel, _jsxs("div", { "data-ui": "side-nav-group", "data-open": open || undefined, "data-stuck": stuck || undefined, "data-testid": testId, className: cn('mt-[5px]', stickyClass, stuckClass), style: stickyStyle, children: [_jsxs("button", { type: "button", "data-ui": "side-nav-group-label", onClick: () => setOpen(!open), "aria-expanded": open, "aria-controls": contentId, className: cn('flex w-full cursor-pointer select-none items-center justify-between bg-transparent text-left', 'pb-[10px] pl-[10px] pr-[6px] pt-[15px] border-0 border-t border-solid [border-color:var(--color-border-medium)]', 'text-[length:var(--text-2xs)] [font-weight:var(--font-semibold)] uppercase tracking-[0.12em] [font-family:var(--font-sans)]', 'transition-colors [transition-duration:120ms] focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-focus)]', active ? '[color:var(--color-cyan-text)]' : '[color:var(--color-text-muted)] hover:[color:var(--color-text-secondary)]'), children: [_jsx("span", { children: label }), _jsx(ChevronDown, { "aria-hidden": "true", className: cn('size-3.5 shrink-0 transition-transform [transition-duration:200ms] motion-reduce:transition-none', !open && '-rotate-90') })] }), _jsx("div", { id: contentId, hidden: !open, className: "mt-[2px] flex flex-col gap-px", children: children })] })] }));
+    return (_jsxs(_Fragment, { children: [sentinel, _jsxs("div", { "data-ui": "side-nav-group", "data-open": open || undefined, "data-stuck": stuck || undefined, "data-testid": testId, className: cn('mt-[5px]', stickyClass, stuckClass), style: stickyStyle, children: [_jsxs("button", { type: "button", "data-ui": "side-nav-group-label", onClick: () => setOpen(!open), "aria-expanded": open, "aria-controls": contentId, className: cn('flex w-full cursor-pointer select-none items-center justify-between bg-transparent text-left', 'pb-[10px] pl-[10px] pr-[6px] pt-[15px] border-0 border-t border-solid [border-color:var(--color-border-medium)]', 'text-[length:var(--text-2xs)] [font-weight:var(--font-semibold)] uppercase tracking-[0.12em] [font-family:var(--font-sans)]', 'transition-colors [transition-duration:120ms] focus-visible:outline-none focus-visible:[box-shadow:var(--shadow-focus)]', active ? '[color:var(--color-cyan-text)]' : '[color:var(--color-text-muted)] hover:[color:var(--color-text-secondary)]'), children: [_jsx("span", { children: label }), _jsx(ChevronDown, { "aria-hidden": "true", className: cn('size-3.5 shrink-0 transition-transform [transition-duration:200ms] motion-reduce:transition-none', !open && '-rotate-90') })] }), _jsx("div", { id: contentId, hidden: !open, className: cn(open && 'mt-[2px] flex flex-col gap-px'), children: children })] })] }));
 }
 /** A small action in the `SideNav` footer (help, what's new): `--text-xs`, a 15px icon. Icon-only with a tooltip on the rail. */
 export function SideNavFooterItem({ icon: Icon, label, href, onClick, indicator, className, iconClassName }) {
