@@ -6,7 +6,7 @@ import React from 'react';
  * popover above it (below when there's no room), clamped inside the viewport.
  *
  * Look: `--color-bg-primary`, `--color-border-medium` hairline, `--radius-md`,
- * `--space-md` `--space-lg` padding, 12px text, and the `--shadow-card-hover-tight` glow.
+ * `--space-sm` `--space-md` padding, 12px text, and the `--shadow-card-hover-tight` glow.
  * `wrap` lets long content run onto several lines, up to 380px wide.
  *
  * Tailwind on the shared tokens (the `write-ui-component` recipe), v3/v4-safe.

@@ -177,9 +177,13 @@
   --vc-scrim: rgba(15, 23, 42, 0.45);
   --vc-ink: #000;
   --shadow-xl: 0 8px 16px 0 rgba(0, 0, 0, 0.7);
-  --shadow-focus: 0 0 0 3px rgba(108, 205, 239, 0.25);
-  --shadow-glow: 0 0 20px rgba(108, 205, 239, 0.25);
-  --shadow-glow-hover: 0 0 35px rgba(108, 205, 239, 0.35), 0 0 70px rgba(176, 181, 255, 0.2);
+  --shadow-focus: var(--shadow-focus-ds);
+  --shadow-glow: var(--shadow-glow-ds);
+  --shadow-glow-hover: var(--shadow-glow-hover-ds);
+  /* Fixed vim-ai values; unlike the unsuffixed tokens, body.light-mode does not override these. */
+  --shadow-focus-ds: 0 0 0 3px rgba(108, 205, 239, 0.25);
+  --shadow-glow-ds: 0 0 20px rgba(108, 205, 239, 0.25);
+  --shadow-glow-hover-ds: 0 0 35px rgba(108, 205, 239, 0.35), 0 0 70px rgba(176, 181, 255, 0.2);
   --shadow-card: 0 0 25px rgba(108, 205, 239, 0.12);
 
   /* Text link — the hover recipe for an inline text link that isn't a
@@ -312,6 +316,8 @@
   --shadow-card-hover: 0 20px 60px rgba(16, 171, 228, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
   /* Scaled-down --shadow-card-hover for small floating surfaces (the shared Tooltip). */
   --shadow-card-hover-tight: 0 2px 10px rgba(16, 171, 228, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  /* Soft: for a grid of small cards (a dashboard, a directory) where the full 60px glow is too heavy. Border stays as is. */
+  --shadow-card-hover-soft: 0 10px 32px rgba(16, 171, 228, 0.24);
   --glass-shadow-float:  0 20px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
 
   --glass-tint-cyan:   rgba(72, 191, 227, 0.06);
@@ -417,6 +423,7 @@ body.light-mode {
   --glass-shadow-raised: 0 4px 16px rgba(0, 0, 0, 0.10), 0 8px 32px rgba(0, 0, 0, 0.08), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --shadow-card-hover: 0 4px 16px rgba(16, 171, 228, 0.14), 0 8px 32px rgba(16, 171, 228, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
   --shadow-card-hover-tight: 0 2px 10px rgba(16, 171, 228, 0.28), 0 1px 4px rgba(16, 171, 228, 0.20), inset 0 1px 0 rgba(255, 255, 255, 0.92);
+  --shadow-card-hover-soft: 0 4px 16px rgba(16,171,228,0.14), 0 8px 32px rgba(16,171,228,0.12);
   --glass-shadow-float:  0 8px 32px rgba(0, 0, 0, 0.14), 0 20px 56px rgba(0, 0, 0, 0.10), inset 0 1px 0 rgba(255, 255, 255, 1.00);
 
   /* Assistant Orb, light */

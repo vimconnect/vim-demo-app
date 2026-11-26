@@ -97,16 +97,27 @@ const buttonVariants = cva([
             true: '',
             false: '',
         },
+        // Pill radius is half the size's height (default 16, sm 12, lg 20): change them with the heights.
+        shape: {
+            default: '',
+            pill: [
+                '[transition:border-radius_0.7s_cubic-bezier(0.34,1.7,0.5,1),transform_var(--transition-base),box-shadow_var(--transition-base),background_var(--transition-base),border-color_var(--transition-base),color_var(--transition-base),opacity_var(--transition-base),filter_var(--transition-base)]',
+                'hover:rounded-[var(--radius-md)] motion-reduce:[transition:none]',
+            ].join(' '),
+        },
     },
     compoundVariants: [
+        { shape: 'pill', size: 'default', class: 'rounded-[16px]' },
+        { shape: 'pill', size: 'sm', class: 'rounded-[12px]' },
+        { shape: 'pill', size: 'lg', class: 'rounded-[20px]' },
         { iconOnly: true, size: 'default', class: 'p-[8px]' },
         { iconOnly: true, size: 'sm', class: 'p-[5px]' },
         { iconOnly: true, size: 'lg', class: 'p-[12px]' },
     ],
-    defaultVariants: { variant: 'primary', size: 'default', iconOnly: false },
+    defaultVariants: { variant: 'primary', size: 'default', iconOnly: false, shape: 'default' },
 });
-export const Button = React.forwardRef(({ variant = 'primary', size = 'default', iconOnly = false, type = 'button', className, children, ...props }, ref) => {
-    return (_jsx("button", { ref: ref, type: type, className: cn(buttonVariants({ variant, size, iconOnly }), className), "data-ui": "button", "data-variant": variant, "data-size": size, "data-icon-only": iconOnly ? '' : undefined, ...props, children: children }));
+export const Button = React.forwardRef(({ variant = 'primary', size = 'default', shape = 'default', iconOnly = false, type = 'button', className, children, ...props }, ref) => {
+    return (_jsx("button", { ref: ref, type: type, className: cn(buttonVariants({ variant, size, iconOnly, shape }), className), "data-ui": "button", "data-variant": variant, "data-size": size, "data-shape": shape === 'pill' ? 'pill' : undefined, "data-icon-only": iconOnly ? '' : undefined, ...props, children: children }));
 });
 Button.displayName = 'Button';
 export { buttonVariants };

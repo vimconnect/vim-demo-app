@@ -27,7 +27,7 @@ export type { SearchInputProps } from './SearchInput.js';
 export { Badge, badgeVariants } from './Badge.js';
 export type { BadgeProps, BadgeSize, BadgeVariant } from './Badge.js';
 export { Button, buttonVariants } from './Button.js';
-export type { ButtonProps, ButtonSize, ButtonVariant } from './Button.js';
+export type { ButtonProps, ButtonShape, ButtonSize, ButtonVariant } from './Button.js';
 export { IconButton } from './IconButton.js';
 export type { IconButtonProps } from './IconButton.js';
 export { TextLink, textLinkVariants } from './TextLink.js';

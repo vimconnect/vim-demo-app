@@ -6,7 +6,7 @@
  *  `packages/ui/src/tooltipShared.tsx`), or the bubble renders unstyled. */
 export const TOOLTIP_BUBBLE_CLASS = [
     'fixed z-[var(--z-tooltip,3000)] pointer-events-none',
-    'px-[var(--space-lg)] py-[var(--space-md)] rounded-[var(--radius-md)]',
+    'px-[var(--space-md)] py-[var(--space-sm)] rounded-[var(--radius-md)]',
     '[background:var(--color-bg-primary)] [color:var(--color-text-primary)]',
     'border border-solid [border-color:var(--color-border-medium)] [box-shadow:var(--shadow-card-hover-tight)]',
     '[font-family:var(--font-sans)] text-[length:var(--text-sm)] leading-[1.4]',

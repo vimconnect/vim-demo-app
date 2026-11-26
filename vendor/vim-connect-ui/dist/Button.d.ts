@@ -13,12 +13,16 @@ declare const buttonVariants: (props?: ({
     variant?: "accent" | "primary" | "secondary" | "dashed" | "danger" | "ghost" | "ghost-danger" | null | undefined;
     size?: "sm" | "lg" | "default" | null | undefined;
     iconOnly?: boolean | null | undefined;
+    shape?: "default" | "pill" | null | undefined;
 } & import("class-variance-authority/types").ClassProp) | undefined) => string;
 export type ButtonVariant = NonNullable<VariantProps<typeof buttonVariants>['variant']>;
 export type ButtonSize = NonNullable<VariantProps<typeof buttonVariants>['size']>;
+export type ButtonShape = NonNullable<VariantProps<typeof buttonVariants>['shape']>;
 export interface ButtonProps extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, 'color'> {
     variant?: ButtonVariant;
     size?: ButtonSize;
+    /** `pill`: full pill at rest, settles to the 8px corner on hover (DS `.btn-pill`). One standalone call to action; not for toolbars or paired buttons. */
+    shape?: ButtonShape;
     /** Square icon-only control — keeps the variant paint; always pass `aria-label`. */
     iconOnly?: boolean;
 }
