@@ -8,7 +8,7 @@
 /* DS tokens the shared file is missing, or has drifted from. DS value wins. */
 :root {
   /* DS .card--hover-shadow glow (console tokens); light value in body.light-mode */
-  --shadow-card-hover: 0 20px 60px rgba(16, 171, 228, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --shadow-card-hover: 0 10px 32px rgba(16, 171, 228, 0.24);
   --radius-2xl: 16px;
   --gradient-accent-button: linear-gradient(90deg, #6CCDEF 0%, #2BA8E0 100%);
   --color-error-text-strong: #b91c1c;

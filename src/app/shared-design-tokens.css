@@ -305,16 +305,17 @@
   --glass-border-base:   rgba(255, 255, 255, 0.12);
   --glass-border-raised: rgba(255, 255, 255, 0.20);
 
-  --glass-shadow-base:   0 4px 24px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-  --glass-shadow-raised: 0 8px 40px rgba(0, 0, 0, 0.45), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-  /* The blue-tinted glow raised and floating surfaces use (DS Tooltip, card hover). Promoted
-     from the Console's own tokens so shared components can use it; same values. */
-  --shadow-card-hover: 0 20px 60px rgba(16, 171, 228, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  /* Dark glass shadows: the DS soft glow at every level; dark mode always uses the soft shadow. */
+  --glass-shadow-base:   0 10px 32px rgba(16, 171, 228, 0.24);
+  --glass-shadow-raised: 0 10px 32px rgba(16, 171, 228, 0.24);
+  /* The blue-tinted glow raised and floating surfaces use on hover. Dark mode always uses the
+     DS soft glow (same value as --shadow-card-hover-soft); keep the two equal. */
+  --shadow-card-hover: 0 10px 32px rgba(16, 171, 228, 0.24);
   /* Scaled-down --shadow-card-hover for small floating surfaces (the shared Tooltip). */
   --shadow-card-hover-tight: 0 2px 10px rgba(16, 171, 228, 0.48), inset 0 1px 0 rgba(255, 255, 255, 0.14);
-  /* Soft: for a grid of small cards (a dashboard, a directory) where the full 60px glow is too heavy. Border stays as is. */
+  /* Soft glow for a grid of small cards (a dashboard, a directory); border stays as is. In dark it equals --shadow-card-hover. */
   --shadow-card-hover-soft: 0 10px 32px rgba(16, 171, 228, 0.24);
-  --glass-shadow-float:  0 20px 60px rgba(0, 0, 0, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+  --glass-shadow-float:  0 10px 32px rgba(16, 171, 228, 0.24);
 
   --glass-tint-cyan:   rgba(72, 191, 227, 0.06);
   --glass-tint-purple: rgba(105, 48, 195, 0.06);
