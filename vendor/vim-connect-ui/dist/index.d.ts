@@ -92,6 +92,7 @@ export { usePagination, usePageSizePreference } from './usePagination.js';
 export { PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE } from './paginationShared.js';
 export type { UsePaginationResult } from './usePagination.js';
 export { useVirtualRows } from './useVirtualRows.js';
+export { useScrollingFlag } from './useScrollingFlag.js';
 export type { VirtualRows, VirtualRowWindow } from './useVirtualRows.js';
 export { toastClassName, toastOptions, toastStyle, ToastIcon } from './toast.js';
 export type { ToastAccent, ToastIconProps, ToastThemeOptions } from './toast.js';
