@@ -27,12 +27,6 @@ body.light-mode {
   --color-text-muted: #6b7280;
   --color-text-subtle: #64748b;
   --color-purple-text: #7400B8;
-  /* DS uses one card glow in both modes; shared light mode swaps in an old teal one */
-  --shadow-card: 0 0 25px rgba(108, 205, 239, 0.12);
-  --shadow-card-hover: 0 4px 16px rgba(16, 171, 228, 0.14), 0 8px 32px rgba(16, 171, 228, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.95);
-  /* Shared light mode still has the old teal focus ring and button glow; DS keeps them cyan */
-  --shadow-focus: 0 0 0 3px rgba(108, 205, 239, 0.25);
-  --shadow-glow-hover: 0 0 35px rgba(108, 205, 239, 0.35), 0 0 70px rgba(176, 181, 255, 0.2);
 }
 
 /* Element resets stay in @layer base so @vim-connect/ui utility classes override them. */
