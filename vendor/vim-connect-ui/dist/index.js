@@ -36,6 +36,7 @@ export { Radio } from './Radio.js';
 export { RadioGroup } from './RadioGroup.js';
 export { choiceControlVariants, choiceControlLabelClasses } from './choiceControlVariants.js';
 export { Notice, noticeVariants } from './Notice.js';
+export { OptionRow } from './OptionRow.js';
 export { Select } from './Select.js';
 export { computeDropdownRect } from './dropdownRect.js';
 export { cn } from './cn.js';

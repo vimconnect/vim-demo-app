@@ -3,6 +3,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useState, useRef, useEffect, useLayoutEffect, useId, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { cn } from './cn.js';
+import { OptionRow } from './OptionRow.js';
 import { markLabellable } from './labellable.js';
 import { computeDropdownRect } from './dropdownRect.js';
 import { useFloatingLayer } from './floatingLayers.js';
@@ -89,21 +90,6 @@ const SEARCH_INPUT = [
 // The searchable panel's keyboard highlight, drawn over the selected tint too (DS).
 const SEARCH_HIGHLIGHT = '[background:var(--color-bg-secondary)] [box-shadow:inset_0_0_0_1px_var(--color-cyan-30)]';
 const NO_MATCH = 'm-0 px-[var(--space-md)] py-[var(--space-sm)] text-[length:var(--text-base)] [color:var(--color-text-muted)]';
-const OPTION = [
-    'select-option flex items-center justify-between gap-[var(--space-sm)]',
-    'px-[var(--space-md)] py-[var(--space-sm)] rounded-[var(--radius-base)]',
-    '[font-family:var(--font-sans)] text-[length:var(--text-base)] [color:var(--color-text-primary)]',
-    'cursor-pointer select-none [transition:background_var(--transition-fast)]',
-].join(' ');
-function optionClasses({ selected, focused, disabled }) {
-    if (disabled) {
-        return cn(OPTION, '[color:var(--color-text-muted)] cursor-not-allowed hover:[background:transparent]');
-    }
-    if (selected) {
-        return cn(OPTION, '[background:var(--color-cyan-08)] [color:var(--color-cyan-text)] [font-weight:var(--font-medium)] hover:[background:var(--color-cyan-10)]', focused && '[background:var(--color-cyan-10)]');
-    }
-    return cn(OPTION, 'hover:[background:var(--color-cyan-05)]', focused && '[background:var(--color-cyan-05)]');
-}
 export function Select({ options, value, onChange, placeholder, required, disabled, className, id, ariaLabel, 'aria-describedby': describedBy, 'aria-labelledby': labelledBy, 'data-testid': testId, size = 'default', searchable: searchableProp, searchPlaceholder = 'Type to filter…', onSearchChange, loading = false, emptyMessage = 'No match.', clearable = false, clearLabel = 'Clear', disabledReason, }) {
     const searchable = searchableProp ?? (onSearchChange !== undefined || options.length >= SEARCHABLE_FROM);
     const [open, setOpen] = useState(false);
@@ -318,10 +304,10 @@ export function Select({ options, value, onChange, placeholder, required, disabl
         : undefined;
     const rows = visible.map((opt, i) => {
         const selected = opt.value === value;
-        return (_jsxs("li", { id: `${selectId}-option-${i}`, role: "option", "aria-selected": selected, "aria-disabled": opt.disabled || undefined, className: cn(optionClasses({ selected, focused: i === focusedIdx && !searchable, disabled: !!opt.disabled }), searchable && i === focusedIdx && SEARCH_HIGHLIGHT), onMouseDown: (e) => {
+        return (_jsx(OptionRow, { id: `${selectId}-option-${i}`, selected: selected, focused: i === focusedIdx && !searchable, disabled: !!opt.disabled, className: searchable && i === focusedIdx ? SEARCH_HIGHLIGHT : undefined, onMouseDown: (e) => {
                 e.preventDefault();
                 pick(i);
-            }, onMouseEnter: () => setFocusedIdx(i), children: [opt.description ? (_jsxs("span", { className: "min-w-0", children: [_jsx("span", { className: "block", children: opt.labelNode ?? opt.label }), _jsx("span", { className: "block text-[length:var(--text-sm)] [font-weight:var(--font-normal)] [color:var(--color-text-muted)]", children: opt.description })] })) : (_jsx("span", { children: opt.labelNode ?? opt.label })), selected && (_jsx("svg", { className: "select-check shrink-0 [color:var(--color-cyan-text)]", width: "14", height: "14", viewBox: "0 0 14 14", fill: "none", "aria-hidden": true, children: _jsx("path", { d: "M2.5 7l3 3 6-6", stroke: "currentColor", strokeWidth: "1.5", strokeLinecap: "round", strokeLinejoin: "round" }) }))] }, opt.value));
+            }, onMouseEnter: () => setFocusedIdx(i), children: opt.description ? (_jsxs("span", { className: "min-w-0", children: [_jsx("span", { className: "block", children: opt.labelNode ?? opt.label }), _jsx("span", { className: "block text-[length:var(--text-sm)] [font-weight:var(--font-normal)] [color:var(--color-text-muted)]", children: opt.description })] })) : (_jsx("span", { children: opt.labelNode ?? opt.label })) }, opt.value));
     });
     const empty = loading ? (_jsxs("p", { className: cn(NO_MATCH, 'flex items-center gap-[var(--space-sm)]'), role: "status", children: [_jsx(Spinner, { size: "xs", color: "current" }), "Loading\u2026"] })) : visible.length === 0 ? (_jsx("p", { className: NO_MATCH, children: emptyMessage })) : null;
     const onSearchKeyDown = (e) => {

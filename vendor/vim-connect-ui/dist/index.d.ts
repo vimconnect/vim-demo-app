@@ -60,6 +60,8 @@ export { choiceControlVariants, choiceControlLabelClasses } from './choiceContro
 export type { ChoiceControlKind } from './choiceControlVariants.js';
 export { Notice, noticeVariants } from './Notice.js';
 export type { NoticeProps, NoticeVariant } from './Notice.js';
+export { OptionRow } from './OptionRow.js';
+export type { OptionRowProps } from './OptionRow.js';
 export { Select } from './Select.js';
 export type { SelectOption, SelectProps } from './Select.js';
 export { computeDropdownRect } from './dropdownRect.js';
