@@ -386,9 +386,8 @@ body.light-mode {
   --color-error-text: var(--color-error-text-strong);
   --color-success-text: var(--color-success-text-strong);
 
-  /* Gradients — subtle teal tints for light mode surfaces */
-  --gradient-subtle: linear-gradient(135deg, rgba(20, 184, 166, 0.03) 0%, rgba(59, 130, 246, 0.03) 100%);
-  --gradient-card:   linear-gradient(135deg, rgba(20, 184, 166, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%);
+  /* --gradient-subtle / --gradient-card are not overridden for light: the design system keeps one
+     cyan -> lavender set for both themes (vim-ai tokens.css). */
 
   /* Shadows — minimal and refined */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.03);
