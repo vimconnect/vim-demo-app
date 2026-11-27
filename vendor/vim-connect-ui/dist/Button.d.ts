@@ -1,5 +1,11 @@
 import React from 'react';
 import { type VariantProps } from 'class-variance-authority';
+/** Square padding for `iconOnly` (and ExpandingIconButton, which never sets `data-icon-only`). */
+export declare const BUTTON_ICON_ONLY_PADDING: {
+    readonly default: "p-[8px]";
+    readonly sm: "p-[5px]";
+    readonly lg: "p-[12px]";
+};
 /**
  * Design-system button — vim-ai `Design System.html` → Buttons. Shared
  * Tailwind + `cva` on the shared tokens (the `write-ui-component` recipe).

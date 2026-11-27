@@ -2,6 +2,12 @@ import { jsx as _jsx } from "react/jsx-runtime";
 import React from 'react';
 import { cva } from 'class-variance-authority';
 import { cn } from './cn.js';
+/** Square padding for `iconOnly` (and ExpandingIconButton, which never sets `data-icon-only`). */
+export const BUTTON_ICON_ONLY_PADDING = {
+    default: 'p-[8px]',
+    sm: 'p-[5px]',
+    lg: 'p-[12px]',
+};
 /**
  * Design-system button — vim-ai `Design System.html` → Buttons. Shared
  * Tailwind + `cva` on the shared tokens (the `write-ui-component` recipe).
@@ -110,9 +116,9 @@ const buttonVariants = cva([
         { shape: 'pill', size: 'default', class: 'rounded-[16px]' },
         { shape: 'pill', size: 'sm', class: 'rounded-[12px]' },
         { shape: 'pill', size: 'lg', class: 'rounded-[20px]' },
-        { iconOnly: true, size: 'default', class: 'p-[8px]' },
-        { iconOnly: true, size: 'sm', class: 'p-[5px]' },
-        { iconOnly: true, size: 'lg', class: 'p-[12px]' },
+        { iconOnly: true, size: 'default', class: BUTTON_ICON_ONLY_PADDING.default },
+        { iconOnly: true, size: 'sm', class: BUTTON_ICON_ONLY_PADDING.sm },
+        { iconOnly: true, size: 'lg', class: BUTTON_ICON_ONLY_PADDING.lg },
     ],
     defaultVariants: { variant: 'primary', size: 'default', iconOnly: false, shape: 'default' },
 });

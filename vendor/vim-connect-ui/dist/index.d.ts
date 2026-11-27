@@ -30,6 +30,8 @@ export { Button, buttonVariants } from './Button.js';
 export type { ButtonProps, ButtonShape, ButtonSize, ButtonVariant } from './Button.js';
 export { IconButton } from './IconButton.js';
 export type { IconButtonProps } from './IconButton.js';
+export { ExpandingIconButton } from './ExpandingIconButton.js';
+export type { ExpandingIconButtonProps } from './ExpandingIconButton.js';
 export { TextLink, textLinkVariants } from './TextLink.js';
 export type { TextLinkProps, TextLinkVariant } from './TextLink.js';
 export { FilterChip, filterChipVariants, filterChipCountClasses } from './FilterChip.js';

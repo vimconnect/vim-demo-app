@@ -20,6 +20,7 @@ export { SearchInput } from './SearchInput.js';
 export { Badge, badgeVariants } from './Badge.js';
 export { Button, buttonVariants } from './Button.js';
 export { IconButton } from './IconButton.js';
+export { ExpandingIconButton } from './ExpandingIconButton.js';
 export { TextLink, textLinkVariants } from './TextLink.js';
 export { FilterChip, filterChipVariants, filterChipCountClasses } from './FilterChip.js';
 export { FilterBar } from './FilterBar.js';
