@@ -65,6 +65,8 @@ export { SegmentedControl } from './SegmentedControl.js';
 export { AnchoredPanel } from './AnchoredPanel.js';
 export { zFloatingPanel } from './floatingLayersShared.js';
 export { Popover } from './Popover.js';
+export { Tip } from './Tip.js';
+export { TipMark } from './TipMark.js';
 export { ActionMenu } from './ActionMenu.js';
 export { ACTION_MENU_DIVIDER } from './actionMenuShared.js';
 export { PatientHeader, patientDetails } from './PatientHeader.js';
